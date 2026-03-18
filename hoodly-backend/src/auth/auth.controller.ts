@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Controller, Get, Post, UseGuards, Req } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtGuard } from './guards/jwt.guard';
@@ -22,10 +20,9 @@ interface IAuth0JwtPayload {
 export class AuthController {
   constructor(private usersService: UsersService) {}
 
-  /**
+    /**
    * POST /api/auth/me
-   * Appelé par le frontend juste après le login Auth0.
-   * Délègue la logique métier au UsersService.
+   * Permet de synchroniser le profil du user depuis Auth0 vers MongoDB
    */
   @Post('me')
   async syncUser(@Req() req: Request): Promise<UserResponseDto> {
@@ -43,7 +40,7 @@ export class AuthController {
 
   /**
    * GET /api/auth/me
-   * Retourne le profil du user connecté depuis MongoDB.
+   * Retourne le profil du user connecté depuis MongoDB
    */
   @Get('me')
   async getMe(@Req() req: Request): Promise<UserResponseDto> {

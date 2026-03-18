@@ -7,4 +7,7 @@ export class UserResponseDto {
   name?: string;
   picture?: string;
   role!: UserRole;
+  isActive?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

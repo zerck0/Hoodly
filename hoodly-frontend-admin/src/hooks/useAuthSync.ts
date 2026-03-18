@@ -17,12 +17,9 @@ export function useAuthSync() {
     },
     // N'exécute la requête que si l'utilisateur est authentifié
     enabled: isAuthenticated && !isLoading,
-    // Pas de retry agressif — une seule tentative suffit au login
     retry: 1,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
-
-  // Synchronise le résultat dans le store Zustand
   useEffect(() => {
     if (query.data) setDbUser(query.data);
   }, [query.data, setDbUser]);

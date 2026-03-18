@@ -8,7 +8,6 @@ import { ConfigService } from '@nestjs/config';
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(configService: ConfigService) {
     super({
-      // URL où Auth0 expose ses clés publiques
       secretOrKeyProvider: passportJwtSecret({
         cache: true,
         rateLimit: true,
@@ -16,7 +15,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         jwksUri: `https://${configService.get('AUTH0_DOMAIN')}/.well-known/jwks.json`,
       }),
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      // Domaine Auth0 à vérifier dans le token
       issuer: `https://${configService.get('AUTH0_DOMAIN')}/`,
       audience: configService.get('AUTH0_AUDIENCE'),
       algorithms: ['RS256'],

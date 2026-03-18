@@ -27,48 +27,41 @@ Plateforme collaborative de quartier permettant aux habitants d'**échanger des 
 
 ## 🎯 Stack technique
 
-<table>
-<tr>
-<td><b>🔙 Backend</b></td>
-<td>NestJS · TypeScript · Mongoose</td>
-</tr>
-<tr>
-<td><b>🌐 Frontend Web</b></td>
-<td>React 18 · Vite · TanStack Query · Zustand · Shadcn/ui · Tailwind</td>
-</tr>
-<tr>
-<td><b>⚙️ Admin</b></td>
-<td>React 18 · Vite · TanStack Query · Zustand · Shadcn/ui · Tailwind</td>
-</tr>
-<tr>
-<td><b>💻 Desktop</b></td>
-<td>Java 21 · JavaFX · SQLite</td>
-</tr>
-<tr>
-<td><b>🔐 Authentication</b></td>
-<td>Auth0 (JWT RS256 · Google SSO · MFA)</td>
-</tr>
-<tr>
-<td><b>📊 BDD principale</b></td>
-<td>MongoDB</td>
-</tr>
-<tr>
-<td><b>🔗 BDD graphe</b></td>
-<td>Neo4j</td>
-</tr>
-<tr>
-<td><b>⚡ Temps réel</b></td>
-<td>Socket.io</td>
-</tr>
-<tr>
-<td><b>🐳 Conteneurisation</b></td>
-<td>Docker</td>
-</tr>
-<tr>
-<td><b>🚀 Déploiement</b></td>
-<td>Railway</td>
-</tr>
-</table>
+### 🔐 Authentification
+- **Auth0** - SSO (Single Sign-On), JWT RS256, Google OAuth, MFA
+
+### 💾 Base de données
+- **MongoDB** - Base de données principale (NoSQL)
+- **Mongoose** - ODM pour MongoDB
+- **Neo4j** - Base de données graphe (recommandations)
+
+### 🔙 Backend
+- **NestJS** - Framework Node.js
+- **Passport** - Authentification middleware
+- **TypeScript** - Langage typé
+
+### 🌐 Frontend
+- **React 19** - Framework UI
+- **Vite** - Build tool moderne
+- **TypeScript** - Langage typé
+
+### 🎨 UI & Styling
+- **Radix UI** - Composants headless accessibles
+- **Tailwind CSS** - CSS utility-first
+- **ShadcnUI** - Composants pré-stylés
+- **Lucide React** - Icônes
+
+### 📊 State Management & Data Fetching
+- **Zustand** - State management léger
+- **TanStack Query** - Gestion des requêtes API + cache
+
+### 🌐 HTTP & Temps réel
+- **Axios** - Client HTTP
+- **Socket.io** - Communication temps réel
+
+### 🐳 DevOps
+- **Docker** - Conteneurisation
+- **Railway** - Déploiement cloud
 
 ---
 
@@ -119,6 +112,7 @@ pnpm run dev
 - ✅ Authentification Auth0 (Google SSO, JWT, guard global)
 - ✅ Synchronisation user MongoDB au login
 - ✅ Dashboard admin
+- ✅ Gestion des utilisateurs (CRUD, pagination, filtres, rôles)
 
 ### 🔄 En développement
 - 🔲 Modélisation géographique

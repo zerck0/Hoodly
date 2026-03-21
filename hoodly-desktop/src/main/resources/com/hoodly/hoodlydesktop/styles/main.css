@@ -32,7 +32,6 @@
     -fx-text-fill: #94A3B8;
 }
 
-/* SIDEBAR */
 .sidebar {
     -fx-background-color: #1E3A8A;
 }
@@ -80,7 +79,6 @@
     -fx-background-color: #7F1D1D;
 }
 
-/* CONTENU PRINCIPAL */
 .main-content {
     -fx-background-color: #F8FAFC;
 }
@@ -97,7 +95,6 @@
     -fx-text-fill: #334155;
 }
 
-/* CARTES DE STATS */
 .stat-card {
     -fx-background-color: white;
     -fx-padding: 20;

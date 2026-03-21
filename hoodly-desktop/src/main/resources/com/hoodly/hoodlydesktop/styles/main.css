@@ -1,0 +1,33 @@
+.login-container {
+    -fx-background-color: #FFFFFF;
+}
+
+.app-title {
+    -fx-font-size: 36px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1E3A8A;
+}
+
+.app-subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: #64748B;
+}
+
+.btn-primary {
+    -fx-background-color: #1E3A8A;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 12 24 12 24;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+
+.btn-primary:hover {
+    -fx-background-color: #1e40af;
+}
+
+.status-text {
+    -fx-font-size: 12px;
+    -fx-text-fill: #94A3B8;
+}

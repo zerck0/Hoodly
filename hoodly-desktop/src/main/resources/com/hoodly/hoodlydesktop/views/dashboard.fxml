@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.hoodly.hoodlydesktop.controllers.DashboardController">
+
+    <!-- SIDEBAR -->
+    <left>
+        <VBox styleClass="sidebar" spacing="8" prefWidth="220">
+            <padding><Insets top="24" right="16" bottom="24" left="16"/></padding>
+
+            <Label text="HOODLY" styleClass="sidebar-title"/>
+            <Label fx:id="adminNameLabel" text="Chargement..." styleClass="sidebar-subtitle"/>
+
+            <Separator style="-fx-padding: 8 0 8 0;"/>
+
+            <Button text="Incidents" styleClass="sidebar-btn" maxWidth="Infinity"
+                    onAction="#showIncidents"/>
+            <Button text="Statistiques" styleClass="sidebar-btn" maxWidth="Infinity"/>
+            <Button text="Plugins" styleClass="sidebar-btn" maxWidth="Infinity"/>
+            <Button text="Paramètres" styleClass="sidebar-btn" maxWidth="Infinity"/>
+
+            <VBox VBox.vgrow="ALWAYS"/>
+
+            <HBox spacing="8" alignment="CENTER_LEFT">
+                <Label fx:id="connectionStatus" text="● En ligne" styleClass="status-online"/>
+            </HBox>
+
+            <Button text="Se déconnecter" styleClass="btn-danger" maxWidth="Infinity"
+                    onAction="#handleLogout"/>
+        </VBox>
+    </left>
+
+    <!-- CONTENU PRINCIPAL -->
+    <center>
+        <VBox styleClass="main-content" spacing="20">
+            <padding><Insets top="32" right="32" bottom="32" left="32"/></padding>
+
+            <Label fx:id="pageTitle" text="Tableau de bord" styleClass="page-title"/>
+
+            <HBox spacing="16">
+                <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                    <Label text="Incidents ouverts" styleClass="stat-label"/>
+                    <Label fx:id="openIncidentsCount" text="—" styleClass="stat-value"/>
+                </VBox>
+                <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                    <Label text="En cours" styleClass="stat-label"/>
+                    <Label fx:id="inProgressCount" text="—" styleClass="stat-value"/>
+                </VBox>
+                <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                    <Label text="Résolus" styleClass="stat-label"/>
+                    <Label fx:id="resolvedCount" text="—" styleClass="stat-value"/>
+                </VBox>
+                <VBox styleClass="stat-card" HBox.hgrow="ALWAYS">
+                    <Label text="Sync en attente" styleClass="stat-label"/>
+                    <Label fx:id="syncPendingCount" text="0" styleClass="stat-value"/>
+                </VBox>
+            </HBox>
+
+            <Label text="Incidents récents" styleClass="section-title"/>
+            <TableView fx:id="incidentsTable" VBox.vgrow="ALWAYS">
+                <columns>
+                    <TableColumn fx:id="typeCol" text="Type" prefWidth="120"/>
+                    <TableColumn fx:id="descCol" text="Description" prefWidth="280"/>
+                    <TableColumn fx:id="statutCol" text="Statut" prefWidth="120"/>
+                    <TableColumn fx:id="prioriteCol" text="Priorité" prefWidth="100"/>
+                    <TableColumn fx:id="dateCol" text="Date" prefWidth="160"/>
+                </columns>
+            </TableView>
+
+        </VBox>
+    </center>
+
+</BorderPane>

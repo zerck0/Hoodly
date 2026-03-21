@@ -3,18 +3,26 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.VBox?>
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.hoodly.hoodlydesktop.controllers.LoginController"
       alignment="CENTER"
-      spacing="20"
+      spacing="16"
       styleClass="login-container">
 
     <padding>
         <Insets top="60" right="40" bottom="60" left="40"/>
     </padding>
+
+    <ImageView fitWidth="300" fitHeight="300" preserveRatio="true">
+        <image>
+            <Image url="@logo-hoodly.png"/>
+        </image>
+    </ImageView>
 
     <Label text="HOODLY" styleClass="app-title"/>
     <Label text="Ensemble, c'est mieux !" styleClass="app-subtitle"/>

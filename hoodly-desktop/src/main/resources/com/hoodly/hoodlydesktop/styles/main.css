@@ -31,3 +31,87 @@
     -fx-font-size: 12px;
     -fx-text-fill: #94A3B8;
 }
+
+/* SIDEBAR */
+.sidebar {
+    -fx-background-color: #1E3A8A;
+}
+
+.sidebar-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.sidebar-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #93C5FD;
+}
+
+.sidebar-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 10 12 10 12;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+
+.sidebar-btn:hover {
+    -fx-background-color: #2563EB;
+}
+
+.status-online {
+    -fx-text-fill: #4ADE80;
+    -fx-font-size: 12px;
+}
+
+.btn-danger {
+    -fx-background-color: transparent;
+    -fx-text-fill: #FCA5A5;
+    -fx-font-size: 13px;
+    -fx-padding: 10 12 10 12;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+
+.btn-danger:hover {
+    -fx-background-color: #7F1D1D;
+}
+
+/* CONTENU PRINCIPAL */
+.main-content {
+    -fx-background-color: #F8FAFC;
+}
+
+.page-title {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1E3A8A;
+}
+
+.section-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #334155;
+}
+
+/* CARTES DE STATS */
+.stat-card {
+    -fx-background-color: white;
+    -fx-padding: 20;
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2);
+}
+
+.stat-label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #64748B;
+}
+
+.stat-value {
+    -fx-font-size: 32px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1E3A8A;
+}

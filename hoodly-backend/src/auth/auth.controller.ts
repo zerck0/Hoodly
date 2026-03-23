@@ -20,7 +20,7 @@ interface IAuth0JwtPayload {
 export class AuthController {
   constructor(private usersService: UsersService) {}
 
-    /**
+  /**
    * POST /api/auth/me
    * Permet de synchroniser le profil du user depuis Auth0 vers MongoDB
    */

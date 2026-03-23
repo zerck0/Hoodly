@@ -1,5 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
+import { IncidentStatus } from '../enums/incident-status.enum';
+import { IncidentPriority } from '../enums/incident-priority.enum';
 
 export type IncidentDocument = HydratedDocument<Incident>;
 
@@ -14,17 +16,27 @@ export class Incident {
   @Prop()
   photoUrl?: string;
 
-  @Prop({ required: true, default: 'signale' })
-  statut!: string;
+  @Prop({
+    type: String,
+    enum: IncidentStatus,
+    required: true,
+    default: IncidentStatus.REPORTED,
+  })
+  statut!: IncidentStatus;
 
-  @Prop({ required: true, default: 'normale' })
-  priorite!: string;
+  @Prop({
+    type: String,
+    enum: IncidentPriority,
+    required: true,
+    default: IncidentPriority.NORMAL,
+  })
+  priorite!: IncidentPriority;
 
   @Prop()
   signaledPar?: string;
 
-  @Prop()
-  zoneId?: string;
+  @Prop({ type: Types.ObjectId, ref: 'Zone' })
+  zoneId?: Types.ObjectId;
 }
 
 export const IncidentSchema = SchemaFactory.createForClass(Incident);

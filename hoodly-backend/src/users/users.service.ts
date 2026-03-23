@@ -34,7 +34,7 @@ export class UsersService {
           },
           $setOnInsert: { role: 'user', isActive: true },
         },
-        { upsert: true, new: true },
+        { upsert: true, returnDocument: 'after' },
       );
       return this.toDto(user);
     } catch {
@@ -85,11 +85,7 @@ export class UsersService {
     };
   }
 
-  private buildSearchQuery(
-    search?: string,
-    role?: string,
-    isActive?: boolean,
-  ) {
+  private buildSearchQuery(search?: string, role?: string, isActive?: boolean) {
     const query: Record<string, any> = {};
     if (search) {
       query.$or = [
@@ -97,10 +93,8 @@ export class UsersService {
         { name: { $regex: search, $options: 'i' } },
       ];
     }
-    if (role)
-      query.role = role;
-    if (isActive !== undefined)
-      query.isActive = isActive;
+    if (role) query.role = role;
+    if (isActive !== undefined) query.isActive = isActive;
     return query;
   }
 
@@ -108,7 +102,7 @@ export class UsersService {
     const user = await this.userModel.findByIdAndUpdate(
       id,
       { $set: updates },
-      { new: true },
+      { returnDocument: 'after' },
     );
     if (!user) throw new NotFoundException('Utilisateur introuvable');
     return this.toDto(user);

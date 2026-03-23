@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
+import { ZoneMembershipStatus } from '../enums/zone-membership-status.enum';
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -31,6 +32,16 @@ export class User {
 
   createdAt?: Date;
   updatedAt?: Date;
+
+  @Prop({
+    type: String,
+    enum: ZoneMembershipStatus,
+    default: ZoneMembershipStatus.NO_ZONE,
+  })
+  zoneStatut!: ZoneMembershipStatus;
+
+  @Prop({ type: Types.ObjectId, ref: 'Zone' })
+  zoneId?: Types.ObjectId;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

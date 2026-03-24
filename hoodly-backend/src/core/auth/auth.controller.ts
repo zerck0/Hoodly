@@ -1,4 +1,10 @@
 import { Controller, Get, Post, UseGuards, Req } from '@nestjs/common';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
 import { UsersService } from '../../modules/users/services/users.service';
 import { JwtGuard } from './guards/jwt.guard';
 import { UserResponseDto } from '../../modules/users/dto/user-response.dto';
@@ -15,16 +21,21 @@ interface IAuth0JwtPayload {
   [key: string]: unknown;
 }
 
+@ApiTags('Auth')
+@ApiBearerAuth()
 @Controller('auth')
 @UseGuards(JwtGuard)
 export class AuthController {
   constructor(private usersService: UsersService) {}
 
-  /**
-   * POST /api/auth/me
-   * Permet de synchroniser le profil du user depuis Auth0 vers MongoDB
-   */
   @Post('me')
+  @ApiOperation({ summary: 'Synchroniser le profil depuis Auth0' })
+  @ApiResponse({
+    status: 201,
+    description: 'Profil synchronisé',
+    type: UserResponseDto,
+  })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
   async syncUser(@Req() req: Request): Promise<UserResponseDto> {
     const payload = req.user as IAuth0JwtPayload;
     return await this.usersService.syncFromAuth0(payload.sub, {
@@ -38,11 +49,14 @@ export class AuthController {
     });
   }
 
-  /**
-   * GET /api/auth/me
-   * Retourne le profil du user connecté depuis MongoDB
-   */
   @Get('me')
+  @ApiOperation({ summary: 'Récupérer le profil du user connecté' })
+  @ApiResponse({
+    status: 200,
+    description: 'Profil récupéré',
+    type: UserResponseDto,
+  })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
   async getMe(@Req() req: Request): Promise<UserResponseDto> {
     const payload = req.user as IAuth0JwtPayload;
     return await this.usersService.getProfileByAuth0Id(payload.sub);

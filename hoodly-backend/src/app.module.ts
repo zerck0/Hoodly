@@ -7,10 +7,7 @@ import { AuthModule } from './core/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { IncidentsModule } from './modules/incidents/incidents.module';
 import { ZonesModule } from './modules/zones/zones.module';
-import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
-import { IncidentsModule } from './incidents/incidents.module';
-import { EventsModule } from './events/events.module';
+import { EventsModule } from './modules/events/events.module';
 
 @Module({
   imports: [

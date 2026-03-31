@@ -8,6 +8,7 @@ import { UsersModule } from './modules/users/users.module';
 import { IncidentsModule } from './modules/incidents/incidents.module';
 import { ZonesModule } from './modules/zones/zones.module';
 import { EventsModule } from './modules/events/events.module';
+import { ServicesModule } from './modules/services/services.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { EventsModule } from './modules/events/events.module';
     IncidentsModule,
     ZonesModule,
     EventsModule,
+    ServicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

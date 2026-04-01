@@ -3,6 +3,8 @@ import {
   Get,
   Post,
   Put,
+  Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -19,6 +21,7 @@ import {
 import { ZonesService } from '../services/zones.service';
 import { ZoneRequestsService } from '../services/zone-requests.service';
 import { ZoneMembershipsService } from '../services/zone-memberships.service';
+import { UpdateZoneDto } from '../dto/update-zone.dto';
 import { CurrentUser } from '../../../core/auth/decorators/current-user.decorator';
 import { JwtGuard } from '../../../core/auth/guards/jwt.guard';
 import { RolesGuard } from '../../../core/auth/guards/roles.guard';
@@ -44,9 +47,13 @@ export class ZonesController {
 
   @Get()
   @ApiOperation({ summary: 'Lister toutes les zones' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Limite par page' })
   @ApiResponse({ status: 200, description: 'Liste des zones' })
-  findAll() {
-    return this.zonesService.findAll();
+  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 20;
+    return this.zonesService.findAllPaginated(pageNum, limitNum);
   }
 
   @Get('search')
@@ -58,6 +65,79 @@ export class ZonesController {
     return this.zonesService.search(nom, ville);
   }
 
+  @Get('my')
+  @ApiOperation({ summary: 'Récupérer ma zone (utilisateur connecté)' })
+  @ApiResponse({ status: 200, description: 'Zone de l utilisateur' })
+  @ApiResponse({ status: 204, description: 'Utilisateur sans zone' })
+  getMyZone(@CurrentUser() user: JwtPayloadDto) {
+    return this.zonesService.getMyZone(user.sub);
+  }
+
+  @Get('nearby')
+  @ApiOperation({ summary: 'Trouver les zones proches d un point GPS' })
+  @ApiQuery({ name: 'lat', description: 'Latitude' })
+  @ApiQuery({ name: 'lng', description: 'Longitude' })
+  @ApiResponse({ status: 200, description: 'Zones trouvées' })
+  findNearby(@Query('lat') lat: string, @Query('lng') lng: string) {
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lng);
+    return this.zonesService.findNearby(latitude, longitude);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Récupérer une zone par son ID' })
+  @ApiParam({ name: 'id', description: 'ID de la zone' })
+  @ApiResponse({ status: 200, description: 'Zone trouvée' })
+  @ApiResponse({ status: 404, description: 'Zone introuvable' })
+  findOne(@Param('id', MongoIdValidationPipe) id: string) {
+    return this.zonesService.findById(id);
+  }
+
+  @Get(':id/members')
+  @ApiOperation({ summary: 'Lister les membres d une zone' })
+  @ApiParam({ name: 'id', description: 'ID de la zone' })
+  @ApiResponse({ status: 200, description: 'Liste des membres' })
+  @ApiResponse({ status: 404, description: 'Zone introuvable' })
+  findMembers(@Param('id', MongoIdValidationPipe) id: string) {
+    return this.zonesService.findMembers(id);
+  }
+
+  @Get(':id/stats')
+  @ApiOperation({ summary: 'Statistiques d une zone' })
+  @ApiParam({ name: 'id', description: 'ID de la zone' })
+  @ApiResponse({ status: 200, description: 'Statistiques' })
+  @ApiResponse({ status: 404, description: 'Zone introuvable' })
+  getStats(@Param('id', MongoIdValidationPipe) id: string) {
+    return this.zonesService.getStats(id);
+  }
+
+  @Get(':id/incidents')
+  @ApiOperation({ summary: 'Lister les incidents d une zone' })
+  @ApiParam({ name: 'id', description: 'ID de la zone' })
+  @ApiResponse({ status: 200, description: 'Liste des incidents' })
+  @ApiResponse({ status: 404, description: 'Zone introuvable' })
+  findIncidentsByZone(@Param('id', MongoIdValidationPipe) id: string) {
+    return this.zonesService.findIncidentsByZone(id);
+  }
+
+  @Get(':id/events')
+  @ApiOperation({ summary: 'Lister les événements d une zone' })
+  @ApiParam({ name: 'id', description: 'ID de la zone' })
+  @ApiResponse({ status: 200, description: 'Liste des événements' })
+  @ApiResponse({ status: 404, description: 'Zone introuvable' })
+  findEventsByZone(@Param('id', MongoIdValidationPipe) id: string) {
+    return this.zonesService.findEventsByZone(id);
+  }
+
+  @Get(':id/services')
+  @ApiOperation({ summary: 'Lister les services d une zone' })
+  @ApiParam({ name: 'id', description: 'ID de la zone' })
+  @ApiResponse({ status: 200, description: 'Liste des services' })
+  @ApiResponse({ status: 404, description: 'Zone introuvable' })
+  findServicesByZone(@Param('id', MongoIdValidationPipe) id: string) {
+    return this.zonesService.findServicesByZone(id);
+  }
+
   @Post()
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Créer une zone (admin)' })
@@ -65,6 +145,17 @@ export class ZonesController {
   @ApiResponse({ status: 403, description: 'Accès refusé' })
   create(@Body() body: CreateZoneDto, @CurrentUser() user: JwtPayloadDto) {
     return this.zonesService.create(body, user.sub);
+  }
+
+  @Post(':id/activate')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Réactiver une zone (admin)' })
+  @ApiParam({ name: 'id', description: 'ID de la zone' })
+  @ApiResponse({ status: 200, description: 'Zone réactivée' })
+  @ApiResponse({ status: 403, description: 'Accès refusé' })
+  @ApiResponse({ status: 404, description: 'Zone introuvable' })
+  activate(@Param('id', MongoIdValidationPipe) id: string) {
+    return this.zonesService.activate(id);
   }
 
   @Post('requests')
@@ -75,6 +166,46 @@ export class ZonesController {
     @CurrentUser() user: JwtPayloadDto,
   ) {
     return this.zoneRequestsService.create(body, user.sub);
+  }
+
+  @Post('memberships')
+  @ApiOperation({ summary: 'Demander une adhésion à une zone' })
+  @ApiResponse({ status: 201, description: "Demande d'adhésion créée" })
+  createMembership(
+    @Body() body: CreateMembershipDto,
+    @CurrentUser() user: JwtPayloadDto,
+  ) {
+    return this.zoneMembershipsService.create(
+      body.zoneId,
+      user.sub,
+      body.justificatifUrl,
+      body.pieceIdentiteUrl,
+    );
+  }
+
+  @Patch(':id')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Modifier une zone (admin)' })
+  @ApiParam({ name: 'id', description: 'ID de la zone' })
+  @ApiResponse({ status: 200, description: 'Zone modifiée' })
+  @ApiResponse({ status: 403, description: 'Accès refusé' })
+  @ApiResponse({ status: 404, description: 'Zone introuvable' })
+  update(
+    @Param('id', MongoIdValidationPipe) id: string,
+    @Body() body: UpdateZoneDto,
+  ) {
+    return this.zonesService.update(id, body);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Désactiver une zone (admin)' })
+  @ApiParam({ name: 'id', description: 'ID de la zone' })
+  @ApiResponse({ status: 200, description: 'Zone désactivée' })
+  @ApiResponse({ status: 403, description: 'Accès refusé' })
+  @ApiResponse({ status: 404, description: 'Zone introuvable' })
+  desactivate(@Param('id', MongoIdValidationPipe) id: string) {
+    return this.zonesService.desactivate(id);
   }
 
   @Get('requests')
@@ -118,21 +249,6 @@ export class ZonesController {
       id,
       user.sub,
       body.commentaire ?? '',
-    );
-  }
-
-  @Post('memberships')
-  @ApiOperation({ summary: 'Demander une adhésion à une zone' })
-  @ApiResponse({ status: 201, description: "Demande d'adhésion créée" })
-  createMembership(
-    @Body() body: CreateMembershipDto,
-    @CurrentUser() user: JwtPayloadDto,
-  ) {
-    return this.zoneMembershipsService.create(
-      body.zoneId,
-      user.sub,
-      body.justificatifUrl,
-      body.pieceIdentiteUrl,
     );
   }
 

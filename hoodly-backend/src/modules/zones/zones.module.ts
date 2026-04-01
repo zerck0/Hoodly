@@ -11,6 +11,9 @@ import {
   ZoneMembershipSchema,
 } from './schemas/zone-membership.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
+import { Incident, IncidentSchema } from '../incidents/schemas/incident.schema';
+import { Event, EventSchema } from '../events/schemas/event.schema';
+import { Service, ServiceSchema } from '../services/schemas/service.schema';
 
 @Module({
   imports: [
@@ -19,6 +22,9 @@ import { User, UserSchema } from '../users/schemas/user.schema';
       { name: ZoneRequest.name, schema: ZoneRequestSchema },
       { name: ZoneMembership.name, schema: ZoneMembershipSchema },
       { name: User.name, schema: UserSchema },
+      { name: Incident.name, schema: IncidentSchema },
+      { name: Event.name, schema: EventSchema },
+      { name: Service.name, schema: ServiceSchema },
     ]),
   ],
   controllers: [ZonesController],

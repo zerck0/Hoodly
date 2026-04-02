@@ -12,16 +12,22 @@ import {
   Wrench,
   Vote,
   LogOut,
+  MapPin,
+  FileText,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Utilisateurs', icon: Users, path: '/users' },
   { label: 'Incidents', icon: AlertTriangle, path: '/incidents' },
+  { label: 'Zones', icon: MapPin, path: '/zones' },
+  { label: 'Demandes quartiers', icon: FileText, path: '/zones/requests' },
+  { label: 'Demandes adhésion', icon: Users, path: '/zones/memberships' },
   { label: 'Événements', icon: CalendarDays, path: '/events' },
   { label: 'Services', icon: Wrench, path: '/services' },
   { label: 'Votes', icon: Vote, path: '/votes' },
 ];
+
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user: auth0User, logout } = useAuth0();

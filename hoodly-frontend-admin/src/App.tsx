@@ -9,6 +9,7 @@ import DashboardPage from './pages/dashboard';
 import UsersPage from './pages/users';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
+import ZonesPage from './pages/zones';
 
 function Auth0ProviderWithNavigate({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -22,8 +23,10 @@ function Auth0ProviderWithNavigate({ children }: { children: React.ReactNode }) 
       authorizationParams={{
         redirect_uri: `${window.location.origin}/dashboard`,
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-        scope: 'openid profile email',
+        scope: 'openid profile email offline_access',
       }}
+      useRefreshTokens={true}
+      cacheLocation="localstorage"
       onRedirectCallback={onRedirectCallback}
     >
       <TokenSetup />
@@ -34,13 +37,13 @@ function Auth0ProviderWithNavigate({ children }: { children: React.ReactNode }) 
 
 function TokenSetup() {
   const { getAccessTokenSilently, isAuthenticated } = useAuth0();
-  
+
   useEffect(() => {
     if (isAuthenticated) {
       setTokenGetter(async () => await getAccessTokenSilently());
     }
   }, [isAuthenticated, getAccessTokenSilently]);
-  
+
   return null;
 }
 
@@ -51,25 +54,35 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route 
-            path="/dashboard" 
+          <Route
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <AdminRoute>
                   <DashboardPage />
                 </AdminRoute>
               </ProtectedRoute>
-            } 
+            }
           />
-          <Route 
-            path="/users" 
+          <Route
+            path="/users"
             element={
               <ProtectedRoute>
                 <AdminRoute>
                   <UsersPage />
                 </AdminRoute>
               </ProtectedRoute>
-            } 
+            }
+          />
+          <Route
+            path="/zones"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <ZonesPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
           />
         </Routes>
       </Auth0ProviderWithNavigate>

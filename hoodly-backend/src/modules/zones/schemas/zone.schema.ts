@@ -26,6 +26,9 @@ export class Zone {
 
   @Prop({ default: 0 })
   membresCount!: number;
+
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export const ZoneSchema = SchemaFactory.createForClass(Zone);

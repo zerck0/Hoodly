@@ -1,5 +1,5 @@
-import { IsString, IsNotEmpty, IsOptional, IsObject } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsObject } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateZoneDto {
   @ApiProperty({ description: 'Nom du quartier' })
@@ -12,10 +12,10 @@ export class CreateZoneDto {
   @IsNotEmpty()
   ville!: string;
 
-  @ApiPropertyOptional({ description: 'Polygone GeoJSON' })
-  @IsOptional()
+  @ApiProperty({ description: 'Polygone GeoJSON' })
   @IsObject()
-  polygone?: {
+  @IsNotEmpty()
+  polygone!: {
     type: string;
     coordinates: number[][][];
   };

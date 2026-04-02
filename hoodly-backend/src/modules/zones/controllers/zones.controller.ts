@@ -49,11 +49,20 @@ export class ZonesController {
   @ApiOperation({ summary: 'Lister toutes les zones' })
   @ApiQuery({ name: 'page', required: false, description: 'Page' })
   @ApiQuery({ name: 'limit', required: false, description: 'Limite par page' })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Recherche texte sur nom ou ville',
+  })
   @ApiResponse({ status: 200, description: 'Liste des zones' })
-  findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
-    const pageNum = page ? parseInt(page, 10) : 1;
-    const limitNum = limit ? parseInt(limit, 10) : 20;
-    return this.zonesService.findAllPaginated(pageNum, limitNum);
+  findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+  ) {
+    const pageNum = page ? Number.parseInt(page, 10) : 1;
+    const limitNum = limit ? Number.parseInt(limit, 10) : 20;
+    return this.zonesService.findAllPaginated(pageNum, limitNum, search);
   }
 
   @Get('search')
@@ -79,9 +88,25 @@ export class ZonesController {
   @ApiQuery({ name: 'lng', description: 'Longitude' })
   @ApiResponse({ status: 200, description: 'Zones trouvées' })
   findNearby(@Query('lat') lat: string, @Query('lng') lng: string) {
-    const latitude = parseFloat(lat);
-    const longitude = parseFloat(lng);
+    const latitude = Number.parseFloat(lat);
+    const longitude = Number.parseFloat(lng);
     return this.zonesService.findNearby(latitude, longitude);
+  }
+
+  @Get('requests')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @ApiOperation({ summary: 'Lister les demandes de création de zone' })
+  @ApiResponse({ status: 200, description: 'Liste des demandes' })
+  findAllZoneRequests() {
+    return this.zoneRequestsService.findAll();
+  }
+
+  @Get('memberships')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @ApiOperation({ summary: "Lister les demandes d'adhésion" })
+  @ApiResponse({ status: 200, description: 'Liste des adhésions' })
+  findAllMemberships() {
+    return this.zoneMembershipsService.findAll();
   }
 
   @Get(':id')
@@ -208,14 +233,6 @@ export class ZonesController {
     return this.zonesService.desactivate(id);
   }
 
-  @Get('requests')
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
-  @ApiOperation({ summary: 'Lister les demandes de création de zone' })
-  @ApiResponse({ status: 200, description: 'Liste des demandes' })
-  findAllZoneRequests() {
-    return this.zoneRequestsService.findAll();
-  }
-
   @Put('requests/:id/accept')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Accepter une demande de création de zone' })
@@ -250,14 +267,6 @@ export class ZonesController {
       user.sub,
       body.commentaire ?? '',
     );
-  }
-
-  @Get('memberships')
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
-  @ApiOperation({ summary: "Lister les demandes d'adhésion" })
-  @ApiResponse({ status: 200, description: 'Liste des adhésions' })
-  findAllMemberships() {
-    return this.zoneMembershipsService.findAll();
   }
 
   @Put('memberships/:id/accept')

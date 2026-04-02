@@ -12,7 +12,9 @@ import { EventResponseDto } from '../dto/event-response.dto';
 
 @Injectable()
 export class EventsService {
-  constructor(@InjectModel(Event.name) private eventModel: Model<EventDocument>) {}
+  constructor(
+    @InjectModel(Event.name) private eventModel: Model<EventDocument>,
+  ) {}
 
   async create(createEventDto: CreateEventDto): Promise<EventResponseDto> {
     try {
@@ -21,7 +23,7 @@ export class EventsService {
       return this.toDto(saved);
     } catch {
       throw new InternalServerErrorException(
-        'Erreur lors de la création de l\'événement',
+        "Erreur lors de la création de l'événement",
       );
     }
   }

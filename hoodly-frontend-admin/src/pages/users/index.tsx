@@ -20,7 +20,6 @@ export default function UsersPage() {
   const [page, setPage] = useState(1);
   const [editingUser, setEditingUser] = useState<IUserResponse | null>(null);
 
-  // Récupération des utilisateurs
   const { data, isLoading } = useQuery({
     queryKey: ['users', page, filters],
     queryFn: () =>
@@ -31,7 +30,6 @@ export default function UsersPage() {
       }),
   });
 
-  // Mettre à jour un utilisateur
   const updateMutation = useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: IUpdateUserDto }) =>
       usersApi.update(id, updates),
@@ -41,7 +39,6 @@ export default function UsersPage() {
     },
   });
 
-  // Supprimer un utilisateur
   const deleteMutation = useMutation({
     mutationFn: (id: string) => usersApi.delete(id),
     onSuccess: () => {
@@ -114,6 +111,7 @@ export default function UsersPage() {
         </Card>
 
         <EditUserDialog
+          key={editingUser?.id ?? 'no-user'}
           user={editingUser}
           open={!!editingUser}
           onClose={() => setEditingUser(null)}

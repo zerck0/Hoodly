@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -28,16 +28,11 @@ export function EditUserDialog({
   open,
   onClose,
   onSave,
-}: EditUserDialogProps) {
-  const [role, setRole] = useState<string>('user');
-  const [isActive, setIsActive] = useState<string>('true');
-
-  useEffect(() => {
-    if (user) {
-      setRole(user.role);
-      setIsActive(user.isActive ? 'true' : 'false');
-    }
-  }, [user]);
+}: Readonly<EditUserDialogProps>) {
+  const [role, setRole] = useState<string>(user?.role ?? 'user');
+  const [isActive, setIsActive] = useState<string>(
+    user?.isActive ? 'true' : 'false',
+  );
 
   const handleSave = () => {
     if (!user) return;

@@ -1,11 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Zone, ZoneDocument } from '../schemas/zone.schema';
 import { User, UserDocument } from '../../users/schemas/user.schema';
 import { CreateZoneDto } from '../dto/create-zone.dto';
-import { ZoneStatus } from '../enums/zone-status.enum';
 import { UpdateZoneDto } from '../dto/update-zone.dto';
+import { ZoneStatus } from '../enums/zone-status.enum';
 import { ZoneMembershipStatus } from 'src/modules/users/enums/zone-membership-status.enum';
 import {
   ZoneMembership,
@@ -21,6 +25,18 @@ import {
   ServiceDocument,
 } from 'src/modules/services/schemas/service.schema';
 
+export interface ZoneDto {
+  id: string;
+  nom: string;
+  ville: string;
+  polygone?: { type: string; coordinates: number[][][] };
+  createdPar?: string;
+  statut: string;
+  membresCount: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 @Injectable()
 export class ZonesService {
   constructor(
@@ -33,47 +49,77 @@ export class ZonesService {
     @InjectModel(Service.name) private serviceModel: Model<ServiceDocument>,
   ) {}
 
-  async findAll(): Promise<Zone[]> {
-    return this.zoneModel.find({ statut: ZoneStatus.ACTIVE }).exec();
+  async findAllPaginated(
+    page: number,
+    limit: number,
+    search?: string,
+  ): Promise<{
+    zones: ZoneDto[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const skip = (page - 1) * limit;
+
+    const query: Record<string, any> = {};
+    if (search) {
+      query.$or = [
+        { nom: { $regex: search, $options: 'i' } },
+        { ville: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const [zones, total] = await Promise.all([
+      this.zoneModel
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .sort({ createdAt: -1 })
+        .exec(),
+      this.zoneModel.countDocuments(query),
+    ]);
+
+    return {
+      zones: zones.map((z) => this.toDto(z)),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
-  async search(nom: string, ville: string): Promise<Zone[]> {
-    return this.zoneModel
+  async search(nom: string, ville: string): Promise<ZoneDto[]> {
+    const zones = await this.zoneModel
       .find({
         statut: ZoneStatus.ACTIVE,
         ...(nom && { nom: { $regex: nom, $options: 'i' } }),
         ...(ville && { ville: { $regex: ville, $options: 'i' } }),
       })
       .exec();
+    return zones.map((z) => this.toDto(z));
   }
 
-  async create(data: CreateZoneDto, adminSub: string): Promise<Zone> {
+  async create(data: CreateZoneDto, adminSub: string): Promise<ZoneDto> {
+    if (!data.polygone) {
+      throw new BadRequestException('Le périmètre du quartier est obligatoire');
+    }
     const admin = await this.getAdminByAuth0Id(adminSub);
-
     const zone = new this.zoneModel({
       ...data,
       createdPar: admin._id,
     });
-    return zone.save();
+    const saved = await zone.save();
+    return this.toDto(saved);
   }
 
-  private async getAdminByAuth0Id(auth0Id: string): Promise<UserDocument> {
-    const admin = await this.userModel.findOne({ auth0Id });
-    if (!admin) {
-      throw new NotFoundException('Admin introuvable');
-    }
-    return admin;
-  }
-
-  async findById(id: string): Promise<Zone> {
+  async findById(id: string): Promise<ZoneDto> {
     const zone = await this.zoneModel.findById(id).exec();
     if (!zone) {
       throw new NotFoundException('Zone introuvable');
     }
-    return zone;
+    return this.toDto(zone);
   }
 
-  async update(id: string, data: UpdateZoneDto): Promise<Zone> {
+  async update(id: string, data: UpdateZoneDto): Promise<ZoneDto> {
     const updated = await this.zoneModel
       .findByIdAndUpdate(id, data, { new: true, runValidators: true })
       .exec();
@@ -81,10 +127,10 @@ export class ZonesService {
     if (!updated) {
       throw new NotFoundException('Zone introuvable');
     }
-    return updated;
+    return this.toDto(updated);
   }
 
-  async activate(id: string): Promise<Zone> {
+  async activate(id: string): Promise<ZoneDto> {
     const updated = await this.zoneModel
       .findByIdAndUpdate(id, { statut: ZoneStatus.ACTIVE }, { new: true })
       .exec();
@@ -92,10 +138,10 @@ export class ZonesService {
     if (!updated) {
       throw new NotFoundException('Zone introuvable');
     }
-    return updated;
+    return this.toDto(updated);
   }
 
-  async desactivate(id: string): Promise<Zone> {
+  async desactivate(id: string): Promise<ZoneDto> {
     const updated = await this.zoneModel
       .findByIdAndUpdate(id, { statut: ZoneStatus.INACTIVE }, { new: true })
       .exec();
@@ -103,10 +149,13 @@ export class ZonesService {
     if (!updated) {
       throw new NotFoundException('Zone introuvable');
     }
-    return updated;
+    return this.toDto(updated);
   }
 
   async findMembers(id: string): Promise<User[]> {
+    await this.zoneModel
+      .findById(id)
+      .orFail(new NotFoundException('Zone introuvable'));
     return this.userModel
       .find({
         zoneId: new Types.ObjectId(id),
@@ -115,42 +164,17 @@ export class ZonesService {
       .exec();
   }
 
-  async findAllPaginated(
-    page: number,
-    limit: number,
-  ): Promise<{
-    zones: Zone[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
-    const skip = (page - 1) * limit;
-    const [zones, total] = await Promise.all([
-      this.zoneModel
-        .find({ statut: ZoneStatus.ACTIVE })
-        .skip(skip)
-        .limit(limit)
-        .exec(),
-      this.zoneModel.countDocuments({ statut: ZoneStatus.ACTIVE }),
-    ]);
-    return {
-      zones,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-    };
-  }
-
-  async getMyZone(userSub: string): Promise<Zone | null> {
+  async getMyZone(userSub: string): Promise<ZoneDto | null> {
     const user = await this.userModel.findOne({ auth0Id: userSub }).exec();
     if (!user || !user.zoneId) {
       return null;
     }
-    return this.zoneModel.findById(user.zoneId).exec();
+    const zone = await this.zoneModel.findById(user.zoneId).exec();
+    return zone ? this.toDto(zone) : null;
   }
 
-  async findNearby(lat: number, lng: number): Promise<Zone[]> {
-    return this.zoneModel
+  async findNearby(lat: number, lng: number): Promise<ZoneDto[]> {
+    const zones = await this.zoneModel
       .find({
         statut: ZoneStatus.ACTIVE,
         polygone: {
@@ -163,10 +187,11 @@ export class ZonesService {
         },
       })
       .exec();
+    return zones.map((z) => this.toDto(z));
   }
 
   async getStats(id: string): Promise<{
-    zone: Zone;
+    zone: ZoneDto;
     membersCount: number;
     incidentsCount: number;
     activeIncidentsCount: number;
@@ -207,17 +232,45 @@ export class ZonesService {
   }
 
   async findIncidentsByZone(id: string): Promise<Incident[]> {
-    await this.findById(id);
+    await this.zoneModel
+      .findById(id)
+      .orFail(new NotFoundException('Zone introuvable'));
     return this.incidentModel.find({ zoneId: new Types.ObjectId(id) }).exec();
   }
 
   async findEventsByZone(id: string): Promise<Event[]> {
-    await this.findById(id);
+    await this.zoneModel
+      .findById(id)
+      .orFail(new NotFoundException('Zone introuvable'));
     return this.eventModel.find({ zoneId: new Types.ObjectId(id) }).exec();
   }
 
   async findServicesByZone(id: string): Promise<Service[]> {
-    await this.findById(id);
+    await this.zoneModel
+      .findById(id)
+      .orFail(new NotFoundException('Zone introuvable'));
     return this.serviceModel.find({ zoneId: new Types.ObjectId(id) }).exec();
+  }
+
+  private toDto(zone: ZoneDocument): ZoneDto {
+    return {
+      id: (zone._id as unknown as string).toString(),
+      nom: zone.nom,
+      ville: zone.ville,
+      polygone: zone.polygone,
+      createdPar: zone.createdPar?.toString(),
+      statut: zone.statut,
+      membresCount: zone.membresCount,
+      createdAt: zone.createdAt?.toISOString(),
+      updatedAt: zone.updatedAt?.toISOString(),
+    };
+  }
+
+  private async getAdminByAuth0Id(auth0Id: string): Promise<UserDocument> {
+    const admin = await this.userModel.findOne({ auth0Id });
+    if (!admin) {
+      throw new NotFoundException('Admin introuvable');
+    }
+    return admin;
   }
 }

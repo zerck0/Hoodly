@@ -1,11 +1,18 @@
-import { IsOptional, IsString, IsDate, IsNumber, IsEnum, ValidateNested } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsDate,
+  IsNumber,
+  IsEnum,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { EventStatus } from '../schemas/event.schema';
 import { LieuDto } from './create-event.dto';
 
 export class UpdateEventDto {
-  @ApiPropertyOptional({ description: 'Titre de l\'événement' })
+  @ApiPropertyOptional({ description: "Titre de l'événement" })
   @IsOptional()
   @IsString()
   titre?: string;
@@ -15,7 +22,7 @@ export class UpdateEventDto {
   @IsString()
   categorie?: string;
 
-  @ApiPropertyOptional({ description: 'Date de l\'événement' })
+  @ApiPropertyOptional({ description: "Date de l'événement" })
   @IsOptional()
   @IsDate()
   @Type(() => Date)

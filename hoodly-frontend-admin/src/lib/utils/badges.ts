@@ -4,7 +4,7 @@ export function getRoleBadgeVariant(role: string) {
     moderator: 'default',
     user: 'secondary',
   } as const;
-  
+
   return variants[role as keyof typeof variants] || 'secondary';
 }
 

@@ -22,13 +22,13 @@ export class EventResponseDto {
   @ApiProperty({ description: 'ID MongoDB' })
   id!: string;
 
-  @ApiProperty({ description: 'Titre de l\'événement' })
+  @ApiProperty({ description: "Titre de l'événement" })
   titre!: string;
 
   @ApiProperty({ description: 'Catégorie' })
   categorie!: string;
 
-  @ApiProperty({ description: 'Date de l\'événement' })
+  @ApiProperty({ description: "Date de l'événement" })
   date!: Date;
 
   @ApiProperty({ description: 'Lieu' })

@@ -1,4 +1,12 @@
-import { IsNotEmpty, IsString, IsDate, IsNumber, IsOptional, IsEnum, ValidateNested } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsDate,
+  IsNumber,
+  IsOptional,
+  IsEnum,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EventStatus } from '../schemas/event.schema';
@@ -31,7 +39,7 @@ export class LieuDto {
 }
 
 export class CreateEventDto {
-  @ApiProperty({ description: 'Titre de l\'événement' })
+  @ApiProperty({ description: "Titre de l'événement" })
   @IsNotEmpty()
   @IsString()
   titre!: string;
@@ -41,7 +49,7 @@ export class CreateEventDto {
   @IsString()
   categorie!: string;
 
-  @ApiProperty({ description: 'Date de l\'événement' })
+  @ApiProperty({ description: "Date de l'événement" })
   @IsNotEmpty()
   @IsDate()
   @Type(() => Date)

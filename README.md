@@ -85,7 +85,7 @@ Hoodly/
 
 - ✔️ Node.js 20+
 - ✔️ pnpm
-- ✔️ MongoDB local ou Atlas
+- ✔️ MongoDB local (Compass)
 - ✔️ Compte Auth0 configuré
 
 ### 🔙 Backend
@@ -108,20 +108,17 @@ pnpm run dev
 
 ## ✨ Fonctionnalités
 
-### ✅ Implémentées
 - ✅ Authentification Auth0 (Google SSO, JWT, guard global)
 - ✅ Synchronisation user MongoDB au login
 - ✅ Dashboard admin
 - ✅ Gestion des utilisateurs (CRUD, pagination, filtres, rôles)
-
-### 🔄 En développement
-- 🔲 Modélisation géographique
-- 🔲 Services entre voisins
-- 🔲 Documents et signatures numériques
-- 🔲 Événements communautaires
-- 🔲 Messagerie temps réel
-- 🔲 Votes et sondages
-- 🔲 Gestion des incidents
-- 🔲 Moteur de recommandations (Neo4j)
-- 🔲 Client Java Desktop (offline-first)
-- 🔲 Internationalisation (fr/en)
+- ✅ Modélisation géographique
+- ✅ Services entre voisins
+- ✅ Documents et signatures numériques
+- ✅ Événements communautaires
+- ✅ Messagerie temps réel
+- ✅ Votes et sondages
+- ✅ Gestion des incidents
+- ✅ Moteur de recommandations (Neo4j)
+- ✅ Client Java Desktop (offline-first)
+- ✅ Internationalisation (fr/en)

@@ -5,14 +5,14 @@ export default function CommunityMap() {
     <section className="bg-[#fefefa] px-4 py-16">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div>
+          <div data-animate="fade-right">
             <img
               src={quartierImg}
               alt="Carte isométrique du quartier"
-              className="w-full rounded-3xl shadow-xl object-cover"
+              className="w-full rounded-3xl shadow-xl object-cover transition-shadow duration-500 hover:shadow-2xl"
             />
           </div>
-          <div>
+          <div data-animate="fade-left">
             <h2 className="text-4xl md:text-5xl font-bold text-[#2c308e] mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>
               Qu'est-ce qu'un quartier pour nous ?
             </h2>

@@ -10,7 +10,7 @@ import { User, UserDocument } from '../../users/schemas/user.schema';
 import { CreateZoneDto } from '../dto/create-zone.dto';
 import { UpdateZoneDto } from '../dto/update-zone.dto';
 import { ZoneStatus } from '../enums/zone-status.enum';
-import { ZoneMembershipStatus } from 'src/modules/users/enums/zone-membership-status.enum';
+import { ZoneMembershipStatus } from '../../users/enums/zone-membership-status.enum';
 import {
   ZoneMembership,
   ZoneMembershipDocument,
@@ -18,12 +18,12 @@ import {
 import {
   Incident,
   IncidentDocument,
-} from 'src/modules/incidents/schemas/incident.schema';
-import { Event, EventDocument } from 'src/modules/events/schemas/event.schema';
+} from '../../incidents/schemas/incident.schema';
+import { Event, EventDocument } from '../../events/schemas/event.schema';
 import {
   Service,
   ServiceDocument,
-} from 'src/modules/services/schemas/service.schema';
+} from '../../services/schemas/service.schema';
 
 export interface ZoneDto {
   id: string;
@@ -166,7 +166,7 @@ export class ZonesService {
 
   async getMyZone(userSub: string): Promise<ZoneDto | null> {
     const user = await this.userModel.findOne({ auth0Id: userSub }).exec();
-    if (!user || !user.zoneId) {
+    if (!user?.zoneId) {
       return null;
     }
     const zone = await this.zoneModel.findById(user.zoneId).exec();

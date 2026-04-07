@@ -70,7 +70,7 @@ Plateforme collaborative de quartier permettant aux habitants d'**échanger des 
 ```
 Hoodly/
 ├── 🔙 hoodly-backend/          → API REST NestJS (port 3000)
-├── 🌐 hoodly-frontend/         → App web habitant (port 5173)
+├── 🌐 hoodly-frontend-client/  → App web habitant (port 5173)
 ├── ⚙️ hoodly-frontend-admin/   → Back-office admin (port 5174)
 └── 💻 hoodly-desktop/          → Client Java Desktop (offline-first)
 ```
@@ -96,6 +96,15 @@ pnpm install
 pnpm run start:dev
 ```
 
+### 🌐 Frontend Habitant
+```bash
+cd hoodly-frontend
+pnpm install
+pnpm run dev
+```
+
+---
+
 ### ⚙️ Frontend Admin
 
 ```bash
@@ -103,22 +112,3 @@ cd hoodly-frontend-admin
 pnpm install
 pnpm run dev
 ```
-
----
-
-## ✨ Fonctionnalités
-
-- ✅ Authentification Auth0 (Google SSO, JWT, guard global)
-- ✅ Synchronisation user MongoDB au login
-- ✅ Dashboard admin
-- ✅ Gestion des utilisateurs (CRUD, pagination, filtres, rôles)
-- ✅ Modélisation géographique
-- ✅ Services entre voisins
-- ✅ Documents et signatures numériques
-- ✅ Événements communautaires
-- ✅ Messagerie temps réel
-- ✅ Votes et sondages
-- ✅ Gestion des incidents
-- ✅ Moteur de recommandations (Neo4j)
-- ✅ Client Java Desktop (offline-first)
-- ✅ Internationalisation (fr/en)

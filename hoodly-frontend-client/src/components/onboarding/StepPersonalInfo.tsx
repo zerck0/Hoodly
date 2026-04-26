@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useAuthStore } from '../stores/auth.store'
-import { usersApi } from '../services/api/user'
+import { useAuthStore } from '../../stores/auth.store'
+import { usersApi } from '../../services/api/user'
+
 
 interface StepPersonalInfoProps {
   onNext: () => void
@@ -39,7 +40,6 @@ function StepPersonalInfo({ onNext }: StepPersonalInfoProps) {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Nom */}
         <div>
           <label htmlFor="name" className="mb-1 block text-sm font-medium">
             Nom complet

@@ -43,14 +43,23 @@ export interface IZoneRequestResponse {
   id: string;
   userId: {
     _id: string;
+    name?: string;
     nom?: string;
     prenom?: string;
     email: string;
+    location?: {
+      type: string;
+      coordinates: number[];
+    };
   };
   nomQuartier: string;
   ville: string;
   codePostal: string;
   description: string;
+  location?: {
+    type: string;
+    coordinates: number[];
+  };
   statut: 'en_attente' | 'accepte' | 'refuse';
   commentaireAdmin?: string;
   traitePar?: string;

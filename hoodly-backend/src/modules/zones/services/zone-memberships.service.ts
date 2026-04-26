@@ -54,10 +54,29 @@ export class ZoneMembershipsService {
     });
 
     await this.userModel.findByIdAndUpdate(user._id, {
-      zoneStatut: ZoneMembershipStatus.PENDING_MEMBERSHIP,
+      zoneStatut: ZoneMembershipStatus.VERIF_EN_COURS,
+      $unset: { refusalReason: "", refusalType: "" },
     });
 
     return membership.save();
+  }
+
+  async intent(zoneId: string, userSub: string): Promise<UserDocument> {
+    const user = await this.getUserByAuth0Id(userSub);
+
+    const zone = await this.zoneModel.findById(zoneId);
+    if (!zone) {
+      throw new NotFoundException('Quartier introuvable');
+    }
+
+    return this.userModel.findByIdAndUpdate(
+      user._id,
+      {
+        zoneId: new Types.ObjectId(zoneId),
+        zoneStatut: ZoneMembershipStatus.PENDING_MEMBERSHIP,
+      },
+      { new: true },
+    ) as Promise<UserDocument>;
   }
 
   async findAll(): Promise<ZoneMembership[]> {
@@ -82,6 +101,7 @@ export class ZoneMembershipsService {
     await this.userModel.findByIdAndUpdate(membership.userId, {
       zoneId: membership.zoneId,
       zoneStatut: ZoneMembershipStatus.ACTIVE,
+      $unset: { refusalReason: "", refusalType: "" },
     });
 
     await this.zoneModel.findByIdAndUpdate(membership.zoneId, {
@@ -114,7 +134,9 @@ export class ZoneMembershipsService {
     }
 
     await this.userModel.findByIdAndUpdate(membership.userId, {
-      zoneStatut: ZoneMembershipStatus.NO_ZONE,
+      zoneStatut: ZoneMembershipStatus.PENDING_MEMBERSHIP, // Il reste en attente mais doit renvoyer les docs
+      refusalReason: commentaire,
+      refusalType: 'membership',
     });
 
     return this.zoneMembershipModel

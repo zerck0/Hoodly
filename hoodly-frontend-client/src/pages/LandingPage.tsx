@@ -1,8 +1,8 @@
-import Hero from '../components/Hero'
-import Features from '../components/Features'
-import HowItWorks from '../components/HowItWorks'
-import CommunityMap from '../components/CommunityMap'
-import Footer from '../components/Footer'
+import Hero from '../components/landing-page/Hero'
+import Features from '../components/landing-page/Features'
+import HowItWorks from '../components/landing-page/HowItWorks'
+import CommunityMap from '../components/landing-page/CommunityMap'
+import Footer from '../components/landing-page/Footer'
 import { useScrollAnimation } from '../hooks/useScrollAnimation'
 
 interface LandingPageProps {

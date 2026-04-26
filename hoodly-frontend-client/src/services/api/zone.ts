@@ -30,7 +30,12 @@ export const zonesApi = {
     ville: string
     codePostal: string
     description: string
+    latitude: number
+    longitude: number
   }) => api.post<ZoneRequest>('/zones/requests', data),
+
+  intentMembership: (zoneId: string) =>
+    api.post(`/zones/memberships/intent/${zoneId}`),
 
   uploadFile: (file: File) => {
     const formData = new FormData()

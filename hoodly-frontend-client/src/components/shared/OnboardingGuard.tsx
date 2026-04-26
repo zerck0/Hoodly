@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../stores/auth.store'
+import { useAuthStore } from '../../stores/auth.store'
 
-interface DashboardGuardProps {
+interface OnboardingGuardProps {
   children: React.ReactNode
 }
 
-function DashboardGuard({ children }: DashboardGuardProps) {
+function OnboardingGuard({ children }: OnboardingGuardProps) {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const isSyncing = useAuthStore((state) => state.isSyncing)
@@ -14,8 +14,15 @@ function DashboardGuard({ children }: DashboardGuardProps) {
   useEffect(() => {
     if (!user || isSyncing) return
 
-    if (user.zoneStatut !== 'actif') {
-      navigate('/onboarding')
+    if (
+      user.zoneStatut === 'actif' || 
+      user.zoneStatut === 'en_attente_adh' ||
+      user.zoneStatut === 'verif_en_cours'
+    ) {
+      navigate('/dashboard')
+    }
+ else if (user.zoneStatut === 'en_attente_zone') {
+      navigate('/waiting')
     }
   }, [user, isSyncing, navigate])
 
@@ -35,15 +42,7 @@ function DashboardGuard({ children }: DashboardGuardProps) {
     )
   }
 
-  if (user.zoneStatut !== 'actif') {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-lg text-gray-500">Redirection...</p>
-      </div>
-    )
-  }
-
   return <>{children}</>
 }
 
-export default DashboardGuard
+export default OnboardingGuard

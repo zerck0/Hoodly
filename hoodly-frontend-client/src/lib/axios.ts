@@ -5,7 +5,6 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Stocke une référence à la fonction getAccessTokenSilently
 let getAccessToken: (() => Promise<string>) | null = null
 
 export function setAuth0TokenGetter(getToken: () => Promise<string>) {
@@ -18,7 +17,7 @@ api.interceptors.request.use(async (config) => {
       const token = await getAccessToken()
       config.headers.Authorization = `Bearer ${token}`
     } catch {
-      // token indisponible
+      console.warn('Failed to get access token for API request')
     }
   }
   return config

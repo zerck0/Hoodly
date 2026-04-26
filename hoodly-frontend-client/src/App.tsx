@@ -5,9 +5,9 @@ import CallbackPage from './pages/CallbackPage'
 import OnboardingPage from './pages/OnboardingPage'
 import WaitingPage from './pages/WaitingPage'
 import DashboardPage from './pages/DashboardPage'
-import ProtectedRoute from './components/ProtectedRoute'
-import OnboardingGuard from './components/OnboardingGuard'
-import DashboardGuard from './components/DashboardGuard'
+import ProtectedRoute from './components/shared/ProtectedRoute'
+import OnboardingGuard from './components/shared/OnboardingGuard'
+import DashboardGuard from './components/shared/DashboardGuard'
 import { useAuthSync } from './hooks/useAuthSync'
 
 function App() {

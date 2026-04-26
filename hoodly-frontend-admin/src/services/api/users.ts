@@ -11,6 +11,7 @@ export interface UsersQueryParams {
   search?: string;
   role?: string;
   isActive?: boolean;
+  zoneStatut?: string;
 }
 
 export const usersApi = {

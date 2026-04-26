@@ -83,6 +83,17 @@ export const zonesApi = {
     return data;
   },
 
+  bulkAcceptRequests: async (body: {
+    requestIds: string[];
+    nomQuartier: string;
+    ville: string;
+    polygone: { type: string; coordinates: number[][][] };
+    commentaire?: string;
+  }) => {
+    const { data } = await apiClient.post<IZoneResponse>('/zones/requests/bulk-accept', body);
+    return data;
+  },
+
   refuseRequest: async (id: string, commentaire: string) => {
     const { data } = await apiClient.put<IZoneRequestResponse>(`/zones/requests/${id}/refuse`, {
       commentaire,

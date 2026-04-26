@@ -10,6 +10,9 @@ import UsersPage from './pages/users';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import ZonesPage from './pages/zones';
+import ZoneMapManagement from './pages/zones/ZoneMapManagement';
+import MembershipsPage from './pages/zones/memberships';
+import { Toaster } from 'sonner';
 
 function Auth0ProviderWithNavigate({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
@@ -51,6 +54,7 @@ export default function App() {
   return (
     <Router>
       <Auth0ProviderWithNavigate>
+        <Toaster position="top-right" richColors />
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
@@ -80,6 +84,26 @@ export default function App() {
               <ProtectedRoute>
                 <AdminRoute>
                   <ZonesPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/zones/map"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <ZoneMapManagement />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/zones/memberships"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <MembershipsPage />
                 </AdminRoute>
               </ProtectedRoute>
             }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MapPin, Plus, Search } from 'lucide-react';
+import { MapPin, Plus, Search, FileText } from 'lucide-react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { zonesApi } from '@/services/api/zones';
 import type { IZoneResponse } from '@/types/zone.types';
 import CreateZoneDialog from './CreateZoneDialog';
+import { useNavigate } from 'react-router-dom';
 
 export default function ZonesPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -49,22 +51,28 @@ export default function ZonesPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Gestion des zones</h1>
+            <h1 className="text-3xl font-bold">Catalogue des Quartiers</h1>
             <p className="text-muted-foreground">
-              Gérez les quartiers et leurs périmètres
+              Liste et statistiques des zones actives sur Hoodly
             </p>
           </div>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Créer une zone
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate('/zones/map')}>
+              <FileText className="h-4 w-4 mr-2" />
+              Radar Ouvertures
+            </Button>
+            <Button onClick={() => setCreateDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nouveau Quartier
+            </Button>
+          </div>
         </div>
 
-        <Card>
+        <Card className="bg-gray-900 border-gray-800">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Zones ({data?.total || 0})
+              <MapPin className="h-5 w-5 text-indigo-400" />
+              Quartiers enregistrés ({data?.total || 0})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">

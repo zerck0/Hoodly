@@ -1,4 +1,4 @@
-import mapImg from '../assets/map.png'
+import mapImg from '../../assets/map.png'
 
 const steps = [
   {

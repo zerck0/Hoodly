@@ -45,6 +45,7 @@ export class UsersController {
   })
   @ApiQuery({ name: 'role', required: false, enum: UserRole })
   @ApiQuery({ name: 'isActive', required: false, description: 'true/false' })
+  @ApiQuery({ name: 'zoneStatut', required: false, description: 'Statut adhésion' })
   @ApiResponse({
     status: 200,
     description: 'Liste des utilisateurs',
@@ -57,6 +58,7 @@ export class UsersController {
     @Query('search') search?: string,
     @Query('role') role?: string,
     @Query('isActive') isActive?: string,
+    @Query('zoneStatut') zoneStatut?: string,
   ) {
     return this.usersService.findAll(
       page ? parseInt(page) : 1,
@@ -64,6 +66,7 @@ export class UsersController {
       search,
       role,
       isActive ? isActive === 'true' : undefined,
+      zoneStatut,
     );
   }
 

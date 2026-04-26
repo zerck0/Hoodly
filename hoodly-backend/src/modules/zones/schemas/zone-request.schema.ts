@@ -22,6 +22,22 @@ export class ZoneRequest {
   description!: string;
 
   @Prop({
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point',
+    },
+    coordinates: {
+      type: [Number],
+      required: true,
+    },
+  })
+  location!: {
+    type: string;
+    coordinates: number[];
+  };
+
+  @Prop({
     type: String,
     enum: RequestStatus,
     default: RequestStatus.PENDING,
@@ -39,3 +55,6 @@ export class ZoneRequest {
 }
 
 export const ZoneRequestSchema = SchemaFactory.createForClass(ZoneRequest);
+
+// Index géospatial pour le champ location
+ZoneRequestSchema.index({ location: '2dsphere' });

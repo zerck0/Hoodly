@@ -12,6 +12,7 @@ import {
 import { User, UserDocument } from '../../users/schemas/user.schema';
 import { Zone, ZoneDocument } from '../schemas/zone.schema';
 import { CreateZoneRequestDto } from '../dto/create-zone-request.dto';
+import { BulkActionZoneRequestDto } from '../dto/bulk-action-zone-request.dto';
 import { RequestStatus } from '../enums/request-status.enum';
 import { ZoneMembershipStatus } from '../../users/enums/zone-membership-status.enum';
 
@@ -41,12 +42,25 @@ export class ZoneRequestsService {
     }
 
     const request = new this.zoneRequestModel({
-      ...data,
+      nomQuartier: data.nomQuartier,
+      ville: data.ville,
+      codePostal: data.codePostal,
+      description: data.description,
       userId: user._id,
+      location: {
+        type: 'Point',
+        coordinates: [data.longitude, data.latitude],
+      },
     });
 
+    // On met à jour la position de l'utilisateur sur son profil également
     await this.userModel.findByIdAndUpdate(user._id, {
       zoneStatut: ZoneMembershipStatus.PENDING_ZONE,
+      location: {
+        type: 'Point',
+        coordinates: [data.longitude, data.latitude],
+      },
+      $unset: { refusalReason: "", refusalType: "" },
     });
 
     return request.save();
@@ -55,8 +69,52 @@ export class ZoneRequestsService {
   async findAll(): Promise<ZoneRequest[]> {
     return this.zoneRequestModel
       .find({ statut: RequestStatus.PENDING })
-      .populate('userId', 'nom prenom email')
+      .populate('userId', 'name email picture location')
       .exec();
+  }
+
+  async bulkAccept(
+    data: BulkActionZoneRequestDto,
+    adminSub: string,
+  ): Promise<Zone> {
+    const admin = await this.getAdminByAuth0Id(adminSub);
+
+    // 1. Créer la zone
+    const zone = new this.zoneModel({
+      nom: data.nomQuartier,
+      ville: data.ville,
+      polygone: data.polygone,
+      createdPar: admin._id,
+    });
+    await zone.save();
+
+    // 2. Mettre à jour toutes les demandes
+    await this.zoneRequestModel.updateMany(
+      { _id: { $in: data.requestIds } },
+      {
+        statut: RequestStatus.ACCEPTED,
+        commentaireAdmin: data.commentaire,
+        traitePar: admin._id,
+        traiteLe: new Date(),
+      },
+    );
+
+    // 3. Mettre à jour les utilisateurs concernés
+    // On récupère les demandes pour avoir les IDs des users
+    const requests = await this.zoneRequestModel.find({
+      _id: { $in: data.requestIds },
+    });
+    const userIds = requests.map((r) => r.userId);
+
+    await this.userModel.updateMany(
+      { _id: { $in: userIds } },
+      {
+        zoneId: zone._id,
+        zoneStatut: ZoneMembershipStatus.PENDING_MEMBERSHIP, // Ils doivent maintenant valider leurs docs
+      },
+    );
+
+    return zone;
   }
 
   async accept(
@@ -85,8 +143,12 @@ export class ZoneRequestsService {
       traiteLe: new Date(),
     });
 
+    // On passe l'initiateur en attente de validation de ses propres documents
+    // pour le nouveau quartier créé.
     await this.userModel.findByIdAndUpdate(request.userId, {
-      zoneStatut: ZoneMembershipStatus.NO_ZONE,
+      zoneId: zone._id,
+      zoneStatut: ZoneMembershipStatus.PENDING_MEMBERSHIP,
+      $unset: { refusalReason: "", refusalType: "" },
     });
 
     return zone;
@@ -106,6 +168,8 @@ export class ZoneRequestsService {
 
     await this.userModel.findByIdAndUpdate(request.userId, {
       zoneStatut: ZoneMembershipStatus.NO_ZONE,
+      refusalReason: commentaire,
+      refusalType: 'zone',
     });
 
     return this.zoneRequestModel

@@ -12,7 +12,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  isSyncing: false,
+  isSyncing: true,
   setUser: (user) => set({ user, isSyncing: false }),
   setIsSyncing: (isSyncing) => set({ isSyncing }),
   updateUser: (updates) =>

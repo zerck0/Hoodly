@@ -33,6 +33,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         redirect_uri: window.location.origin + '/callback',
         audience,
       }}
+      cacheLocation="localstorage"
+      useRefreshTokens={true}
     >
       <QueryClientProvider client={queryClient}>
         <Auth0TokenConnector />

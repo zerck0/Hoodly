@@ -45,6 +45,21 @@ export class User {
 
   @Prop()
   phone?: string;
+
+  @Prop({ type: Object })
+  location?: {
+    type: string;
+    coordinates: number[];
+  };
+
+  @Prop()
+  refusalReason?: string;
+
+  @Prop({ type: String, enum: ['zone', 'membership'] })
+  refusalType?: 'zone' | 'membership';
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+// Index géospatial commenté temporairement pour débloquer l'inscription
+// UserSchema.index({ location: '2dsphere' });

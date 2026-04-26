@@ -60,9 +60,10 @@ export class UsersService {
     search?: string,
     role?: string,
     isActive?: boolean,
+    zoneStatut?: string,
   ) {
     // Filtre de recherche
-    const query = this.buildSearchQuery(search, role, isActive);
+    const query = this.buildSearchQuery(search, role, isActive, zoneStatut);
 
     const skip = (page - 1) * limit;
 
@@ -85,7 +86,7 @@ export class UsersService {
     };
   }
 
-  private buildSearchQuery(search?: string, role?: string, isActive?: boolean) {
+  private buildSearchQuery(search?: string, role?: string, isActive?: boolean, zoneStatut?: string) {
     const query: Record<string, any> = {};
     if (search) {
       query.$or = [
@@ -95,6 +96,7 @@ export class UsersService {
     }
     if (role) query.role = role;
     if (isActive !== undefined) query.isActive = isActive;
+    if (zoneStatut) query.zoneStatut = zoneStatut;
     return query;
   }
 
@@ -141,6 +143,8 @@ export class UsersService {
       phone: user.phone,
       zoneStatut: user.zoneStatut,
       zoneId: user.zoneId?.toString(),
+      refusalReason: user.refusalReason,
+      refusalType: user.refusalType,
     };
   }
 }

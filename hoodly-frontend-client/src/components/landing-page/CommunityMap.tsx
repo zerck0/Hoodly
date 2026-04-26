@@ -1,4 +1,4 @@
-import quartierImg from '../assets/quartier.png'
+import quartierImg from '../../assets/quartier.png'
 
 export default function CommunityMap() {
   return (

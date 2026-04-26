@@ -11,18 +11,25 @@ export function useAuthSync() {
 
   useEffect(() => {
     if (isLoading) return
-    if (!isAuthenticated) return
-    if (user) return
 
     const fetchProfile = async () => {
-      setIsSyncing(true)
-      try {
-        const { data } = await authApi.getMe()
-        setUser(data)
-      } catch {
-        // Erreur de fetch - store vide
-      } finally {
-        setIsSyncing(false)
+      if (isAuthenticated) {
+        if (!user) {
+          try {
+            const { data } = await authApi.getMe()
+            setUser(data)
+          } catch (err) {
+            console.error('Erreur sync profil:', err)
+            setIsSyncing(false)
+          }
+        } else {
+          setIsSyncing(false)
+        }
+      } else {
+        const timer = setTimeout(() => {
+          setIsSyncing(false)
+        }, 500)
+        return () => clearTimeout(timer)
       }
     }
 

@@ -1,6 +1,6 @@
 import { LogIn } from 'lucide-react'
-import heroImg from '../assets/hero.png'
-import logoImg from '../assets/logo_hoodly.png'
+import heroImg from '../../assets/hero.png'
+import logoImg from '../../assets/logo_hoodly.png'
 
 interface HeroProps {
   onLogin: () => void

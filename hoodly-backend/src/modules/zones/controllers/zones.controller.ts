@@ -31,6 +31,7 @@ import { MongoIdValidationPipe } from '../../../shared/pipes/mongo-id-validation
 import { CreateZoneDto } from '../dto/create-zone.dto';
 import { CreateZoneRequestDto } from '../dto/create-zone-request.dto';
 import { CreateMembershipDto } from '../dto/create-membership.dto';
+import { BulkActionZoneRequestDto } from '../dto/bulk-action-zone-request.dto';
 import { AdminActionDto } from '../dto/admin-action.dto';
 import type { JwtPayloadDto } from '../../../core/auth/dto/jwt-payload.dto';
 
@@ -44,6 +45,17 @@ export class ZonesController {
     private readonly zoneRequestsService: ZoneRequestsService,
     private readonly zoneMembershipsService: ZoneMembershipsService,
   ) {}
+
+  @Post('requests/bulk-accept')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Accepter plusieurs demandes et créer une zone' })
+  @ApiResponse({ status: 200, description: 'Zone créée et demandes validées' })
+  bulkAcceptZoneRequests(
+    @Body() body: BulkActionZoneRequestDto,
+    @CurrentUser() user: JwtPayloadDto,
+  ) {
+    return this.zoneRequestsService.bulkAccept(body, user.sub);
+  }
 
   @Get()
   @ApiOperation({ summary: 'Lister toutes les zones' })
@@ -99,6 +111,16 @@ export class ZonesController {
   @ApiResponse({ status: 200, description: 'Liste des demandes' })
   findAllZoneRequests() {
     return this.zoneRequestsService.findAll();
+  }
+
+  @Post('memberships/intent/:zoneId')
+  @ApiOperation({ summary: 'Marquer l\'intention de rejoindre un quartier' })
+  @ApiResponse({ status: 200, description: 'Statut utilisateur mis à jour' })
+  intentMembership(
+    @Param('zoneId', MongoIdValidationPipe) zoneId: string,
+    @CurrentUser() user: JwtPayloadDto,
+  ) {
+    return this.zoneMembershipsService.intent(zoneId, user.sub);
   }
 
   @Get('memberships')

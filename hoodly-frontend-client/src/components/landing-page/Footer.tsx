@@ -1,5 +1,5 @@
 import { Heart } from 'lucide-react'
-import logoImg from '../assets/logo_hoodly.png'
+import logoImg from '../../assets/logo_hoodly.png'
 
 export default function Footer() {
   return (

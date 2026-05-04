@@ -55,7 +55,7 @@ export class ZoneMembershipsService {
 
     await this.userModel.findByIdAndUpdate(user._id, {
       zoneStatut: ZoneMembershipStatus.VERIF_EN_COURS,
-      $unset: { refusalReason: "", refusalType: "" },
+      $unset: { refusalReason: '', refusalType: '' },
     });
 
     return membership.save();
@@ -101,7 +101,7 @@ export class ZoneMembershipsService {
     await this.userModel.findByIdAndUpdate(membership.userId, {
       zoneId: membership.zoneId,
       zoneStatut: ZoneMembershipStatus.ACTIVE,
-      $unset: { refusalReason: "", refusalType: "" },
+      $unset: { refusalReason: '', refusalType: '' },
     });
 
     await this.zoneModel.findByIdAndUpdate(membership.zoneId, {
@@ -134,7 +134,7 @@ export class ZoneMembershipsService {
     }
 
     await this.userModel.findByIdAndUpdate(membership.userId, {
-      zoneStatut: ZoneMembershipStatus.PENDING_MEMBERSHIP, // Il reste en attente mais doit renvoyer les docs
+      zoneStatut: ZoneMembershipStatus.PENDING_MEMBERSHIP,
       refusalReason: commentaire,
       refusalType: 'membership',
     });

@@ -53,14 +53,13 @@ export class ZoneRequestsService {
       },
     });
 
-    // On met à jour la position de l'utilisateur sur son profil également
     await this.userModel.findByIdAndUpdate(user._id, {
       zoneStatut: ZoneMembershipStatus.PENDING_ZONE,
       location: {
         type: 'Point',
         coordinates: [data.longitude, data.latitude],
       },
-      $unset: { refusalReason: "", refusalType: "" },
+      $unset: { refusalReason: '', refusalType: '' },
     });
 
     return request.save();
@@ -79,7 +78,6 @@ export class ZoneRequestsService {
   ): Promise<Zone> {
     const admin = await this.getAdminByAuth0Id(adminSub);
 
-    // 1. Créer la zone
     const zone = new this.zoneModel({
       nom: data.nomQuartier,
       ville: data.ville,
@@ -88,7 +86,6 @@ export class ZoneRequestsService {
     });
     await zone.save();
 
-    // 2. Mettre à jour toutes les demandes
     await this.zoneRequestModel.updateMany(
       { _id: { $in: data.requestIds } },
       {
@@ -99,8 +96,6 @@ export class ZoneRequestsService {
       },
     );
 
-    // 3. Mettre à jour les utilisateurs concernés
-    // On récupère les demandes pour avoir les IDs des users
     const requests = await this.zoneRequestModel.find({
       _id: { $in: data.requestIds },
     });
@@ -110,7 +105,7 @@ export class ZoneRequestsService {
       { _id: { $in: userIds } },
       {
         zoneId: zone._id,
-        zoneStatut: ZoneMembershipStatus.PENDING_MEMBERSHIP, // Ils doivent maintenant valider leurs docs
+        zoneStatut: ZoneMembershipStatus.PENDING_MEMBERSHIP,
       },
     );
 
@@ -143,12 +138,10 @@ export class ZoneRequestsService {
       traiteLe: new Date(),
     });
 
-    // On passe l'initiateur en attente de validation de ses propres documents
-    // pour le nouveau quartier créé.
     await this.userModel.findByIdAndUpdate(request.userId, {
       zoneId: zone._id,
       zoneStatut: ZoneMembershipStatus.PENDING_MEMBERSHIP,
-      $unset: { refusalReason: "", refusalType: "" },
+      $unset: { refusalReason: '', refusalType: '' },
     });
 
     return zone;

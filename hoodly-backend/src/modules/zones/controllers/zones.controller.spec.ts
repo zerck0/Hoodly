@@ -106,7 +106,11 @@ describe('ZonesController', () => {
 
       const result = await controller.findAll('2', '15', 'paris');
 
-      expect(zonesService.findAllPaginated).toHaveBeenCalledWith(2, 15, 'paris');
+      expect(zonesService.findAllPaginated).toHaveBeenCalledWith(
+        2,
+        15,
+        'paris',
+      );
       expect(result).toEqual(payload);
     });
 
@@ -120,7 +124,11 @@ describe('ZonesController', () => {
 
       await controller.findAll(undefined, undefined, undefined);
 
-      expect(zonesService.findAllPaginated).toHaveBeenCalledWith(1, 20, undefined);
+      expect(zonesService.findAllPaginated).toHaveBeenCalledWith(
+        1,
+        20,
+        undefined,
+      );
     });
   });
 
@@ -273,7 +281,9 @@ describe('ZonesController', () => {
 
       await controller.findOne('507f191e810c19729de860aa');
 
-      expect(zonesService.findById).toHaveBeenCalledWith('507f191e810c19729de860aa');
+      expect(zonesService.findById).toHaveBeenCalledWith(
+        '507f191e810c19729de860aa',
+      );
     });
 
     it('should delegate findMembers', async () => {
@@ -291,7 +301,9 @@ describe('ZonesController', () => {
 
       await controller.getStats('507f191e810c19729de860aa');
 
-      expect(zonesService.getStats).toHaveBeenCalledWith('507f191e810c19729de860aa');
+      expect(zonesService.getStats).toHaveBeenCalledWith(
+        '507f191e810c19729de860aa',
+      );
     });
 
     it('should delegate findIncidentsByZone', async () => {
@@ -354,7 +366,9 @@ describe('ZonesController', () => {
 
       await controller.activate('507f191e810c19729de860aa');
 
-      expect(zonesService.activate).toHaveBeenCalledWith('507f191e810c19729de860aa');
+      expect(zonesService.activate).toHaveBeenCalledWith(
+        '507f191e810c19729de860aa',
+      );
     });
 
     it('should update a zone', async () => {

@@ -45,7 +45,7 @@ export class ZoneRequest {
   statut!: RequestStatus;
 
   @Prop()
-  commentaireAdmin?: string; // Commentaire de l'admin en cas de refus
+  commentaireAdmin?: string;
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
   traitePar?: Types.ObjectId;

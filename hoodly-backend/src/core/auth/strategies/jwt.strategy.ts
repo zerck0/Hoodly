@@ -31,10 +31,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const auth0Id = payload.sub as string;
 
     try {
-      // Récupérer le user depuis MongoDB pour avoir son rôle
       const user = await this.usersService.getProfileByAuth0Id(auth0Id);
 
-      // Retourner le payload enrichi avec le rôle
       return {
         ...payload,
         role: user.role,

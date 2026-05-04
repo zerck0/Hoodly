@@ -114,7 +114,7 @@ export class ZonesController {
   }
 
   @Post('memberships/intent/:zoneId')
-  @ApiOperation({ summary: 'Marquer l\'intention de rejoindre un quartier' })
+  @ApiOperation({ summary: "Marquer l'intention de rejoindre un quartier" })
   @ApiResponse({ status: 200, description: 'Statut utilisateur mis à jour' })
   intentMembership(
     @Param('zoneId', MongoIdValidationPipe) zoneId: string,

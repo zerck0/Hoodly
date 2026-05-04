@@ -62,7 +62,6 @@ export class UsersService {
     isActive?: boolean,
     zoneStatut?: string,
   ) {
-    // Filtre de recherche
     const query = this.buildSearchQuery(search, role, isActive, zoneStatut);
 
     const skip = (page - 1) * limit;
@@ -73,7 +72,7 @@ export class UsersService {
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 })
-        .lean(), // .lean() pour de meilleures performances
+        .lean(),
       this.userModel.countDocuments(query),
     ]);
 
@@ -86,7 +85,12 @@ export class UsersService {
     };
   }
 
-  private buildSearchQuery(search?: string, role?: string, isActive?: boolean, zoneStatut?: string) {
+  private buildSearchQuery(
+    search?: string,
+    role?: string,
+    isActive?: boolean,
+    zoneStatut?: string,
+  ) {
     const query: Record<string, any> = {};
     if (search) {
       query.$or = [

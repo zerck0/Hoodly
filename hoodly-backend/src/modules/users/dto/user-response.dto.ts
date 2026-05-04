@@ -45,6 +45,9 @@ export class UserResponseDto {
   @ApiPropertyOptional({ description: 'Motif du refus' })
   refusalReason?: string;
 
-  @ApiPropertyOptional({ description: 'Type du refus', enum: ['zone', 'membership'] })
+  @ApiPropertyOptional({
+    description: 'Type du refus',
+    enum: ['zone', 'membership'],
+  })
   refusalType?: 'zone' | 'membership';
 }

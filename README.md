@@ -75,6 +75,25 @@ Hoodly/
 └── 💻 hoodly-desktop/          → Client Java Desktop (offline-first)
 ```
 
+```
+hoodly-frontend-client/
+|___src/
+    ├── assets/          # Images, logos, ressources statiques
+    ├── components/      # UI réutilisable
+    │   ├── animate-ui/  # Animations et micro-interactions
+    │   ├── dashboard/   # UI spécifique au dashboard
+    │   ├── landing/     # Sections de la landing page
+    │   ├── onboarding/  # Flow d'inscription par étapes
+    │   ├── shared/      # Layouts et protections de routes
+    │   └── ui/          # Composants de base (atomes)
+    ├── hooks/           # Logique métier React personnalisée
+    ├── lib/             # Config outils tiers (Axios) et utils
+    ├── pages/           # Pages racines (routes)
+    ├── services/api/    # Communication avec le backend
+    ├── stores/          # État global (Zustand)
+    └── types/           # Centralisation TypeScript (interfaces/enums)
+```
+
 ---
 
 ## 🚀 Lancer le projet en local
@@ -93,14 +112,14 @@ Hoodly/
 ```bash
 cd hoodly-backend
 pnpm install
-pnpm run start:dev
+pnpm run start:dev # Lance avec dotenvx
 ```
 
 ### 🌐 Frontend Habitant
 ```bash
-cd hoodly-frontend
+cd hoodly-frontend-client
 pnpm install
-pnpm run dev
+pnpm run dev # Lance avec dotenvx
 ```
 
 ---
@@ -110,5 +129,14 @@ pnpm run dev
 ```bash
 cd hoodly-frontend-admin
 pnpm install
-pnpm run dev
+pnpm run dev # Lance avec dotenvx
+```
+
+---
+
+### 💻 Client Desktop (JavaFX)
+
+```bash
+cd hoodly-desktop
+dotenvx run -- ./mvnw javafx:run
 ```

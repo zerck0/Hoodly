@@ -60,6 +60,3 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
-
-// Index géospatial commenté temporairement pour débloquer l'inscription
-// UserSchema.index({ location: '2dsphere' });

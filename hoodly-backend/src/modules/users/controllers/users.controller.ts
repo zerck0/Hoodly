@@ -45,7 +45,11 @@ export class UsersController {
   })
   @ApiQuery({ name: 'role', required: false, enum: UserRole })
   @ApiQuery({ name: 'isActive', required: false, description: 'true/false' })
-  @ApiQuery({ name: 'zoneStatut', required: false, description: 'Statut adhésion' })
+  @ApiQuery({
+    name: 'zoneStatut',
+    required: false,
+    description: 'Statut adhésion',
+  })
   @ApiResponse({
     status: 200,
     description: 'Liste des utilisateurs',

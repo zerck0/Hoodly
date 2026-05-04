@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react'
 import { SearchBox } from '@mapbox/search-js-react'
 import { zonesApi } from '../../services/api/zone'
@@ -5,6 +6,7 @@ import { authApi } from '../../services/api/auth'
 import type { Zone } from '../../types/zone.types'
 import { useAuthStore } from '../../stores/auth.store'
 import { useNavigate } from 'react-router-dom'
+import { ZoneMembershipStatus } from '../../types/status.enum'
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN
 
@@ -71,7 +73,7 @@ function AddressStep() {
         longitude: lng
       })
 
-      updateUser({ zoneStatut: 'en_attente_zone' })
+      updateUser({ zoneStatut: ZoneMembershipStatus.PENDING_ZONE })
       navigate('/waiting')
     } catch (error) {
       console.error(error)
@@ -116,7 +118,8 @@ function AddressStep() {
               </div>
               <div className="grid gap-4">
                 {nearbyZones.map((zone) => (
-                  <div key={zone.id} className="flex items-center justify-between rounded-xl border border-gray-200 p-4 hover:border-blue-300 transition-colors">
+                  <div key={zone.id} className="flex items-center justify-between rounded-xl border border-gray-200 p-4
+      hover:border-blue-300 transition-colors">
                     <div>
                       <h4 className="font-bold text-gray-900">{zone.nom}</h4>
                       <p className="text-sm text-gray-500">{zone.ville}</p>
@@ -124,7 +127,8 @@ function AddressStep() {
                     <button
                       onClick={() => handleJoinZone(zone.id)}
                       disabled={isSubmitting}
-                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-60"
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700
+      disabled:opacity-60"
                     >
                       {isSubmitting ? 'Envoi...' : 'Rejoindre'}
                     </button>
@@ -142,7 +146,8 @@ function AddressStep() {
               <button
                 onClick={handleRequestZone}
                 disabled={isSubmitting}
-                className="inline-flex items-center rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors shadow-sm hover:bg-blue-700 disabled:opacity-60"
+                className="inline-flex items-center rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors
+      shadow-sm hover:bg-blue-700 disabled:opacity-60"
               >
                 {isSubmitting ? 'Envoi en cours...' : 'Demander la création du quartier'}
               </button>

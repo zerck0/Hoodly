@@ -7,7 +7,6 @@ interface AuthState {
   clearDbUser: () => void;
 }
 
-// Store global pour le user MongoDB
 export const useAuthStore = create<AuthState>((set) => ({
   dbUser: null,
   setDbUser: (user) => set({ dbUser: user }),

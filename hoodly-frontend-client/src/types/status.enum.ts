@@ -1,0 +1,9 @@
+export const ZoneMembershipStatus = {
+  NO_ZONE: 'sans_zone',
+  PENDING_ZONE: 'en_attente_zone',
+  PENDING_MEMBERSHIP: 'en_attente_adh',
+  VERIF_EN_COURS: 'verif_en_cours',
+  ACTIVE: 'actif',
+} as const;
+
+export type ZoneMembershipStatus = typeof ZoneMembershipStatus[keyof typeof ZoneMembershipStatus];

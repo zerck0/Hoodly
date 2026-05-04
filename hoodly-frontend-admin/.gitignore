@@ -23,5 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-.env
-.env.local
+# dotenvx keys
+.env.keys
+*.keys

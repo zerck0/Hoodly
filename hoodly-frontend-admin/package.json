@@ -4,10 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "dotenvx run -- vite",
+    "build": "dotenvx run -- tsc -b && dotenvx run -- vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "dotenvx run -- vite preview",
+    "encrypt": "dotenvx encrypt",
+    "decrypt": "dotenvx decrypt"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.15.1",
@@ -32,6 +34,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@dotenvx/dotenvx": "^1.64.0",
     "@eslint/js": "^9.39.4",
     "@tailwindcss/vite": "^4.2.1",
     "@types/mapbox__mapbox-gl-draw": "^1.4.9",

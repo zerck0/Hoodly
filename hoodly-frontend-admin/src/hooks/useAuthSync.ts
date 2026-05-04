@@ -15,7 +15,6 @@ export function useAuthSync() {
       const token = await getAccessTokenSilently();
       return syncUser(token);
     },
-    // N'exécute la requête que si l'utilisateur est authentifié
     enabled: isAuthenticated && !isLoading,
     retry: 1,
     staleTime: 1000 * 60 * 5, // 5 minutes

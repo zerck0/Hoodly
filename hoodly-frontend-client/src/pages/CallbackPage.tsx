@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth0 } from '@auth0/auth0-react'
 import { useAuthStore } from '../stores/auth.store'
 import api from '../lib/axios'
+import { ZoneMembershipStatus } from '../types/status.enum'
 
 function CallbackPage() {
   const { isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0()
@@ -28,7 +29,7 @@ function CallbackPage() {
 
         setUser(response.data)
 
-        if (response.data.zoneStatut === 'actif') {
+        if (response.data.zoneStatut === ZoneMembershipStatus.ACTIVE) {
           navigate('/dashboard')
         } else {
           navigate('/onboarding')

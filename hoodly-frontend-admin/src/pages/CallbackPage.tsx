@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useNavigate } from 'react-router-dom';
 
-// Callback to redirect the user after authentication
 export default function CallbackPage() {
   const { isAuthenticated, isLoading, error } = useAuth0();
   const navigate = useNavigate();

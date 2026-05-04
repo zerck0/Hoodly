@@ -21,13 +21,11 @@ export default function MembershipsPage() {
   const [selectedMembership, setSelectedMembership] = useState<any>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  // 1. Demandes complètes (avec documents)
   const { data: memberships, isLoading: isLoadingMemberships } = useQuery({
     queryKey: ['memberships'],
     queryFn: () => zonesApi.getMemberships(),
   });
 
-  // 2. Intentions d'adhésion (sans documents encore)
   const { data: pendingUsers, isLoading: isLoadingUsers } = useQuery({
     queryKey: ['users', 'pending-adh'],
     queryFn: () => usersApi.getAll({ zoneStatut: 'en_attente_adh' }),

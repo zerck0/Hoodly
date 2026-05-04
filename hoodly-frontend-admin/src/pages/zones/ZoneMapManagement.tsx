@@ -31,17 +31,15 @@ export default function ZoneMapManagement() {
   const [newZoneCity, setNewZoneCity] = useState('');
   const [newZonePolygon, setNewZonePolygon] = useState<GeoJSON.Geometry | null>(null);
 
-  // Data Fetching
-  const { data: zonesData } = useQuery({ 
-    queryKey: ['zones', 'all'], 
-    queryFn: () => zonesApi.getAll({ limit: 1000 }) 
+  const { data: zonesData } = useQuery({
+    queryKey: ['zones', 'all'],
+    queryFn: () => zonesApi.getAll({ limit: 1000 })
   });
-  const { data: requestsData, isLoading: isLoadingRequests } = useQuery({ 
-    queryKey: ['zone-requests'], 
-    queryFn: () => zonesApi.getRequests() 
+  const { data: requestsData, isLoading: isLoadingRequests } = useQuery({
+    queryKey: ['zone-requests'],
+    queryFn: () => zonesApi.getRequests()
   });
 
-  // Bulk Create Mutation
   const bulkAcceptMutation = useMutation({
     mutationFn: (body: any) => zonesApi.bulkAcceptRequests(body),
     onSuccess: () => {
@@ -56,7 +54,6 @@ export default function ZoneMapManagement() {
     onError: () => toast.error('Erreur lors de la création du quartier'),
   });
 
-  // 1. Initialisation de la carte
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
     mapboxgl.accessToken = MAPBOX_TOKEN || '';
@@ -70,10 +67,10 @@ export default function ZoneMapManagement() {
 
     m.on('load', () => {
       map.current = m;
-      draw.current = new MapboxDraw({ 
-        displayControlsDefault: false, 
-        controls: { polygon: true, trash: true }, 
-        defaultMode: 'draw_polygon' 
+      draw.current = new MapboxDraw({
+        displayControlsDefault: false,
+        controls: { polygon: true, trash: true },
+        defaultMode: 'draw_polygon'
       });
       m.addControl(draw.current as any);
       setMapReady(true);
@@ -89,16 +86,13 @@ export default function ZoneMapManagement() {
     };
   }, []);
 
-  // 2. Rendu des données
   useEffect(() => {
     if (!mapReady || !map.current) return;
     const m = map.current;
 
-    // Nettoyage marqueurs
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
-    // Affichage des demandes (Points rouges)
     requestsData?.forEach((req: IZoneRequestResponse) => {
       const id = req.id || (req as any)._id;
       if (!req.location?.coordinates) return;
@@ -109,7 +103,7 @@ export default function ZoneMapManagement() {
         isSelected ? 'bg-green-500 scale-110 z-50' : 'bg-red-600 z-10 hover:bg-red-500'
       }`;
       el.innerHTML = isSelected ? '✓' : '';
-      
+
       el.onclick = (e) => {
         e.stopPropagation();
         setSelectedRequestIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -121,11 +115,10 @@ export default function ZoneMapManagement() {
           `<div class="p-2 text-gray-800 font-bold">${req.userId?.name || req.userId?.nom || 'Habitant'}</div>`
         ))
         .addTo(m);
-      
+
       markersRef.current.push(marker);
     });
 
-    // Auto-zoom initial
     if (requestsData?.length && !m.getLayer('zoom-done')) {
       const bounds = new mapboxgl.LngLatBounds();
       requestsData.forEach(r => r.location?.coordinates && bounds.extend(r.location.coordinates as [number, number]));
@@ -145,7 +138,7 @@ export default function ZoneMapManagement() {
       <div className="flex flex-col h-[calc(100vh-120px)] space-y-4">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-white">Radar des Ouvertures</h1>
-          <Button 
+          <Button
             onClick={handleOpenCreate}
             disabled={bulkAcceptMutation.isPending || selectedRequestIds.length === 0}
             className="bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/20"
@@ -157,7 +150,7 @@ export default function ZoneMapManagement() {
 
         <div className="flex-1 relative rounded-2xl border border-gray-800 bg-gray-900 overflow-hidden shadow-inner">
           <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
-          
+
           {!mapReady && (
             <div className="absolute inset-0 bg-gray-900 flex items-center justify-center z-50">
               <div className="text-center">

@@ -5,6 +5,7 @@ import CallbackPage from './pages/CallbackPage'
 import OnboardingPage from './pages/OnboardingPage'
 import WaitingPage from './pages/WaitingPage'
 import DashboardPage from './pages/DashboardPage'
+import AppLayout from './components/shared/AppLayout'
 import ProtectedRoute from './components/shared/ProtectedRoute'
 import OnboardingGuard from './components/shared/OnboardingGuard'
 import DashboardGuard from './components/shared/DashboardGuard'
@@ -40,15 +41,16 @@ function App() {
       />
 
       <Route
-        path="/dashboard"
         element={
           <ProtectedRoute>
             <DashboardGuard>
-              <DashboardPage />
+              <AppLayout />
             </DashboardGuard>
           </ProtectedRoute>
         }
-      />
+      >
+        <Route path="/dashboard" element={<DashboardPage />} />
+      </Route>
     </Routes>
   )
 }

@@ -1,5 +1,6 @@
 import { Loader2, CheckCircle2, AlertCircle, Clock } from 'lucide-react'
 import type { User } from '../../types/user.types'
+import { ZoneMembershipStatus } from '../../types/status.enum'
 
 interface StatusBannerProps {
   user: User | null
@@ -9,8 +10,8 @@ interface StatusBannerProps {
 }
 
 export default function StatusBanner({ user, isRefreshing, onRefresh, onOpenModal }: StatusBannerProps) {
-  const isPendingUpload = user?.zoneStatut === 'en_attente_adh'
-  const isProcessing = user?.zoneStatut === 'verif_en_cours'
+  const isPendingUpload = user?.zoneStatut === ZoneMembershipStatus.PENDING_MEMBERSHIP
+  const isProcessing = user?.zoneStatut === ZoneMembershipStatus.VERIF_EN_COURS
   const isRefused = user?.refusalReason && user?.refusalType === 'membership'
 
   if (!isPendingUpload && !isProcessing) {

@@ -5,6 +5,8 @@ import { Auth0Provider, useAuth0 } from '@auth0/auth0-react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App'
 import { setAuth0TokenGetter } from './lib/axios'
+import { TooltipProvider } from './components/ui/tooltip'
+import { Toaster } from './components/ui/sonner'
 import './index.css'
 
 const queryClient = new QueryClient()
@@ -38,9 +40,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     >
       <QueryClientProvider client={queryClient}>
         <Auth0TokenConnector />
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <Toaster position="top-right" richColors />
+        <TooltipProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </TooltipProvider>
       </QueryClientProvider>
     </Auth0Provider>
   </React.StrictMode>,

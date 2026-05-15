@@ -4,7 +4,7 @@ module com.hoodly.hoodlydesktop {
     requires okhttp3;
     requires com.fasterxml.jackson.databind;
     requires java.desktop;
-    requires java.sql;
+    requires transitive java.sql;
     requires org.xerial.sqlitejdbc;
 
     opens com.hoodly.hoodlydesktop to javafx.fxml;

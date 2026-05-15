@@ -1,6 +1,8 @@
 package com.hoodly.hoodlydesktop.controllers;
 
 import com.hoodly.hoodlydesktop.auth.TokenStore;
+import com.hoodly.hoodlydesktop.db.DatabaseManager;
+import com.hoodly.hoodlydesktop.db.IncidentDao;
 import com.hoodly.hoodlydesktop.models.Incident;
 import com.hoodly.hoodlydesktop.services.ApiClient;
 import javafx.application.Platform;
@@ -32,7 +34,7 @@ public class DashboardController {
     @FXML private TableColumn<Incident, String> prioriteCol;
     @FXML private TableColumn<Incident, String> dateCol;
 
-    private final ApiClient apiClient = new ApiClient();
+    private final ApiClient apiClient = new ApiClient(new IncidentDao(DatabaseManager.getInstance()));
 
     @FXML
     public void initialize() {

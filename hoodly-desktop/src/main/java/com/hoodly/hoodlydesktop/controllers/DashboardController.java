@@ -1,13 +1,14 @@
 package com.hoodly.hoodlydesktop.controllers;
 
+import com.hoodly.hoodlydesktop.AppContext;
 import com.hoodly.hoodlydesktop.auth.TokenStore;
-import com.hoodly.hoodlydesktop.db.DatabaseManager;
 import com.hoodly.hoodlydesktop.db.IncidentDao;
 import com.hoodly.hoodlydesktop.models.Incident;
 import com.hoodly.hoodlydesktop.services.ApiClient;
+import com.hoodly.hoodlydesktop.services.NetworkMonitor;
+import com.hoodly.hoodlydesktop.services.SyncService;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -34,12 +35,20 @@ public class DashboardController {
     @FXML private TableColumn<Incident, String> prioriteCol;
     @FXML private TableColumn<Incident, String> dateCol;
 
-    private final ApiClient apiClient = new ApiClient(new IncidentDao(DatabaseManager.getInstance()));
+    private ApiClient apiClient;
+    private IncidentDao incidentDao;
+    private NetworkMonitor networkMonitor;
+    private SyncService syncService;
 
     @FXML
     public void initialize() {
+        AppContext ctx = AppContext.getInstance();
+        apiClient = ctx.getApiClient();
+        incidentDao = ctx.getIncidentDao();
+        networkMonitor = ctx.getNetworkMonitor();
+        syncService = ctx.getSyncService();
+
         adminNameLabel.setText("Administrateur");
-        syncPendingCount.setText("0");
 
         typeCol.setCellValueFactory(new PropertyValueFactory<>("type"));
         descCol.setCellValueFactory(new PropertyValueFactory<>("description"));
@@ -47,36 +56,38 @@ public class DashboardController {
         prioriteCol.setCellValueFactory(new PropertyValueFactory<>("priorite"));
         dateCol.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
 
+        updateConnectionStatus(networkMonitor.isOnline());
+        networkMonitor.addListener(online -> {
+            updateConnectionStatus(online);
+            loadIncidents();
+        });
+
+        syncService.addOnSyncCompleteListener(this::loadIncidents);
+
         loadIncidents();
     }
 
     private void loadIncidents() {
         new Thread(() -> {
-            try {
-                List<Incident> incidents = apiClient.getIncidents();
+            List<Incident> incidents = apiClient.getIncidents();
+            int pending = incidentDao.countPending();
 
-                long open = incidents.stream()
-                        .filter(i -> "signale".equals(i.getStatut())).count();
-                long inProgress = incidents.stream()
-                        .filter(i -> "en_cours".equals(i.getStatut())).count();
-                long resolved = incidents.stream()
-                        .filter(i -> "resolu".equals(i.getStatut())).count();
+            long open = incidents.stream().filter(i -> "signale".equals(i.getStatut())).count();
+            long inProgress = incidents.stream().filter(i -> "en_cours".equals(i.getStatut())).count();
+            long resolved = incidents.stream().filter(i -> "resolu".equals(i.getStatut())).count();
 
-                Platform.runLater(() -> {
-                    ObservableList<Incident> data =
-                            FXCollections.observableArrayList(incidents);
-                    incidentsTable.setItems(data);
-                    openIncidentsCount.setText(String.valueOf(open));
-                    inProgressCount.setText(String.valueOf(inProgress));
-                    resolvedCount.setText(String.valueOf(resolved));
-                });
-
-            } catch (Exception e) {
-                Platform.runLater(() ->
-                        connectionStatus.setText("● Hors ligne")
-                );
-            }
+            Platform.runLater(() -> {
+                incidentsTable.setItems(FXCollections.observableArrayList(incidents));
+                openIncidentsCount.setText(String.valueOf(open));
+                inProgressCount.setText(String.valueOf(inProgress));
+                resolvedCount.setText(String.valueOf(resolved));
+                syncPendingCount.setText(String.valueOf(pending));
+            });
         }).start();
+    }
+
+    private void updateConnectionStatus(boolean online) {
+        connectionStatus.setText(online ? "● En ligne" : "● Hors ligne");
     }
 
     @FXML
@@ -90,15 +101,11 @@ public class DashboardController {
         TokenStore.getInstance().clear();
         try {
             FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource(
-                            "/com/hoodly/hoodlydesktop/views/login.fxml"
-                    )
+                    getClass().getResource("/com/hoodly/hoodlydesktop/views/login.fxml")
             );
             Scene scene = new Scene(loader.load(), 480, 600);
             scene.getStylesheets().add(
-                    getClass().getResource(
-                            "/com/hoodly/hoodlydesktop/styles/main.css"
-                    ).toExternalForm()
+                    getClass().getResource("/com/hoodly/hoodlydesktop/styles/main.css").toExternalForm()
             );
             Stage stage = (Stage) adminNameLabel.getScene().getWindow();
             stage.setScene(scene);

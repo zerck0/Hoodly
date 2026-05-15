@@ -1,6 +1,6 @@
 module com.hoodly.hoodlydesktop {
-    requires javafx.controls;
-    requires javafx.fxml;
+    requires transitive javafx.controls;
+    requires transitive javafx.fxml;
     requires okhttp3;
     requires com.fasterxml.jackson.databind;
     requires java.desktop;
@@ -17,4 +17,6 @@ module com.hoodly.hoodlydesktop {
     exports com.hoodly.hoodlydesktop;
     exports com.hoodly.hoodlydesktop.db;
     exports com.hoodly.hoodlydesktop.models;
+    exports com.hoodly.hoodlydesktop.services;
+    exports com.hoodly.hoodlydesktop.auth;
 }

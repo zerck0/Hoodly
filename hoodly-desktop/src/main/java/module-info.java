@@ -16,4 +16,5 @@ module com.hoodly.hoodlydesktop {
 
     exports com.hoodly.hoodlydesktop;
     exports com.hoodly.hoodlydesktop.db;
+    exports com.hoodly.hoodlydesktop.models;
 }

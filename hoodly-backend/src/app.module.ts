@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './core/auth/auth.module';
@@ -10,6 +11,7 @@ import { ZonesModule } from './modules/zones/zones.module';
 import { EventsModule } from './modules/events/events.module';
 import { ServicesModule } from './modules/services/services.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { PostsModule } from './modules/posts/posts.module';
 
 @Module({
   imports: [
@@ -20,6 +22,12 @@ import { UploadsModule } from './modules/uploads/uploads.module';
         uri: config.getOrThrow<string>('MONGODB_URI'),
       }),
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     AuthModule,
     UsersModule,
     IncidentsModule,
@@ -27,6 +35,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
     EventsModule,
     ServicesModule,
     UploadsModule,
+    PostsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

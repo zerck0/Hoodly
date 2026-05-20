@@ -2,14 +2,18 @@ import { useState } from 'react'
 import { useUser } from '../hooks/useUser'
 import VerificationModal from '../components/shared/VerificationModal'
 import StatusBanner from '../components/dashboard/StatusBanner'
-import api from '../lib/axios'
+import { Feed } from '../components/dashboard/feed/Feed'
+import { CreatePostForm } from '../components/dashboard/feed/CreatePostForm'
+import { ZoneMembershipStatus } from '../types/status.enum'
 
 function DashboardPage() {
   const { user, isRefreshing, refreshProfile } = useUser()
   const [isModalOpen, setIsModalOpen] = useState(false)
 
+  const isZoneActive = user?.zoneStatut === ZoneMembershipStatus.ACTIVE && user?.zoneId;
+
   return (
-    <div className="font-sans flex flex-col h-full">
+    <div className="font-sans flex flex-col h-full bg-slate-50 min-h-screen pb-12">
       <StatusBanner
         user={user ?? null}
         isRefreshing={isRefreshing}
@@ -17,21 +21,23 @@ function DashboardPage() {
         onOpenModal={() => setIsModalOpen(true)}
       />
 
-      <div className="p-8 flex-1 flex items-center justify-center">
-        <div className="w-full max-w-7xl mx-auto">
-          <div className="rounded-3xl bg-white p-12 text-center shadow-sm border border-gray-100">
-            <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
-              Bienvenue dans votre quartier !
+      <main className="flex-1 max-w-3xl w-full mx-auto p-4 md:p-6 lg:p-8">
+        {!isZoneActive ? (
+          <div className="rounded-2xl bg-white p-12 text-center shadow-sm border border-gray-100">
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+              Bienvenue sur Hoodly !
             </h1>
-            <button
-              onClick={() => api.get('/route-qui-n-existe-pas')}
-              className="mt-8 bg-red-500 text-white px-4 py-2 rounded-lg"
-            >
-              Tester l'erreur !
-            </button>
+            <p className="mt-4 text-muted-foreground text-lg">
+              Rejoignez un quartier pour commencer à interagir avec vos voisins.
+            </p>
           </div>
-        </div>
-      </div>
+        ) : (
+          <>
+            <CreatePostForm zoneId={user.zoneId!} />
+            <Feed zoneId={user.zoneId!} />
+          </>
+        )}
+      </main>
 
       <VerificationModal
         isOpen={isModalOpen}

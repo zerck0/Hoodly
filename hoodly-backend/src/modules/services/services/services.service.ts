@@ -555,7 +555,6 @@ export class ServicesService {
           service._id.toString(),
         );
 
-        // Fetch names for system message
         const payer = await this.userModel.findById(payerId);
         const recipient = await this.userModel.findById(recipientId);
 

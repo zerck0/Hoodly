@@ -547,40 +547,22 @@ export class ServicesService {
       }
 
       if (payerId && recipientId) {
+        await this.transactionsService.transferPoints(
+          payerId.toString(),
+          recipientId.toString(),
+          points,
+          `Paiement pour le service "${service.titre}"`,
+          service._id.toString(),
+        );
+
+        // Fetch names for system message
         const payer = await this.userModel.findById(payerId);
-        if (!payer) throw new NotFoundException('Payer introuvable');
-        if (payer.points < points) {
-          throw new BadRequestException(
-            `Solde de points insuffisant (${payer.points} pts) pour régler cette prestation (${points} pts).`,
-          );
-        }
-
-        payer.points = Math.max(0, payer.points - points);
-        await payer.save();
-
         const recipient = await this.userModel.findById(recipientId);
-        if (recipient) {
-          recipient.points = (recipient.points || 0) + points;
-          await recipient.save();
-        }
-
-        try {
-          await this.transactionsService.create(
-            payerId.toString(),
-            recipientId.toString(),
-            points,
-            TransactionType.SERVICE_PAYMENT,
-            `Paiement pour le service "${service.titre}"`,
-            service._id.toString(),
-          );
-        } catch (err) {
-          console.warn('Could not save transaction to DB:', err);
-        }
 
         try {
           await this.conversationsService.sendSystemMessage(
             conv._id.toString(),
-            `Transaction réussie : ${points} points ont été transférés de ${payer.name} à ${recipient ? recipient.name : 'Voisin'}.`,
+            `Transaction réussie : ${points} points ont été transférés de ${payer ? payer.name : 'Voisin'} à ${recipient ? recipient.name : 'Voisin'}.`,
           );
         } catch (e) {
           console.warn('Could not send system points message:', e);

@@ -18,6 +18,9 @@ import { ConversationsService } from '../services/conversations.service';
 import { JwtGuard } from '../../../core/auth/guards/jwt.guard';
 import { CurrentUser } from '../../../core/auth/decorators/current-user.decorator';
 import { MongoIdValidationPipe } from '../../../shared/pipes/mongo-id-validation.pipe';
+import { CreateConversationDto } from '../dto/create-conversation.dto';
+import { SendMessageDto } from '../dto/send-message.dto';
+import { ProposeCreneauDto } from '../dto/propose-creneau.dto';
 
 @ApiTags('Conversations')
 @ApiBearerAuth()
@@ -32,7 +35,7 @@ export class ConversationsController {
   })
   @ApiResponse({ status: 201, description: 'Conversation initialisée' })
   async create(
-    @Body() body: { serviceId?: string; destinataireId: string },
+    @Body() body: CreateConversationDto,
     @CurrentUser() user: { userId: string },
   ) {
     return this.conversationsService.getOrCreate(
@@ -76,7 +79,7 @@ export class ConversationsController {
   @ApiResponse({ status: 201, description: 'Message envoyé' })
   async sendMessage(
     @Param('id', MongoIdValidationPipe) id: string,
-    @Body() body: { content: string },
+    @Body() body: SendMessageDto,
     @CurrentUser() user: { userId: string },
   ) {
     return this.conversationsService.sendMessage(id, user.userId, body.content);
@@ -84,11 +87,11 @@ export class ConversationsController {
 
   @Patch(':id/messages/:messageId')
   @ApiOperation({ summary: 'Modifier un message dans une conversation' })
-  @ApiResponse({ status: 200, description: 'Message modifié avec succès' })
+  @ApiResponse({ status: 200, description: 'Message modified avec succès' })
   editMessage(
     @Param('id', MongoIdValidationPipe) id: string,
     @Param('messageId', MongoIdValidationPipe) messageId: string,
-    @Body() body: { content: string },
+    @Body() body: SendMessageDto,
     @CurrentUser() user: { userId: string },
   ) {
     return this.conversationsService.editMessage(
@@ -117,7 +120,7 @@ export class ConversationsController {
   @ApiResponse({ status: 200, description: 'Créneau proposé avec succès' })
   async proposerCreneau(
     @Param('id', MongoIdValidationPipe) id: string,
-    @Body() body: { date: string; debut: string; fin: string },
+    @Body() body: ProposeCreneauDto,
     @CurrentUser() user: { userId: string },
   ) {
     return this.conversationsService.proposerCreneau(

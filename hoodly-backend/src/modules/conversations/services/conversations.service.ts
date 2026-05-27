@@ -19,6 +19,7 @@ import {
 import { Message, MessageDocument } from '../schemas/message.schema';
 import { ServicesService } from '../../services/services/services.service';
 import { ConversationsGateway } from '../gateways/conversations.gateway';
+import { normalizeDateOnly } from '../../../shared/utils/date.util';
 
 @Injectable()
 export class ConversationsService {
@@ -335,17 +336,11 @@ export class ConversationsService {
         })
         .populate('serviceId');
 
-      const propDateStr =
-        typeof date === 'string'
-          ? date.split('T')[0]
-          : new Date(date).toISOString().split('T')[0];
+      const propDateStr = normalizeDateOnly(date);
 
       for (const pc of providerConvs) {
         if (pc.creneau && pc.creneau.date) {
-          const pcDateStr =
-            typeof pc.creneau.date === 'string'
-              ? (pc.creneau.date as string).split('T')[0]
-              : new Date(pc.creneau.date).toISOString().split('T')[0];
+          const pcDateStr = normalizeDateOnly(pc.creneau.date);
 
           if (pcDateStr === propDateStr) {
             const start1 = debut;
@@ -363,10 +358,7 @@ export class ConversationsService {
       }
     }
 
-    const propDateStr =
-      typeof date === 'string'
-        ? date.split('T')[0]
-        : new Date(date).toISOString().split('T')[0];
+    const propDateStr = normalizeDateOnly(date);
     const today = new Date();
     const y = today.getFullYear();
     const m = String(today.getMonth() + 1).padStart(2, '0');

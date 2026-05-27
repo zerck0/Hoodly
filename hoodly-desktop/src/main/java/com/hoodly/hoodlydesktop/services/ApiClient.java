@@ -7,6 +7,8 @@ import com.hoodly.hoodlydesktop.db.IncidentDao;
 import com.hoodly.hoodlydesktop.models.Incident;
 import okhttp3.*;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -63,6 +65,25 @@ public class ApiClient {
         Request request = authorizedRequest("/api/incidents/" + id).patch(body).build();
         try (Response response = httpClient.newCall(request).execute()) {
             if (!response.isSuccessful()) throw new Exception("HTTP " + response.code());
+        }
+    }
+
+    public record VersionInfo(String version, String downloadUrl) {}
+
+    public VersionInfo checkVersion() throws Exception {
+        Request request = new Request.Builder().url(BASE_URL + "/api/version").build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) throw new Exception("HTTP " + response.code());
+            var node = mapper.readTree(response.body().string());
+            return new VersionInfo(node.path("version").asText(), node.path("downloadUrl").asText());
+        }
+    }
+
+    public void downloadFile(String url, Path dest) throws Exception {
+        Request request = new Request.Builder().url(url).build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) throw new Exception("HTTP " + response.code());
+            Files.write(dest, response.body().bytes());
         }
     }
 

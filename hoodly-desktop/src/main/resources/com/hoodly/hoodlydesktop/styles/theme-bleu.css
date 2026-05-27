@@ -1,0 +1,18 @@
+.sidebar { -fx-background-color: #1E3A8A; }
+.sidebar-title { -fx-text-fill: white; }
+.sidebar-subtitle { -fx-text-fill: #93C5FD; }
+.sidebar-btn { -fx-text-fill: white; }
+.sidebar-btn:hover { -fx-background-color: #2563EB; }
+.btn-danger { -fx-text-fill: #FCA5A5; }
+.btn-danger:hover { -fx-background-color: #7F1D1D; }
+.main-content { -fx-background-color: #F8FAFC; }
+.page-title { -fx-text-fill: #1E3A8A; }
+.section-title { -fx-text-fill: #334155; }
+.stat-card { -fx-background-color: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2); }
+.stat-label { -fx-text-fill: #64748B; }
+.stat-value { -fx-text-fill: #1E3A8A; }
+.status-online { -fx-text-fill: #4ADE80; }
+.settings-card { -fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 8, 0, 0, 2); }
+.settings-section-title { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #334155; }
+.btn-apply { -fx-background-color: #1E3A8A; -fx-text-fill: white; -fx-background-radius: 8; -fx-cursor: hand; }
+.btn-apply:hover { -fx-background-color: #2563EB; }

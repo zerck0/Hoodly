@@ -58,6 +58,13 @@ public class DatabaseManager {
                 saved_at      TEXT NOT NULL
             )
         """);
+
+        stmt.execute("""
+            CREATE TABLE IF NOT EXISTS settings (
+                key   TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        """);
     }
 
     public static DatabaseManager getInstance() {

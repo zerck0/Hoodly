@@ -2,10 +2,12 @@ package com.hoodly.hoodlydesktop;
 
 import com.hoodly.hoodlydesktop.db.DatabaseManager;
 import com.hoodly.hoodlydesktop.db.IncidentDao;
+import com.hoodly.hoodlydesktop.db.SettingsDao;
 import com.hoodly.hoodlydesktop.db.TokenDao;
 import com.hoodly.hoodlydesktop.services.ApiClient;
 import com.hoodly.hoodlydesktop.services.NetworkMonitor;
 import com.hoodly.hoodlydesktop.services.SyncService;
+import com.hoodly.hoodlydesktop.services.ThemeManager;
 
 public class AppContext {
 
@@ -17,6 +19,8 @@ public class AppContext {
     private ApiClient apiClient;
     private NetworkMonitor networkMonitor;
     private SyncService syncService;
+    private SettingsDao settingsDao;
+    private ThemeManager themeManager;
     private String zoneId;
 
     private AppContext() {}
@@ -45,6 +49,12 @@ public class AppContext {
 
     public SyncService getSyncService() { return syncService; }
     public void setSyncService(SyncService syncService) { this.syncService = syncService; }
+
+    public SettingsDao getSettingsDao() { return settingsDao; }
+    public void setSettingsDao(SettingsDao settingsDao) { this.settingsDao = settingsDao; }
+
+    public ThemeManager getThemeManager() { return themeManager; }
+    public void setThemeManager(ThemeManager themeManager) { this.themeManager = themeManager; }
 
     public String getZoneId() { return zoneId; }
     public void setZoneId(String zoneId) { this.zoneId = zoneId; }

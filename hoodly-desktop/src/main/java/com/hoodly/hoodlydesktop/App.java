@@ -3,10 +3,12 @@ package com.hoodly.hoodlydesktop;
 import com.hoodly.hoodlydesktop.auth.TokenStore;
 import com.hoodly.hoodlydesktop.db.DatabaseManager;
 import com.hoodly.hoodlydesktop.db.IncidentDao;
+import com.hoodly.hoodlydesktop.db.SettingsDao;
 import com.hoodly.hoodlydesktop.db.TokenDao;
 import com.hoodly.hoodlydesktop.services.ApiClient;
 import com.hoodly.hoodlydesktop.services.NetworkMonitor;
 import com.hoodly.hoodlydesktop.services.SyncService;
+import com.hoodly.hoodlydesktop.services.ThemeManager;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -28,6 +30,9 @@ public class App extends Application {
         NetworkMonitor networkMonitor = new NetworkMonitor();
         SyncService syncService = new SyncService(apiClient, incidentDao);
 
+        SettingsDao settingsDao = new SettingsDao(db);
+        ThemeManager themeManager = new ThemeManager(settingsDao);
+
         AppContext ctx = AppContext.getInstance();
         ctx.setDatabaseManager(db);
         ctx.setIncidentDao(incidentDao);
@@ -35,6 +40,8 @@ public class App extends Application {
         ctx.setApiClient(apiClient);
         ctx.setNetworkMonitor(networkMonitor);
         ctx.setSyncService(syncService);
+        ctx.setSettingsDao(settingsDao);
+        ctx.setThemeManager(themeManager);
 
         networkMonitor.addListener(online -> {
             if (online) syncService.syncNow();
@@ -48,6 +55,7 @@ public class App extends Application {
         scene.getStylesheets().add(
                 App.class.getResource("/com/hoodly/hoodlydesktop/styles/main.css").toExternalForm()
         );
+        themeManager.applyTo(scene);
         stage.setTitle("HOODLY");
         stage.setScene(scene);
         stage.setResizable(false);

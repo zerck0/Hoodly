@@ -23,8 +23,10 @@
                     onAction="#showIncidents"/>
             <Button text="Statistiques" styleClass="sidebar-btn" maxWidth="Infinity"
                     onAction="#showStats"/>
-            <Button text="Plugins" styleClass="sidebar-btn" maxWidth="Infinity"/>
-            <Button text="Paramètres" styleClass="sidebar-btn" maxWidth="Infinity"/>
+            <Button text="Plugins" styleClass="sidebar-btn" maxWidth="Infinity"
+                    onAction="#showPlugins"/>
+            <Button text="Paramètres" styleClass="sidebar-btn" maxWidth="Infinity"
+                    onAction="#showSettings"/>
 
             <VBox VBox.vgrow="ALWAYS"/>
 
@@ -100,6 +102,115 @@
                     <xAxis><CategoryAxis label="Voisin"/></xAxis>
                     <yAxis><NumberAxis label="Incidents signalés"/></yAxis>
                 </BarChart>
+            </VBox>
+
+            <!-- PANNEAU PARAMÈTRES -->
+            <VBox fx:id="settingsPane" styleClass="main-content" spacing="24" visible="false" managed="false">
+                <padding><Insets top="32" right="32" bottom="32" left="32"/></padding>
+
+                <Label text="Paramètres" styleClass="page-title"/>
+
+                <VBox styleClass="settings-card" spacing="12">
+                    <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+                    <Label text="Thème" styleClass="settings-section-title"/>
+                    <HBox spacing="16">
+                        <RadioButton fx:id="themeBleu" text="Bleu"/>
+                        <RadioButton fx:id="themeSombre" text="Sombre"/>
+                        <RadioButton fx:id="themeVert" text="Vert"/>
+                    </HBox>
+                </VBox>
+
+                <VBox styleClass="settings-card" spacing="12">
+                    <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+                    <Label text="Taille de police" styleClass="settings-section-title"/>
+                    <HBox spacing="16">
+                        <RadioButton fx:id="fontSmall" text="Petite"/>
+                        <RadioButton fx:id="fontNormal" text="Normale"/>
+                        <RadioButton fx:id="fontLarge" text="Grande"/>
+                    </HBox>
+                </VBox>
+
+                <VBox styleClass="settings-card" spacing="12">
+                    <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+                    <Label text="Disposition" styleClass="settings-section-title"/>
+                    <HBox spacing="16">
+                        <RadioButton fx:id="layoutNormal" text="Normale"/>
+                        <RadioButton fx:id="layoutCompact" text="Compacte"/>
+                    </HBox>
+                </VBox>
+
+                <Button text="Appliquer" styleClass="btn-apply" onAction="#applySettings"
+                        prefWidth="160" prefHeight="40"/>
+
+                <VBox styleClass="settings-card" spacing="12">
+                    <padding><Insets top="16" right="16" bottom="16" left="16"/></padding>
+                    <Label text="Désinstaller l'application" styleClass="settings-section-title"/>
+                    <Label text="Supprime toutes les données locales et le fichier .jar, puis ferme l'application." wrapText="true" styleClass="stat-label"/>
+                    <Button text="Désinstaller" styleClass="btn-danger" onAction="#handleUninstall"
+                            prefWidth="160" prefHeight="40"/>
+                </VBox>
+
+            </VBox>
+
+            <!-- PANNEAU PLUGINS -->
+            <VBox fx:id="pluginsPane" styleClass="main-content" spacing="24" visible="false" managed="false">
+                <padding><Insets top="32" right="32" bottom="32" left="32"/></padding>
+                <Label text="Plugins" styleClass="page-title"/>
+                <HBox spacing="20">
+                    <VBox styleClass="stat-card" spacing="12" HBox.hgrow="ALWAYS">
+                        <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+                        <Label text="Export statistiques" styleClass="section-title"/>
+                        <Label text="Exporte les incidents de votre zone au format CSV." wrapText="true" styleClass="stat-label"/>
+                        <Button text="Exporter CSV" styleClass="btn-apply" onAction="#exportCsv" prefWidth="140"/>
+                    </VBox>
+                    <VBox styleClass="stat-card" spacing="12" HBox.hgrow="ALWAYS">
+                        <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+                        <Label text="Analyse sociale" styleClass="section-title"/>
+                        <Label text="Visualise la répartition des incidents par jour et par mois." wrapText="true" styleClass="stat-label"/>
+                        <Button text="Ouvrir" styleClass="btn-apply" onAction="#showAnalyseSociale" prefWidth="140"/>
+                    </VBox>
+                    <VBox styleClass="stat-card" spacing="12" HBox.hgrow="ALWAYS">
+                        <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+                        <Label text="Calendrier local" styleClass="section-title"/>
+                        <Label text="Affiche les incidents jour par jour sur le mois en cours." wrapText="true" styleClass="stat-label"/>
+                        <Button text="Ouvrir" styleClass="btn-apply" onAction="#showCalendrier" prefWidth="140"/>
+                    </VBox>
+                </HBox>
+            </VBox>
+
+            <!-- PANNEAU ANALYSE SOCIALE -->
+            <VBox fx:id="analysePane" styleClass="main-content" spacing="20" visible="false" managed="false">
+                <padding><Insets top="32" right="32" bottom="32" left="32"/></padding>
+                <HBox spacing="12" alignment="CENTER_LEFT">
+                    <Button text="← Plugins" styleClass="sidebar-btn" onAction="#showPlugins"/>
+                    <Label text="Analyse sociale" styleClass="page-title"/>
+                </HBox>
+                <HBox spacing="20" VBox.vgrow="ALWAYS">
+                    <BarChart fx:id="jourSemaineChart" title="Incidents par jour de la semaine"
+                              HBox.hgrow="ALWAYS" maxHeight="300" legendVisible="false">
+                        <xAxis><CategoryAxis/></xAxis>
+                        <yAxis><NumberAxis/></yAxis>
+                    </BarChart>
+                    <BarChart fx:id="evolutionChart" title="Évolution sur 6 mois"
+                              HBox.hgrow="ALWAYS" maxHeight="300" legendVisible="false">
+                        <xAxis><CategoryAxis/></xAxis>
+                        <yAxis><NumberAxis/></yAxis>
+                    </BarChart>
+                </HBox>
+            </VBox>
+
+            <!-- PANNEAU CALENDRIER -->
+            <VBox fx:id="calendrierPane" styleClass="main-content" spacing="20" visible="false" managed="false">
+                <padding><Insets top="32" right="32" bottom="32" left="32"/></padding>
+                <HBox spacing="12" alignment="CENTER_LEFT">
+                    <Button text="← Plugins" styleClass="sidebar-btn" onAction="#showPlugins"/>
+                    <Label fx:id="calendrierTitle" text="Calendrier" styleClass="page-title"/>
+                </HBox>
+                <HBox spacing="12" alignment="CENTER_LEFT">
+                    <Button text="◀" onAction="#prevMonth" prefWidth="36"/>
+                    <Button text="▶" onAction="#nextMonth" prefWidth="36"/>
+                </HBox>
+                <GridPane fx:id="calendrierGrid" hgap="6" vgap="6"/>
             </VBox>
 
         </StackPane>

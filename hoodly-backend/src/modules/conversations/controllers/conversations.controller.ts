@@ -1,17 +1,18 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
+import {
+  Controller,
+  Get,
+  Post,
   Patch,
-  Param, 
-  Body, 
-  UseGuards 
+  Delete,
+  Param,
+  Body,
+  UseGuards,
 } from '@nestjs/common';
-import { 
-  ApiTags, 
-  ApiBearerAuth, 
-  ApiOperation, 
-  ApiResponse 
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { ConversationsService } from '../services/conversations.service';
 import { JwtGuard } from '../../../core/auth/guards/jwt.guard';
@@ -26,13 +27,19 @@ export class ConversationsController {
   constructor(private readonly conversationsService: ConversationsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Démarrer ou récupérer une conversation pour un service' })
+  @ApiOperation({
+    summary: 'Démarrer ou récupérer une conversation pour un service',
+  })
   @ApiResponse({ status: 201, description: 'Conversation initialisée' })
   async create(
     @Body() body: { serviceId?: string; destinataireId: string },
     @CurrentUser() user: { userId: string },
   ) {
-    return this.conversationsService.getOrCreate(body.serviceId, user.userId, body.destinataireId);
+    return this.conversationsService.getOrCreate(
+      body.serviceId,
+      user.userId,
+      body.destinataireId,
+    );
   }
 
   @Get('me')
@@ -43,7 +50,7 @@ export class ConversationsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Récupérer les détails d\'une conversation' })
+  @ApiOperation({ summary: "Récupérer les détails d'une conversation" })
   @ApiResponse({ status: 200, description: 'Détails de la conversation' })
   async findOne(
     @Param('id', MongoIdValidationPipe) id: string,
@@ -53,7 +60,9 @@ export class ConversationsController {
   }
 
   @Get(':id/messages')
-  @ApiOperation({ summary: 'Récupérer l\'historique des messages d\'une conversation' })
+  @ApiOperation({
+    summary: "Récupérer l'historique des messages d'une conversation",
+  })
   @ApiResponse({ status: 200, description: 'Historique des messages' })
   async getMessages(
     @Param('id', MongoIdValidationPipe) id: string,
@@ -73,8 +82,38 @@ export class ConversationsController {
     return this.conversationsService.sendMessage(id, user.userId, body.content);
   }
 
+  @Patch(':id/messages/:messageId')
+  @ApiOperation({ summary: 'Modifier un message dans une conversation' })
+  @ApiResponse({ status: 200, description: 'Message modifié avec succès' })
+  editMessage(
+    @Param('id', MongoIdValidationPipe) id: string,
+    @Param('messageId', MongoIdValidationPipe) messageId: string,
+    @Body() body: { content: string },
+    @CurrentUser() user: { userId: string },
+  ) {
+    return this.conversationsService.editMessage(
+      id,
+      messageId,
+      user.userId,
+      body.content,
+    );
+  }
+
+  @Delete(':id/messages/:messageId')
+  @ApiOperation({ summary: 'Supprimer un message dans une conversation' })
+  @ApiResponse({ status: 200, description: 'Message supprimé avec succès' })
+  deleteMessage(
+    @Param('id', MongoIdValidationPipe) id: string,
+    @Param('messageId', MongoIdValidationPipe) messageId: string,
+    @CurrentUser() user: { userId: string },
+  ) {
+    return this.conversationsService.deleteMessage(id, messageId, user.userId);
+  }
+
   @Patch(':id/creneau/proposer')
-  @ApiOperation({ summary: 'Proposer un créneau de rendez-vous pour la prestation' })
+  @ApiOperation({
+    summary: 'Proposer un créneau de rendez-vous pour la prestation',
+  })
   @ApiResponse({ status: 200, description: 'Créneau proposé avec succès' })
   async proposerCreneau(
     @Param('id', MongoIdValidationPipe) id: string,
@@ -92,7 +131,10 @@ export class ConversationsController {
 
   @Patch(':id/creneau/accepter')
   @ApiOperation({ summary: 'Accepter le créneau de rendez-vous proposé' })
-  @ApiResponse({ status: 200, description: 'Créneau validé et rendez-vous planifié' })
+  @ApiResponse({
+    status: 200,
+    description: 'Créneau validé et rendez-vous planifié',
+  })
   async accepterCreneau(
     @Param('id', MongoIdValidationPipe) id: string,
     @CurrentUser() user: { userId: string },

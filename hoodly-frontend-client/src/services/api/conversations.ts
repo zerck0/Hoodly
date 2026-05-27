@@ -17,6 +17,12 @@ export const conversationsApi = {
   sendMessage: (id: string, content: string) =>
     api.post<Message>(`/conversations/${id}/messages`, { content }),
 
+  editMessage: (id: string, messageId: string, content: string) =>
+    api.patch<Message>(`/conversations/${id}/messages/${messageId}`, { content }),
+
+  deleteMessage: (id: string, messageId: string) =>
+    api.delete<void>(`/conversations/${id}/messages/${messageId}`),
+
   proposerCreneau: (id: string, date: string, debut: string, fin: string) =>
     api.patch<Conversation>(`/conversations/${id}/creneau/proposer`, { date, debut, fin }),
 

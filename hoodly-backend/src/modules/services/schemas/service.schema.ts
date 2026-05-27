@@ -49,7 +49,7 @@ export class Service {
   zoneId!: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'User' })
-  respondeId?: Types.ObjectId;
+  responderId?: Types.ObjectId;
 
   @Prop({ type: [Types.ObjectId], ref: 'User', default: [] })
   refusedResponders!: Types.ObjectId[];

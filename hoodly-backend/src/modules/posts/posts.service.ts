@@ -13,19 +13,27 @@ import { UploadsService } from '../uploads/services/uploads.service';
 export class PostsService {
   constructor(
     @InjectModel(Post.name) private readonly postModel: Model<PostDocument>,
-    @InjectModel(Comment.name) private readonly commentModel: Model<CommentDocument>,
+    @InjectModel(Comment.name)
+    private readonly commentModel: Model<CommentDocument>,
     private readonly usersService: UsersService,
     private readonly uploadsService: UploadsService,
   ) {}
 
-  async createPost(zoneId: string, userId: string, dto: CreatePostDto, files?: Express.Multer.File[]) {
+  async createPost(
+    zoneId: string,
+    userId: string,
+    dto: CreatePostDto,
+    files?: Express.Multer.File[],
+  ) {
     const user = await this.usersService.findById(userId);
     if (!user) throw new NotFoundException('Utilisateur introuvable');
 
     let mediaUrls: string[] = dto.media || [];
 
     if (files && files.length > 0) {
-      const uploadPromises = files.map((file) => this.uploadsService.uploadFile(file as any));
+      const uploadPromises = files.map((file) =>
+        this.uploadsService.uploadFile(file as any),
+      );
       const uploadedUrls = await Promise.all(uploadPromises);
       mediaUrls = [...mediaUrls, ...uploadedUrls];
     }
@@ -52,17 +60,21 @@ export class PostsService {
     const hasLiked = post.likes.some((id) => id.equals(userObjectId));
 
     if (hasLiked) {
-      return this.postModel.findByIdAndUpdate(
-        postId,
-        { $pull: { likes: userObjectId } },
-        { new: true },
-      ).lean();
+      return this.postModel
+        .findByIdAndUpdate(
+          postId,
+          { $pull: { likes: userObjectId } },
+          { new: true },
+        )
+        .lean();
     } else {
-      return this.postModel.findByIdAndUpdate(
-        postId,
-        { $addToSet: { likes: userObjectId } },
-        { new: true },
-      ).lean();
+      return this.postModel
+        .findByIdAndUpdate(
+          postId,
+          { $addToSet: { likes: userObjectId } },
+          { new: true },
+        )
+        .lean();
     }
   }
 
@@ -84,7 +96,9 @@ export class PostsService {
       .exec();
 
     const hasMore = comments.length === limit;
-    const nextCursor = hasMore ? comments[comments.length - 1]._id.toString() : null;
+    const nextCursor = hasMore
+      ? comments[comments.length - 1]._id.toString()
+      : null;
 
     return {
       data: comments,
@@ -97,13 +111,16 @@ export class PostsService {
       _id: new Types.ObjectId(postId),
       author: new Types.ObjectId(userId),
     });
-    if (!post) throw new NotFoundException('Post introuvable ou action non autorisée');
+    if (!post)
+      throw new NotFoundException('Post introuvable ou action non autorisée');
 
-    return this.postModel.findByIdAndUpdate(
-      postId,
-      { $set: { deletedAt: new Date() } },
-      { new: true },
-    ).lean();
+    return this.postModel
+      .findByIdAndUpdate(
+        postId,
+        { $set: { deletedAt: new Date() } },
+        { new: true },
+      )
+      .lean();
   }
 
   async deleteComment(commentId: string, userId: string) {
@@ -111,11 +128,18 @@ export class PostsService {
       _id: new Types.ObjectId(commentId),
       author: new Types.ObjectId(userId),
     });
-    if (!comment) throw new NotFoundException('Commentaire introuvable ou action non autorisée');
+    if (!comment)
+      throw new NotFoundException(
+        'Commentaire introuvable ou action non autorisée',
+      );
 
     await Promise.all([
-      this.commentModel.findByIdAndUpdate(commentId, { $set: { deletedAt: new Date() } }),
-      this.postModel.findByIdAndUpdate(comment.post, { $inc: { commentCount: -1 } }),
+      this.commentModel.findByIdAndUpdate(commentId, {
+        $set: { deletedAt: new Date() },
+      }),
+      this.postModel.findByIdAndUpdate(comment.post, {
+        $inc: { commentCount: -1 },
+      }),
     ]);
 
     return { message: 'Commentaire supprimé' };
@@ -146,8 +170,13 @@ export class PostsService {
     return comment;
   }
 
-  async getFeedByZone(zoneId: string, cursor?: string, limit: number = 20, type?: PostType) {
-    const query: any = { 
+  async getFeedByZone(
+    zoneId: string,
+    cursor?: string,
+    limit: number = 20,
+    type?: PostType,
+  ) {
+    const query: any = {
       zone: new Types.ObjectId(zoneId),
       deletedAt: null,
     };

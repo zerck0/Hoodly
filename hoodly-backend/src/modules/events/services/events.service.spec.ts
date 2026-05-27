@@ -26,4 +26,3 @@ describe('EventsService', () => {
     expect(service).toBeDefined();
   });
 });
-

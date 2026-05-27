@@ -5,6 +5,7 @@ import { ServicesController } from './controllers/services.controller';
 import { Service, ServiceSchema } from './schemas/service.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { ConversationsModule } from '../conversations/conversations.module';
+import { TransactionsModule } from '../transactions/transactions.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { ConversationsModule } from '../conversations/conversations.module';
       { name: User.name, schema: UserSchema },
     ]),
     forwardRef(() => ConversationsModule),
+    TransactionsModule,
   ],
   controllers: [ServicesController],
   providers: [ServicesService],

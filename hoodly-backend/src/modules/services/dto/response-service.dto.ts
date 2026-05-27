@@ -33,7 +33,7 @@ export class ServiceResponseDto {
   zoneId!: string;
 
   @ApiPropertyOptional({ description: 'Répondant' })
-  respondeId?: string;
+  responderId?: string;
 
   @ApiPropertyOptional({ description: 'ID du contrat' })
   contractId?: string;

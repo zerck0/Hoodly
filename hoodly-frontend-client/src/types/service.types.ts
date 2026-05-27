@@ -22,7 +22,7 @@ export interface Service {
   statut: ServiceStatus
   createurId: ServiceCreator | string
   zoneId: string
-  respondeId?: ServiceCreator | string
+  responderId?: ServiceCreator | string
   refusedResponders?: string[]
   realisationValidee?: boolean
   recurrente?: boolean

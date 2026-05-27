@@ -29,9 +29,13 @@ export class Conversation {
       date: Date,
       debut: String,
       fin: String,
-      statut: { type: String, enum: ['en_attente', 'confirme', 'annule'], default: 'en_attente' }
+      statut: {
+        type: String,
+        enum: ['en_attente', 'confirme', 'annule'],
+        default: 'en_attente',
+      },
     },
-    required: false
+    required: false,
   })
   creneau?: {
     date: Date;

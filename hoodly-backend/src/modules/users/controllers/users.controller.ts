@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Controller,
   Get,
@@ -23,6 +26,7 @@ import { UserResponseDto } from '../dto/user-response.dto';
 import { JwtGuard } from '../../../core/auth/guards/jwt.guard';
 import { RolesGuard } from '../../../core/auth/guards/roles.guard';
 import { Roles } from '../../../core/auth/decorators/roles.decorator';
+import { CurrentUser } from '../../../core/auth/decorators/current-user.decorator';
 import { UserRole } from '../schemas/user.schema';
 import { MongoIdValidationPipe } from '../../../shared/pipes/mongo-id-validation.pipe';
 
@@ -32,6 +36,35 @@ import { MongoIdValidationPipe } from '../../../shared/pipes/mongo-id-validation
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Get('search-voisins')
+  @ApiOperation({ summary: 'Rechercher des voisins' })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Recherche par nom/email',
+  })
+  @ApiQuery({
+    name: 'global',
+    required: false,
+    description: 'Recherche globale (true/false)',
+  })
+  async searchVoisins(
+    @CurrentUser() user: any,
+    @Query('search') search?: string,
+    @Query('global') global?: string,
+  ) {
+    const callerId = user.userId || user.id;
+    const callerProfile = await this.usersService.findById(callerId);
+    const callerZoneId = callerProfile?.zoneId?.toString();
+
+    return this.usersService.findVoisins(
+      callerId,
+      callerZoneId,
+      search,
+      global === 'true',
+    );
+  }
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.MODERATOR)

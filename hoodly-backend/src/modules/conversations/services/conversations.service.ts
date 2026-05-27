@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   Injectable,
   NotFoundException,
@@ -14,6 +18,7 @@ import {
 } from '../schemas/conversation.schema';
 import { Message, MessageDocument } from '../schemas/message.schema';
 import { ServicesService } from '../../services/services/services.service';
+import { ConversationsGateway } from '../gateways/conversations.gateway';
 
 @Injectable()
 export class ConversationsService {
@@ -23,6 +28,8 @@ export class ConversationsService {
     @InjectModel(Message.name) private messageModel: Model<MessageDocument>,
     @Inject(forwardRef(() => ServicesService))
     private servicesService: ServicesService,
+    @Inject(forwardRef(() => ConversationsGateway))
+    private conversationsGateway: ConversationsGateway,
   ) {}
 
   async getOrCreate(
@@ -61,8 +68,8 @@ export class ConversationsService {
       await this.sendSystemMessage(
         conversation._id.toString(),
         serviceId
-          ? 'Discussion initiée à propos du service. Vous pouvez échanger pour vous accorder sur les détails.'
-          : 'Discussion générale démarrée entre voisins.',
+          ? "👋 Nouvelle discussion lancée au sujet de cette annonce d'entraide. C'est le moment d'échanger et de caler vos rendez-vous !"
+          : '👋 Bonjour ! Discussion générale démarrée entre voisins. Rapprochons notre quartier !',
       );
     }
 
@@ -134,7 +141,80 @@ export class ConversationsService {
       $set: { updatedAt: new Date() },
     });
 
+    try {
+      this.conversationsGateway.emitNewMessage(conversationId, saved);
+    } catch (e) {
+      console.warn('[WS] Failed to emit message:', e);
+    }
+
     return saved;
+  }
+
+  async editMessage(
+    conversationId: string,
+    messageId: string,
+    senderId: string,
+    newContent: string,
+  ): Promise<MessageDocument> {
+    const message = await this.messageModel.findById(messageId);
+    if (!message) {
+      throw new NotFoundException('Message introuvable');
+    }
+
+    if (message.senderId?.toString() !== senderId) {
+      throw new ForbiddenException(
+        "Non autorisé à modifier ce message car vous n'en êtes pas l'auteur",
+      );
+    }
+
+    if (message.conversationId.toString() !== conversationId) {
+      throw new BadRequestException(
+        "Le message n'appartient pas à cette conversation",
+      );
+    }
+
+    message.content = newContent;
+    message.edited = true;
+    const saved = await message.save();
+
+    try {
+      this.conversationsGateway.emitMessageUpdated(conversationId, saved);
+    } catch (e) {
+      console.warn('[WS] Failed to emit message update:', e);
+    }
+
+    return saved;
+  }
+
+  async deleteMessage(
+    conversationId: string,
+    messageId: string,
+    senderId: string,
+  ): Promise<void> {
+    const message = await this.messageModel.findById(messageId);
+    if (!message) {
+      throw new NotFoundException('Message introuvable');
+    }
+
+    if (message.senderId?.toString() !== senderId) {
+      throw new ForbiddenException(
+        "Non autorisé à supprimer ce message car vous n'en êtes pas l'auteur",
+      );
+    }
+
+    if (message.conversationId.toString() !== conversationId) {
+      throw new BadRequestException(
+        "Le message n'appartient pas à cette conversation",
+      );
+    }
+
+    await this.messageModel.findByIdAndDelete(messageId);
+
+    try {
+      this.conversationsGateway.emitMessageDeleted(conversationId, messageId);
+    } catch (e) {
+      console.warn('[WS] Failed to emit message delete:', e);
+    }
   }
 
   async sendSystemMessage(
@@ -151,6 +231,13 @@ export class ConversationsService {
     await this.conversationModel.findByIdAndUpdate(conversationId, {
       $set: { updatedAt: new Date() },
     });
+
+    try {
+      this.conversationsGateway.emitNewMessage(conversationId, saved);
+    } catch (e) {
+      console.warn('[WS] Failed to emit system message:', e);
+    }
+
     return saved;
   }
 
@@ -191,7 +278,7 @@ export class ConversationsService {
       await conv.save();
       await this.sendSystemMessage(
         conv._id.toString(),
-        "Merci beaucoup d'avoir proposé votre aide ! J'ai finalement trouvé un arrangement avec un autre voisin pour cette fois. Peut-être une prochaine fois !",
+        "Merci beaucoup d'avoir proposé votre aide ! J'ai trouvé un arrangement avec un autre voisin pour ce créneau. Au plaisir de s'entraider une prochaine fois !",
       );
     }
   }
@@ -257,7 +344,7 @@ export class ConversationsService {
         if (pc.creneau && pc.creneau.date) {
           const pcDateStr =
             typeof pc.creneau.date === 'string'
-              ? pc.creneau.date.split('T')[0]
+              ? (pc.creneau.date as string).split('T')[0]
               : new Date(pc.creneau.date).toISOString().split('T')[0];
 
           if (pcDateStr === propDateStr) {
@@ -312,7 +399,7 @@ export class ConversationsService {
     const dateStr = new Date(date).toLocaleDateString('fr-FR');
     await this.sendSystemMessage(
       conversation._id.toString(),
-      `📅 Proposition de rendez-vous soumise pour le ${dateStr} de ${debut} à ${fin}. En attente de confirmation...`,
+      `📅 Proposition de rendez-vous envoyée pour le ${dateStr} de ${debut} à ${fin}. En attente de confirmation...`,
     );
 
     return conversation;
@@ -364,7 +451,7 @@ export class ConversationsService {
     );
     await this.sendSystemMessage(
       conversation._id.toString(),
-      `Rendez-vous confirmé ! La prestation est planifiée pour le ${dateStr} de ${conversation.creneau.debut} à ${conversation.creneau.fin}.`,
+      `🎉 Rendez-vous confirmé ! La prestation est planifiée pour le ${dateStr} de ${conversation.creneau.debut} à ${conversation.creneau.fin}.`,
     );
 
     return conversation;
@@ -390,7 +477,7 @@ export class ConversationsService {
 
     await this.sendSystemMessage(
       conversation._id.toString(),
-      `La proposition de rendez-vous de ${oldDebut} à ${oldFin} a été déclinée.`,
+      `❌ La proposition de rendez-vous de ${oldDebut} à ${oldFin} a été déclinée. N'hésitez pas à suggérer un autre horaire !`,
     );
 
     return conversation;

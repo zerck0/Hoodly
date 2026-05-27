@@ -1,5 +1,5 @@
 import { useUser } from '../hooks/useUser'
-import { useConversations } from '../hooks/useConversations'
+import { useTransactions } from '../hooks/useTransactions'
 import { useMemo } from 'react'
 import {
   Coins,
@@ -17,40 +17,19 @@ import { Badge } from '../components/ui/badge'
 
 export default function PointsPage() {
   const { user } = useUser()
-  const { conversations, isLoadingInbox } = useConversations()
+  const { data: backendTransactions, isLoading: isLoadingInbox } = useTransactions()
   const points = user?.points ?? 100
   const euros = (points / 10).toFixed(2)
 
   const realTransactions = useMemo(() => {
-    const completedConvs = conversations.filter(
-      (conv: any) =>
-        conv.prestationStatut === 'termine' &&
-        conv.realisationValidee === true &&
-        conv.serviceId &&
-        !conv.serviceId.gratuit &&
-        (conv.serviceId.points ?? 0) > 0
-    )
+    if (!backendTransactions) return []
 
-    const mapped = completedConvs.map((conv: any) => {
-      const service = conv.serviceId
-      const amount = service.points ?? 0
-      const isDemande = service.type === 'demande'
+    return backendTransactions.map((tx: any) => {
+      const payerId = typeof tx.payerId === 'object' ? tx.payerId?._id : tx.payerId
+      const isPayer = payerId === user?.id
 
-      const serviceCreatorId = typeof service.createurId === 'object'
-        ? (service.createurId._id || service.createurId.id)
-        : service.createurId
-
-      const isCreator = serviceCreatorId === user?.id || (user?.email && service.createurId?.email === user.email)
-
-      let type: 'credit' | 'debit' = 'credit'
-      if (isDemande) {
-        type = isCreator ? 'debit' : 'credit'
-      } else {
-        type = isCreator ? 'credit' : 'debit'
-      }
-
-      const dateLabel = conv.updatedAt
-        ? new Date(conv.updatedAt).toLocaleDateString('fr-FR', {
+      const dateLabel = tx.createdAt
+        ? new Date(tx.createdAt).toLocaleDateString('fr-FR', {
             day: 'numeric',
             month: 'short',
             year: 'numeric'
@@ -58,29 +37,16 @@ export default function PointsPage() {
         : 'Récemment'
 
       return {
-        id: conv._id,
-        title: service.titre,
-        category: service.categorie,
-        amount,
-        type,
+        id: tx._id,
+        title: tx.description,
+        category: tx.serviceId?.categorie || 'Système',
+        amount: tx.amount,
+        type: isPayer ? 'debit' : 'credit',
         date: dateLabel,
         status: 'complété'
       }
     })
-
-    return [
-      ...mapped,
-      {
-        id: 'welcome-gift',
-        title: 'Cadeau de Bienvenue Hoodly',
-        category: 'Système',
-        amount: 100,
-        type: 'credit',
-        date: 'Nouveau résident',
-        status: 'complété'
-      }
-    ]
-  }, [conversations, user])
+  }, [backendTransactions, user])
 
   const suggestedRates = [
     { name: 'Soutien scolaire', rate: '150 - 250 pts / h', eq: '15 - 25 €' },

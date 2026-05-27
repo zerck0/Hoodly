@@ -17,6 +17,9 @@ export class Message {
   @Prop({ type: Boolean, default: false })
   system!: boolean;
 
+  @Prop({ type: Boolean, default: false })
+  edited?: boolean;
+
   createdAt?: Date;
   updatedAt?: Date;
 }

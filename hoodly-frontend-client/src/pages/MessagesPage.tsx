@@ -1,17 +1,24 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useUser } from '../hooks/useUser'
 import { useConversations } from '../hooks/useConversations'
 import { useServices } from '../hooks/useServices'
+import { useSocket } from '../hooks/useSocket'
+import { usersApi } from '../services/api/user'
 import {
   MessageSquare,
+  MessageSquarePlus,
+  Globe,
   Send,
   Loader2,
   Inbox,
   HeartHandshake,
   Search,
   Calendar,
-  X
+  X,
+  Pencil,
+  Trash2
 } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar'
@@ -42,13 +49,17 @@ const CATEGORY_STYLES: Record<string, { bg: string, text: string, border: string
 
 export default function MessagesPage() {
   const { user } = useUser()
+  const { socket } = useSocket()
   const [searchParams, setSearchParams] = useSearchParams()
   const activeIdFromUrl = searchParams.get('id')
 
   const [inboxSearch, setInboxSearch] = useState('')
   const [newMessage, setNewMessage] = useState('')
   const [activeTab, setActiveTab] = useState<'all' | 'services' | 'general'>('all')
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
+  const [editingContent, setEditingContent] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const { conversations, isLoadingInbox } = useConversations()
 
@@ -64,6 +75,9 @@ export default function MessagesPage() {
     isProposing,
     accepterCreneau,
     refuserCreneau,
+    startConversation,
+    editMessage,
+    deleteMessage,
   } = useConversations(activeId || undefined)
 
   const {
@@ -75,6 +89,72 @@ export default function MessagesPage() {
   } = useServices()
 
   const [showScheduler, setShowScheduler] = useState(false)
+  const [showNewChatModal, setShowNewChatModal] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchGlobal, setSearchGlobal] = useState(false)
+  const [searchResults, setSearchResults] = useState<{ id: string; name: string; email: string; picture?: string; zoneId?: string }[]>([])
+  const [isSearchingNeighbors, setIsSearchingNeighbors] = useState(false)
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!socket) return
+
+    socket.emit('getOnlineUsers', {}, (userIds: string[]) => {
+      setOnlineUsers(new Set(userIds))
+    })
+
+    const handleUserPresence = ({ userId, status }: { userId: string; status: 'online' | 'offline' }) => {
+      setOnlineUsers((prev) => {
+        const next = new Set(prev)
+        if (status === 'online') {
+          next.add(userId)
+        } else {
+          next.delete(userId)
+        }
+        return next
+      })
+    }
+
+    socket.on('userPresence', handleUserPresence)
+
+    return () => {
+      socket.off('userPresence', handleUserPresence)
+    }
+  }, [socket])
+
+  useEffect(() => {
+    if (!showNewChatModal) {
+      setSearchQuery('')
+      setSearchResults([])
+      return
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      setIsSearchingNeighbors(true)
+      try {
+        const { data } = await usersApi.searchVoisins(searchQuery, searchGlobal)
+        setSearchResults(data)
+      } catch {
+        toast.error('Erreur lors de la recherche des voisins.')
+      } finally {
+        setIsSearchingNeighbors(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(delayDebounce)
+  }, [searchQuery, searchGlobal, showNewChatModal])
+
+  const handleStartGeneralChat = async (voisinId: string) => {
+    try {
+      const conv = await startConversation({ destinataireId: voisinId })
+      setShowNewChatModal(false)
+      setSearchParams({ id: conv._id })
+      toast.success('Discussion générale démarrée !')
+    } catch {
+      toast.error('Impossible de démarrer la discussion.')
+    }
+  }
+
   const [slotDate, setSlotDate] = useState('')
   const [slotStart, setSlotStart] = useState('')
   const [slotEnd, setSlotEnd] = useState('')
@@ -284,15 +364,63 @@ export default function MessagesPage() {
     }
   }, [conversations, activeIdFromUrl, setSearchParams])
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault()
+  useEffect(() => {
+    setNewMessage('')
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '44px'
+    }
+  }, [activeId])
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNewMessage(e.target.value)
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      const scrollHeight = textareaRef.current.scrollHeight
+      textareaRef.current.style.height = `${Math.min(120, Math.max(44, scrollHeight))}px`
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
+    }
+  }
+
+  const handleSendMessage = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
     if (!newMessage.trim() || isSending || !activeId) return
 
     try {
       await sendMessage(newMessage)
       setNewMessage('')
+      if (textareaRef.current) {
+        textareaRef.current.style.height = '44px'
+      }
     } catch {
       toast.error('Erreur lors de l\'envoi du message')
+    }
+  }
+
+  const handleSaveEdit = async (messageId: string) => {
+    if (!editingContent.trim()) return
+    try {
+      await editMessage({ messageId, content: editingContent })
+      setEditingMessageId(null)
+      setEditingContent('')
+      toast.success('Message modifié !')
+    } catch {
+      toast.error('Erreur lors de la modification du message')
+    }
+  }
+
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!window.confirm('Voulez-vous vraiment supprimer ce message ?')) return
+    try {
+      await deleteMessage(messageId)
+      toast.success('Message supprimé !')
+    } catch {
+      toast.error('Erreur lors de la suppression du message')
     }
   }
 
@@ -390,9 +518,11 @@ export default function MessagesPage() {
 
     if (prestationStatut === 'valide') {
       if (isProvider) {
+        const hasPendingCreneau = activeConv?.creneau && activeConv.creneau.statut === 'en_attente';
         return (
           <Button
             size="sm"
+            disabled={hasPendingCreneau}
             onClick={async () => {
               try {
                 await demarrerService({ id: service._id, body: { conversationId: activeConv?._id } })
@@ -402,9 +532,9 @@ export default function MessagesPage() {
                 toast.error(errMsg)
               }
             }}
-            className="bg-[#2c308e] hover:bg-[#2c308e]/95 text-white font-bold rounded-lg text-xs"
+            className="bg-[#2c308e] hover:bg-[#2c308e]/95 text-white font-bold rounded-lg text-xs disabled:opacity-50"
           >
-            Démarrer le service
+            {hasPendingCreneau ? 'En attente de planification' : 'Démarrer le service'}
           </Button>
         )
       }
@@ -486,9 +616,18 @@ export default function MessagesPage() {
     <div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-[#f5f3ed]">
       <div className="w-80 shrink-0 border-r border-gray-200 bg-[#fefefa] flex flex-col h-full">
         <div className="p-4 border-b border-gray-100 space-y-3 shrink-0">
-          <h2 className="text-xl font-bold text-[#1e224e]" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Discussions
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-[#1e224e]" style={{ fontFamily: "'Playfair Display', serif" }}>
+              Discussions
+            </h2>
+            <button
+              onClick={() => setShowNewChatModal(true)}
+              className="h-8 w-8 rounded-full bg-gray-50 hover:bg-[#e9eaf6] text-gray-500 hover:text-[#2c308e] flex items-center justify-center transition-all duration-200 cursor-pointer shadow-xs hover:scale-105 active:scale-95 border border-gray-200/40"
+              title="Nouvelle discussion générale"
+            >
+              <MessageSquarePlus className="h-4 w-4" />
+            </button>
+          </div>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
@@ -540,10 +679,30 @@ export default function MessagesPage() {
               <Loader2 className="h-6 w-6 text-gray-300 animate-spin" />
             </div>
           ) : filteredConversations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center text-gray-400">
-              <Inbox className="h-8 w-8 text-gray-200 mb-2" />
-              <p className="text-xs font-semibold">Aucune discussion</p>
-              <p className="text-[10px] mt-0.5 text-gray-400">Lancez un chat depuis les services.</p>
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center text-gray-400 space-y-4">
+              <div className="h-12 w-12 rounded-full bg-indigo-50/50 flex items-center justify-center text-[#2c308e] border border-indigo-100/50">
+                <HeartHandshake className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-800">
+                  {activeTab === 'general' ? 'Aucune discussion générale' : activeTab === 'services' ? 'Aucun service en cours' : 'Aucune discussion'}
+                </p>
+                <p className="text-[10px] mt-1 text-gray-400 max-w-[200px] mx-auto leading-relaxed font-light">
+                  {activeTab === 'general'
+                    ? "Vous n'avez pas encore de conversation générale avec vos voisins."
+                    : activeTab === 'services'
+                    ? "Aucune discussion liée à un service n'a été commencée."
+                    : "Lancez une discussion en proposant ou acceptant un service !"}
+                </p>
+              </div>
+              {activeTab === 'general' && (
+                <Button
+                  onClick={() => setShowNewChatModal(true)}
+                  className="bg-[#2c308e] hover:bg-[#2c308e]/95 text-white text-[10px] font-bold rounded-xl px-4 py-2 shadow-sm cursor-pointer transition-all hover:scale-102 active:scale-98"
+                >
+                  Faire connaissance avec un voisin
+                </Button>
+              )}
             </div>
           ) : (
             filteredConversations.map((conv) => {
@@ -564,12 +723,19 @@ export default function MessagesPage() {
                       : 'hover:bg-gray-50 text-gray-600'
                   }`}
                 >
-                  <Avatar className="h-10 w-10 border border-gray-100 shrink-0">
-                    <AvatarImage src={other?.picture} alt={other?.name} />
-                    <AvatarFallback className="bg-[#2c308e] text-white font-bold text-sm">
-                      {other?.name?.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="relative shrink-0">
+                    <Avatar className="h-10 w-10 border border-gray-100">
+                      <AvatarImage src={other?.picture} alt={other?.name} />
+                      <AvatarFallback className="bg-[#2c308e] text-white font-bold text-sm">
+                        {other?.name?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    {other && (
+                      <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
+                        onlineUsers.has(other.id || other._id) ? 'bg-emerald-500' : 'bg-gray-300'
+                      }`} />
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-baseline mb-0.5">
                       <p className="text-xs font-bold text-gray-900 truncate">
@@ -600,7 +766,7 @@ export default function MessagesPage() {
       <div className="flex-1 flex flex-col h-full bg-[#f8f9fc]">
         {activeConv ? (
           <>
-            <div className="h-16 px-6 border-b border-gray-200 bg-white flex items-center justify-between shrink-0">
+            <div className="h-16 px-6 border-b border-gray-200 bg-white flex items-center shrink-0">
               <div className="flex items-center gap-3">
                 <Avatar className="h-9 w-9 border border-gray-100">
                   <AvatarImage src={getOtherParticipant(activeConv)?.picture} />
@@ -612,8 +778,19 @@ export default function MessagesPage() {
                   <p className="text-sm font-bold text-gray-900 leading-snug">
                     {getOtherParticipant(activeConv)?.name}
                   </p>
-                  <p className="text-[10px] text-emerald-500 flex items-center gap-1 font-semibold">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Voisin connecté
+                  <p className={`text-[10px] flex items-center gap-1.5 font-semibold ${
+                    getOtherParticipant(activeConv) && onlineUsers.has(getOtherParticipant(activeConv)!.id || getOtherParticipant(activeConv)!._id)
+                      ? 'text-emerald-500'
+                      : 'text-gray-400'
+                  }`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${
+                      getOtherParticipant(activeConv) && onlineUsers.has(getOtherParticipant(activeConv)!.id || getOtherParticipant(activeConv)!._id)
+                        ? 'bg-emerald-500'
+                        : 'bg-gray-400'
+                    }`} />
+                    {getOtherParticipant(activeConv) && onlineUsers.has(getOtherParticipant(activeConv)!.id || getOtherParticipant(activeConv)!._id)
+                      ? 'Voisin connecté'
+                      : 'Hors ligne'}
                   </p>
                 </div>
               </div>
@@ -673,7 +850,7 @@ export default function MessagesPage() {
 
                   <div className="shrink-0">
                     {activeConv.creneau.statut === 'en_attente' ? (
-                      activeConv.serviceId.type === 'demande' ? !isCreator : isCreator ? (
+                      (activeConv.serviceId.type === 'demande' ? !isCreator : isCreator) ? (
                         <div className="flex gap-2">
                           <Button
                             size="xs"
@@ -747,20 +924,77 @@ export default function MessagesPage() {
                   return (
                     <div
                       key={msg._id}
-                      className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}
+                      className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'} items-center gap-2 group animate-in fade-in slide-in-from-bottom-2 duration-300 ease-out`}
                     >
-                      <div className={`px-4 py-2.5 rounded-2xl text-xs max-w-[70%] leading-relaxed shadow-xs ${
-                        isMe
-                          ? 'bg-[#2c308e] text-white rounded-tr-none'
-                          : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
-                      }`}>
-                        <p className="font-light">{msg.content}</p>
-                        <p className={`text-[8px] text-right mt-1 font-light ${
-                          isMe ? 'text-white/60' : 'text-gray-400'
+                      {isMe && !msg.system && editingMessageId !== msg._id && (
+                        <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity duration-150 shrink-0 order-first">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingMessageId(msg._id)
+                              setEditingContent(msg.content)
+                            }}
+                            className="h-6 w-6 rounded-lg bg-gray-100 hover:bg-[#e9eaf6] text-gray-400 hover:text-[#2c308e] flex items-center justify-center transition-all cursor-pointer"
+                            title="Modifier le message"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMessage(msg._id)}
+                            className="h-6 w-6 rounded-lg bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600 flex items-center justify-center transition-all cursor-pointer"
+                            title="Supprimer le message"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
+
+                      {editingMessageId === msg._id ? (
+                        <div className="flex flex-col gap-1.5 p-3 bg-white border border-[#2c308e]/20 rounded-2xl max-w-[70%] shadow-md animate-in zoom-in-95 duration-150">
+                          <textarea
+                            value={editingContent}
+                            onChange={(e) => setEditingContent(e.target.value)}
+                            className="w-full min-w-[200px] text-xs p-2 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:bg-white focus:border-[#2c308e] resize-none h-16 leading-relaxed"
+                          />
+                          <div className="flex justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setEditingMessageId(null)}
+                              className="text-[9px] font-bold px-2.5 py-1 text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors"
+                            >
+                              Annuler
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleSaveEdit(msg._id)}
+                              className="text-[9px] font-bold px-2.5 py-1 text-white bg-[#2c308e] hover:bg-[#2c308e]/90 rounded-lg cursor-pointer transition-colors"
+                            >
+                              Enregistrer
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={`px-4 py-2.5 rounded-2xl text-xs max-w-[70%] leading-relaxed shadow-xs ${
+                          isMe
+                            ? 'bg-[#2c308e] text-white rounded-tr-none'
+                            : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
                         }`}>
-                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
+                          <p className="font-light whitespace-pre-wrap break-words">{msg.content}</p>
+                          <div className="flex items-center justify-end gap-1 mt-1">
+                            {msg.edited && (
+                              <span className={`text-[7px] font-light italic ${isMe ? 'text-white/50' : 'text-gray-400'}`}>
+                                (modifié)
+                              </span>
+                            )}
+                            <p className={`text-[8px] font-light ${
+                              isMe ? 'text-white/60' : 'text-gray-400'
+                            }`}>
+                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )
                 })
@@ -792,13 +1026,15 @@ export default function MessagesPage() {
                 )
               })()}
 
-              <input
-                type="text"
+              <textarea
+                ref={textareaRef}
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={handleTextareaChange}
+                onKeyDown={handleKeyDown}
                 placeholder="Écrivez un message à votre voisin..."
                 disabled={isSending}
-                className="h-11 flex-1 rounded-2xl bg-gray-50 border border-gray-200/60 px-4 text-xs outline-none focus:bg-white focus:border-[#2c308e] focus:ring-1 focus:ring-[#2c308e]/10 transition-all disabled:opacity-50"
+                rows={1}
+                className="flex-1 rounded-2xl bg-gray-50 border border-gray-200/60 px-4 py-3 text-xs outline-none focus:bg-white focus:border-[#2c308e] focus:ring-1 focus:ring-[#2c308e]/10 transition-all disabled:opacity-50 resize-none h-[44px] min-h-[44px] max-h-[120px] overflow-y-auto leading-relaxed"
               />
               <button
                 type="submit"
@@ -1002,6 +1238,101 @@ export default function MessagesPage() {
           </div>
         )}
       </div>
+
+      {showNewChatModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2rem] border border-gray-100 p-8 shadow-2xl max-w-md w-full space-y-6 animate-in zoom-in-95 duration-200 relative">
+            <button
+              type="button"
+              onClick={() => setShowNewChatModal(false)}
+              className="absolute top-4 right-4 bg-gray-50 hover:bg-gray-100 text-gray-500 rounded-full p-2 transition-colors cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 leading-snug">
+                💬 Nouveau message privé
+              </h3>
+              <p className="text-xs text-gray-400 mt-1 font-light leading-relaxed">
+                Trouvez un voisin et commencez à discuter directement avec lui.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Rechercher par nom ou email..."
+                  className="h-11 w-full rounded-2xl bg-gray-50 border border-gray-200 pl-10 pr-4 text-xs outline-none focus:bg-white focus:border-[#2c308e] focus:ring-1 focus:ring-[#2c308e]/10 transition-all"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-gray-50/50 border border-gray-200/50">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-[#2c308e]" />
+                  <span className="text-xs font-semibold text-gray-700 select-none">
+                    Recherche à l'échelle de Woodly
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  id="searchGlobal"
+                  checked={searchGlobal}
+                  onChange={(e) => setSearchGlobal(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-[#2c308e] focus:ring-[#2c308e]/30 cursor-pointer"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider">
+                  Résultats ({searchResults.length})
+                </label>
+
+                <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1 font-sans">
+                  {isSearchingNeighbors ? (
+                    <div className="flex justify-center items-center py-8">
+                      <Loader2 className="h-5 w-5 text-gray-300 animate-spin" />
+                    </div>
+                  ) : searchResults.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400 bg-gray-50/20 rounded-2xl border border-dashed border-gray-200">
+                      <Inbox className="h-6 w-6 text-gray-200 mx-auto mb-2" />
+                      <p className="text-[10px] font-semibold">Aucun voisin trouvé</p>
+                      <p className="text-[9px] text-gray-400 mt-0.5">Saisissez un nom ou changez de filtre.</p>
+                    </div>
+                  ) : (
+                    searchResults.map((voisin) => (
+                      <button
+                        key={voisin.id}
+                        onClick={() => handleStartGeneralChat(voisin.id)}
+                        className="flex w-full items-center gap-3 p-2.5 rounded-2xl hover:bg-[#e9eaf6]/40 border border-transparent hover:border-gray-200/30 transition-all text-left group cursor-pointer"
+                      >
+                        <Avatar className="h-9 w-9 border border-gray-100 shrink-0">
+                          <AvatarImage src={voisin.picture} alt={voisin.name} />
+                          <AvatarFallback className="bg-[#2c308e] text-white font-bold text-xs">
+                            {voisin.name?.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-gray-900 truncate group-hover:text-[#2c308e] transition-colors">
+                            {voisin.name}
+                          </p>
+                          <p className="text-[10px] text-gray-400 truncate">
+                            {voisin.email}
+                          </p>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

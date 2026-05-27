@@ -6,6 +6,7 @@ export interface Message {
   senderId?: string
   content: string
   system: boolean
+  edited?: boolean
   createdAt: string
   updatedAt?: string
 }

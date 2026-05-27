@@ -6,7 +6,7 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-let getAccessToken: (() => Promise<string>) | null = null
+export let getAccessToken: (() => Promise<string>) | null = null
 
 export function setAuth0TokenGetter(getToken: () => Promise<string>) {
   getAccessToken = getToken

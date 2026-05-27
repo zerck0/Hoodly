@@ -142,8 +142,8 @@ export default function ServicesPage() {
     const creator = typeof service.createurId === 'object' ? service.createurId : null
     const creatorId = creator?.id || creator?._id || (service.createurId as string)
 
-    const responder = typeof service.respondeId === 'object' ? service.respondeId : null
-    const responderId = responder?.id || responder?._id || (service.respondeId as string)
+    const responder = typeof service.responderId === 'object' ? service.responderId : null
+    const responderId = responder?.id || responder?._id || (service.responderId as string)
 
     const destinataireId = isCreator ? responderId : creatorId
 
@@ -169,9 +169,9 @@ export default function ServicesPage() {
       ? service.createurId.email === user?.email
       : service.createurId === user?.id
 
-    const isResponder = typeof service.respondeId === 'object'
-      ? service.respondeId?.email === user?.email
-      : service.respondeId === user?.id
+    const isResponder = typeof service.responderId === 'object'
+      ? service.responderId?.email === user?.email
+      : service.responderId === user?.id
 
     if (isCreator) {
       if (service.statut === 'actif') {
@@ -418,14 +418,6 @@ export default function ServicesPage() {
           <div className="lg:col-span-2 flex flex-col items-center justify-center p-12 bg-white rounded-3xl border border-dashed border-gray-300 text-center h-[340px]">
             <HeartHandshake className="h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-bold text-gray-900">Aucun service trouvé</h3>
-            <p className="text-gray-500 text-sm mt-1 max-w-sm">
-              Soyez le premier à proposer votre aide ou formulez une demande d'entraide dans votre quartier !
-            </p>
-            <Link to="/services/nouveau" className="mt-6">
-              <Button size="sm" className="bg-[#2c308e] hover:bg-[#2c308e]/90 text-white rounded-full">
-                Proposer un service
-              </Button>
-            </Link>
           </div>
 
           <Card className="bg-[#1f224e] border-0 text-white rounded-[2rem] overflow-hidden flex flex-col justify-between p-8 h-[340px] relative shadow-lg">
@@ -842,24 +834,24 @@ export default function ServicesPage() {
                     </div>
                   </div>
 
-                  {activeService.respondeId && (
+                  {activeService.responderId && (
                     <div className="border-t border-gray-100 pt-5">
                       <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
                         {activeService.type === 'offre' ? 'Bénéficiaire' : 'Intervenant'}
                       </h4>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-10 w-10 border border-gray-100">
-                          <AvatarImage src={typeof activeService.respondeId === 'object' ? activeService.respondeId.picture : undefined} />
+                          <AvatarImage src={typeof activeService.responderId === 'object' ? activeService.responderId.picture : undefined} />
                           <AvatarFallback className="bg-emerald-600 text-white">
-                            {typeof activeService.respondeId === 'object' ? activeService.respondeId.name?.charAt(0).toUpperCase() : 'V'}
+                            {typeof activeService.responderId === 'object' ? activeService.responderId.name?.charAt(0).toUpperCase() : 'V'}
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <p className="text-sm font-bold text-gray-900">
-                            {typeof activeService.respondeId === 'object' ? activeService.respondeId.name : 'Voisin'}
+                            {typeof activeService.responderId === 'object' ? activeService.responderId.name : 'Voisin'}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {typeof activeService.respondeId === 'object' ? activeService.respondeId.email : ''}
+                            {typeof activeService.responderId === 'object' ? activeService.responderId.email : ''}
                           </p>
                         </div>
                       </div>

@@ -19,6 +19,8 @@ import { CreateServiceDto } from '../dto/create-service.dto';
 import { UpdateServiceDto } from '../dto/update-service.dto';
 import { ConversationsService } from '../../conversations/services/conversations.service';
 import { User, UserDocument } from '../../users/schemas/user.schema';
+import { TransactionsService } from '../../transactions/services/transactions.service';
+import { TransactionType } from '../../transactions/schemas/transaction.schema';
 
 @Injectable()
 export class ServicesService {
@@ -27,6 +29,7 @@ export class ServicesService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @Inject(forwardRef(() => ConversationsService))
     private conversationsService: ConversationsService,
+    private transactionsService: TransactionsService,
   ) {}
 
   async create(
@@ -71,7 +74,7 @@ export class ServicesService {
         .limit(limit)
         .sort({ createdAt: -1 })
         .populate('createurId', 'name email picture')
-        .populate('respondeId', 'name email picture')
+        .populate('responderId', 'name email picture')
         .populate('zoneId', 'nom ville')
         .lean(),
       this.serviceModel.countDocuments(query),
@@ -90,7 +93,7 @@ export class ServicesService {
     const service = await this.serviceModel
       .findById(id)
       .populate('createurId', 'name email picture')
-      .populate('respondeId', 'name email picture')
+      .populate('responderId', 'name email picture')
       .populate('zoneId', 'nom ville');
     if (!service) throw new NotFoundException('Service introuvable');
     return service;
@@ -224,13 +227,13 @@ export class ServicesService {
         .findByIdAndUpdate(
           id,
           {
-            $set: { respondeId: new Types.ObjectId(responderId) },
+            $set: { responderId: new Types.ObjectId(responderId) },
             $addToSet: { refusedResponders: { $each: otherCandidateIds } },
           },
           { returnDocument: 'after' },
         )
         .populate('createurId', 'name email picture')
-        .populate('respondeId', 'name email picture')
+        .populate('responderId', 'name email picture')
         .populate('zoneId', 'nom ville'))!;
 
       try {
@@ -248,7 +251,7 @@ export class ServicesService {
     try {
       await this.conversationsService.sendSystemMessage(
         conv._id.toString(),
-        `Proposition validée ! Vous pouvez maintenant commencer les échanges et démarrer la prestation.`,
+        `🤝 Proposition acceptée ! Le créateur a validé votre profil. Vous pouvez maintenant échanger librement pour planifier les détails.`,
       );
     } catch (e) {
       console.warn('Could not send system message:', e);
@@ -282,7 +285,7 @@ export class ServicesService {
           { returnDocument: 'after' },
         )
         .populate('createurId', 'name email picture')
-        .populate('respondeId', 'name email picture')
+        .populate('responderId', 'name email picture')
         .populate('zoneId', 'nom ville'))!;
     } else {
       updatedService = (await this.serviceModel
@@ -294,7 +297,7 @@ export class ServicesService {
     try {
       await this.conversationsService.sendSystemMessage(
         conv._id.toString(),
-        "Merci beaucoup pour votre proposition, mais désolé, cette offre d'aide ou demande n'est pas retenue pour cette fois.",
+        "Merci d'avoir proposé votre aide ! Le créateur a finalement choisi de s'organiser différemment pour cette fois. À charge de revanche !",
       );
     } catch (e) {
       console.warn('Could not send refusal system message:', e);
@@ -332,6 +335,12 @@ export class ServicesService {
     }
 
     if (conv.creneau && conv.creneau.date) {
+      if (conv.creneau.statut !== 'confirme') {
+        throw new BadRequestException(
+          "Vous devez d'abord confirmer le créneau horaire du rendez-vous avant de démarrer la prestation.",
+        );
+      }
+
       const schedDate = new Date(conv.creneau.date);
       const [hours, minutes] = (conv.creneau.debut || '00:00')
         .split(':')
@@ -353,7 +362,7 @@ export class ServicesService {
     let updatedService = service;
 
     if (service.type === ServiceType.DEMANDE) {
-      if (!service.respondeId || service.respondeId.toString() !== userId) {
+      if (!service.responderId || service.responderId.toString() !== userId) {
         throw new ForbiddenException('Non autorisé à démarrer ce service');
       }
       if (service.statut !== ServiceStatus.ACTIF) {
@@ -369,7 +378,7 @@ export class ServicesService {
           { returnDocument: 'after' },
         )
         .populate('createurId', 'name email picture')
-        .populate('respondeId', 'name email picture')
+        .populate('responderId', 'name email picture')
         .populate('zoneId', 'nom ville'))!;
     } else {
       updatedService = (await this.serviceModel
@@ -386,7 +395,7 @@ export class ServicesService {
 
       await this.conversationsService.sendSystemMessage(
         conv._id.toString(),
-        `Le service a été démarré par ${starterName}. Travail en cours...`,
+        `🚀 ${starterName} a démarré la prestation ! Bon travail à vous deux.`,
       );
     } catch (e) {
       console.warn('Could not send system message for start:', e);
@@ -431,7 +440,7 @@ export class ServicesService {
     let updatedService = service;
 
     if (service.type === ServiceType.DEMANDE) {
-      if (!service.respondeId || service.respondeId.toString() !== userId) {
+      if (!service.responderId || service.responderId.toString() !== userId) {
         throw new ForbiddenException('Non autorisé à finaliser ce service');
       }
       if (service.statut !== ServiceStatus.EN_COURS) {
@@ -445,7 +454,7 @@ export class ServicesService {
           { returnDocument: 'after' },
         )
         .populate('createurId', 'name email picture')
-        .populate('respondeId', 'name email picture')
+        .populate('responderId', 'name email picture')
         .populate('zoneId', 'nom ville'))!;
     } else {
       updatedService = (await this.serviceModel
@@ -462,7 +471,7 @@ export class ServicesService {
 
       await this.conversationsService.sendSystemMessage(
         conv._id.toString(),
-        `Le service a été marqué comme accompli par ${finisherName}. En attente de validation par le bénéficiaire.`,
+        `✅ Prestation déclarée terminée par ${finisherName}. En attente de validation finale par le bénéficiaire...`,
       );
     } catch (e) {
       console.warn('Could not send system message for completion:', e);
@@ -527,7 +536,7 @@ export class ServicesService {
 
       if (service.type === ServiceType.DEMANDE) {
         payerId = service.createurId;
-        recipientId = service.respondeId || null;
+        recipientId = service.responderId || null;
       } else {
         const visitor = conv.participants.find((p: any) => {
           const pIdStr = p._id ? p._id.toString() : p.toString();
@@ -553,6 +562,19 @@ export class ServicesService {
         if (recipient) {
           recipient.points = (recipient.points || 0) + points;
           await recipient.save();
+        }
+
+        try {
+          await this.transactionsService.create(
+            payerId.toString(),
+            recipientId.toString(),
+            points,
+            TransactionType.SERVICE_PAYMENT,
+            `Paiement pour le service "${service.titre}"`,
+            service._id.toString(),
+          );
+        } catch (err) {
+          console.warn('Could not save transaction to DB:', err);
         }
 
         try {
@@ -582,7 +604,7 @@ export class ServicesService {
           { returnDocument: 'after' },
         )
         .populate('createurId', 'name email picture')
-        .populate('respondeId', 'name email picture')
+        .populate('responderId', 'name email picture')
         .populate('zoneId', 'nom ville'))!;
     } else {
       updatedService = (await this.serviceModel
@@ -594,7 +616,7 @@ export class ServicesService {
     try {
       await this.conversationsService.sendSystemMessage(
         conv._id.toString(),
-        `Réalisation confirmée par le bénéficiaire. Le service est clos !`,
+        `🎉 Réalisation validée par le bénéficiaire. Le service est désormais clos avec succès. Merci pour ce beau coup de main !`,
       );
     } catch (e) {
       console.warn('Could not send validation system message:', e);

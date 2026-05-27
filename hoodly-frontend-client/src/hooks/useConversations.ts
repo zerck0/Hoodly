@@ -1,8 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { conversationsApi } from '../services/api/conversations'
+import { useSocket } from './useSocket'
 
 export function useConversations(conversationId?: string) {
   const queryClient = useQueryClient()
+  const { socket } = useSocket()
 
   const inboxQuery = useQuery({
     queryKey: ['conversations'],
@@ -31,8 +35,55 @@ export function useConversations(conversationId?: string) {
       return data
     },
     enabled: !!conversationId,
-    refetchInterval: 3000,
   })
+
+  useEffect(() => {
+    if (!socket || !conversationId) return
+
+    socket.emit('joinConversation', { conversationId })
+
+    const handleNewMessage = (message: any) => {
+      if (message.conversationId === conversationId) {
+        queryClient.setQueryData(['messages', conversationId], (oldMessages: any[] | undefined) => {
+          const existing = oldMessages || []
+          if (existing.some((m) => m._id === message._id)) {
+            return existing
+          }
+          return [...existing, message]
+        })
+        queryClient.invalidateQueries({ queryKey: ['conversations'] })
+      }
+    }
+
+    const handleMessageUpdated = (updatedMessage: any) => {
+      if (updatedMessage.conversationId === conversationId) {
+        queryClient.setQueryData(['messages', conversationId], (oldMessages: any[] | undefined) => {
+          if (!oldMessages) return []
+          return oldMessages.map((m) => (m._id === updatedMessage._id ? updatedMessage : m))
+        })
+        queryClient.invalidateQueries({ queryKey: ['conversations'] })
+      }
+    }
+
+    const handleMessageDeleted = ({ messageId }: { messageId: string }) => {
+      queryClient.setQueryData(['messages', conversationId], (oldMessages: any[] | undefined) => {
+        if (!oldMessages) return []
+        return oldMessages.filter((m) => m._id !== messageId)
+      })
+      queryClient.invalidateQueries({ queryKey: ['conversations'] })
+    }
+
+    socket.on('newMessage', handleNewMessage)
+    socket.on('messageUpdated', handleMessageUpdated)
+    socket.on('messageDeleted', handleMessageDeleted)
+
+    return () => {
+      socket.emit('leaveConversation', { conversationId })
+      socket.off('newMessage', handleNewMessage)
+      socket.off('messageUpdated', handleMessageUpdated)
+      socket.off('messageDeleted', handleMessageDeleted)
+    }
+  }, [socket, conversationId, queryClient])
 
   const sendMutation = useMutation({
     mutationFn: async (content: string) => {
@@ -89,6 +140,27 @@ export function useConversations(conversationId?: string) {
     },
   })
 
+  const editMutation = useMutation({
+    mutationFn: async ({ messageId, content }: { messageId: string; content: string }) => {
+      if (!conversationId) throw new Error('Aucune conversation active')
+      const { data } = await conversationsApi.editMessage(conversationId, messageId, content)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages', conversationId] })
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: async (messageId: string) => {
+      if (!conversationId) throw new Error('Aucune conversation active')
+      await conversationsApi.deleteMessage(conversationId, messageId)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['messages', conversationId] })
+    },
+  })
+
   return {
     conversations: inboxQuery.data || [],
     isLoadingInbox: inboxQuery.isLoading,
@@ -113,5 +185,10 @@ export function useConversations(conversationId?: string) {
 
     refuserCreneau: refuserCreneauMutation.mutateAsync,
     isRefusingCreneau: refuserCreneauMutation.isPending,
+
+    editMessage: editMutation.mutateAsync,
+    isEditingMessage: editMutation.isPending,
+    deleteMessage: deleteMutation.mutateAsync,
+    isDeletingMessage: deleteMutation.isPending,
   }
 }

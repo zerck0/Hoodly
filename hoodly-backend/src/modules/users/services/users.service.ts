@@ -8,6 +8,8 @@ import { Model } from 'mongoose';
 import { User, UserDocument } from '../schemas/user.schema';
 import { UserResponseDto } from '../dto/user-response.dto';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
+import { TransactionsService } from '../../transactions/services/transactions.service';
+import { TransactionType } from '../../transactions/schemas/transaction.schema';
 
 interface ISyncPayload {
   email: string;
@@ -17,26 +19,57 @@ interface ISyncPayload {
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private transactionsService: TransactionsService,
+  ) {}
 
   async syncFromAuth0(
     auth0Id: string,
     payload: ISyncPayload,
   ): Promise<UserResponseDto> {
     try {
-      const user = await this.userModel.findOneAndUpdate(
-        { auth0Id },
-        {
-          $set: {
-            email: payload.email,
-            ...(payload.name && { name: payload.name }),
-            ...(payload.picture && { picture: payload.picture }),
+      let user = await this.userModel.findOne({ auth0Id });
+      const isNewUser = !user;
+
+      if (isNewUser) {
+        user = new this.userModel({
+          auth0Id,
+          email: payload.email,
+          ...(payload.name && { name: payload.name }),
+          ...(payload.picture && { picture: payload.picture }),
+          role: 'user',
+          isActive: true,
+          points: 100,
+        });
+        await user.save();
+
+        try {
+          await this.transactionsService.create(
+            null,
+            String(user._id),
+            100,
+            TransactionType.WELCOME_GRANT,
+            'Cadeau de Bienvenue Hoodly',
+          );
+        } catch {
+          console.warn('Could not save welcome transaction');
+        }
+      } else {
+        user = await this.userModel.findOneAndUpdate(
+          { auth0Id },
+          {
+            $set: {
+              email: payload.email,
+              ...(payload.name && { name: payload.name }),
+              ...(payload.picture && { picture: payload.picture }),
+            },
           },
-          $setOnInsert: { role: 'user', isActive: true },
-        },
-        { upsert: true, returnDocument: 'after' },
-      );
-      return this.toDto(user);
+          { returnDocument: 'after' },
+        );
+      }
+
+      return this.toDto(user!);
     } catch {
       throw new InternalServerErrorException(
         'Erreur lors de la synchronisation du profil',
@@ -131,6 +164,38 @@ export class UsersService {
     );
     if (!user) throw new NotFoundException('Utilisateur introuvable');
     return this.toDto(user);
+  }
+
+  async findVoisins(
+    currentUserId: string,
+    currentUserZoneId: string | undefined,
+    search?: string,
+    global = false,
+  ) {
+    const query: Record<string, any> = {
+      _id: { $ne: currentUserId },
+      isActive: true,
+    };
+
+    if (!global && currentUserZoneId) {
+      query.zoneId = currentUserZoneId;
+    }
+
+    if (search) {
+      query.$or = [
+        { email: { $regex: search, $options: 'i' } },
+        { name: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const users = await this.userModel.find(query).limit(20).lean();
+    return users.map((u) => ({
+      id: String(u._id),
+      name: u.name,
+      email: u.email,
+      picture: u.picture,
+      zoneId: u.zoneId ? String(u.zoneId) : undefined,
+    }));
   }
 
   private toDto(user: UserDocument): UserResponseDto {

@@ -25,4 +25,3 @@ describe('EventsController', () => {
     expect(controller).toBeDefined();
   });
 });
-

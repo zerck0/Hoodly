@@ -55,7 +55,12 @@ export class PostsController {
     )
     files?: Express.Multer.File[],
   ) {
-    return this.postsService.createPost(zoneId, user.userId, createPostDto, files);
+    return this.postsService.createPost(
+      zoneId,
+      user.userId,
+      createPostDto,
+      files,
+    );
   }
 
   @Throttle({ default: { limit: 60, ttl: 60000 } })

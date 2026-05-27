@@ -49,6 +49,14 @@ export class Incident {
   @Prop({ type: Types.ObjectId, ref: 'Zone' })
   zoneId?: Types.ObjectId;
 
+  @ApiPropertyOptional({ description: "ID de l'utilisateur assigné" })
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  assignedTo?: Types.ObjectId;
+
+  @ApiPropertyOptional({ description: 'Commentaire de résolution' })
+  @Prop()
+  resolutionComment?: string;
+
   @ApiProperty({ description: 'Date de création' })
   createdAt?: Date;
 

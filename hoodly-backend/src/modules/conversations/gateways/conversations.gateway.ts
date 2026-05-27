@@ -97,8 +97,7 @@ export class ConversationsGateway
   async handleConnection(client: Socket) {
     try {
       let token =
-        client.handshake.auth?.token ||
-        client.handshake.headers?.authorization;
+        client.handshake.auth?.token || client.handshake.headers?.authorization;
 
       if (!token) {
         client.disconnect(true);

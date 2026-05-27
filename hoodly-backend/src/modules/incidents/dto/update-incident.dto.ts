@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsMongoId } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IncidentStatus } from '../enums/incident-status.enum';
 import { IncidentPriority } from '../enums/incident-priority.enum';
@@ -28,4 +28,14 @@ export class UpdateIncidentDto {
   @IsOptional()
   @IsEnum(IncidentPriority)
   priorite?: IncidentPriority;
+
+  @ApiPropertyOptional({ description: "ID de l'utilisateur assigné" })
+  @IsOptional()
+  @IsMongoId()
+  assignedTo?: string;
+
+  @ApiPropertyOptional({ description: 'Commentaire de résolution' })
+  @IsOptional()
+  @IsString()
+  resolutionComment?: string;
 }

@@ -44,4 +44,14 @@ export class CreateIncidentDto {
   @IsOptional()
   @IsMongoId()
   zoneId?: string;
+
+  @ApiPropertyOptional({ description: "ID de l'utilisateur assigné" })
+  @IsOptional()
+  @IsMongoId()
+  assignedTo?: string;
+
+  @ApiPropertyOptional({ description: 'Commentaire de résolution' })
+  @IsOptional()
+  @IsString()
+  resolutionComment?: string;
 }

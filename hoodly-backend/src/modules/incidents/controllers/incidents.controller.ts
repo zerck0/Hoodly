@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -8,8 +17,18 @@ import {
 import { IncidentsService } from '../services/incidents.service';
 import { Incident } from '../schemas/incident.schema';
 import { JwtGuard } from '../../../core/auth/guards/jwt.guard';
+import { RolesGuard } from '../../../core/auth/guards/roles.guard';
+import { Roles } from '../../../core/auth/decorators/roles.decorator';
+import { CurrentUser } from '../../../core/auth/decorators/current-user.decorator';
+import { UserRole } from '../../users/schemas/user.schema';
 import { CreateIncidentDto } from '../dto/create-incident.dto';
 import { UpdateIncidentStatutDto } from '../dto/update-incident-statut.dto';
+
+interface AuthenticatedUser {
+  userId: string;
+  role: UserRole;
+  sub: string;
+}
 
 @ApiTags('Incidents')
 @ApiBearerAuth()
@@ -28,12 +47,18 @@ export class IncidentsController {
   @Post()
   @ApiOperation({ summary: 'Créer un incident' })
   @ApiResponse({ status: 201, description: 'Incident créé' })
-  create(@Body() body: CreateIncidentDto): Promise<Incident> {
+  create(
+    @Body() body: CreateIncidentDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<Incident> {
+    body.signaledPar = user.userId;
     return this.incidentsService.create(body);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Mettre à jour le statut d\'un incident' })
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiOperation({ summary: "Mettre à jour le statut d'un incident" })
   @ApiResponse({ status: 200, description: 'Incident mis à jour' })
   updateStatut(
     @Param('id') id: string,

@@ -13,17 +13,37 @@ export class IncidentsService {
 
   async findAll(zoneId?: string): Promise<Incident[]> {
     const filter = zoneId ? { zoneId: new Types.ObjectId(zoneId) } : {};
-    return this.incidentModel.find(filter).lean().exec() as unknown as Incident[];
+    return this.incidentModel
+      .find(filter)
+      .lean()
+      .exec() as unknown as Incident[];
   }
 
   async create(data: CreateIncidentDto): Promise<Incident> {
-    const incident = new this.incidentModel(data);
+    const incidentData: any = { ...data };
+    if (data.assignedTo) {
+      incidentData.assignedTo = new Types.ObjectId(data.assignedTo);
+    }
+    const incident = new this.incidentModel(incidentData);
     return incident.save();
   }
 
-  async updateStatut(id: string, dto: UpdateIncidentStatutDto): Promise<Incident> {
+  async updateStatut(
+    id: string,
+    dto: UpdateIncidentStatutDto,
+  ): Promise<Incident> {
+    const updateData: any = { statut: dto.statut };
+    if (dto.assignedTo !== undefined) {
+      updateData.assignedTo = dto.assignedTo
+        ? new Types.ObjectId(dto.assignedTo)
+        : null;
+    }
+    if (dto.resolutionComment !== undefined) {
+      updateData.resolutionComment = dto.resolutionComment;
+    }
+
     const updated = await this.incidentModel
-      .findByIdAndUpdate(id, { statut: dto.statut }, { returnDocument: 'after' })
+      .findByIdAndUpdate(id, updateData, { returnDocument: 'after' })
       .lean()
       .exec();
     if (!updated) throw new NotFoundException(`Incident ${id} introuvable`);

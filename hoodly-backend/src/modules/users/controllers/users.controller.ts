@@ -40,8 +40,14 @@ export class UsersController {
   @Get('me')
   @Roles(UserRole.ADMIN, UserRole.MODERATOR)
   @ApiOperation({ summary: 'Profil du modérateur connecté' })
-  @ApiResponse({ status: 200, description: 'Profil utilisateur', type: UserResponseDto })
-  async getMe(@CurrentUser() user: Record<string, unknown>): Promise<UserResponseDto> {
+  @ApiResponse({
+    status: 200,
+    description: 'Profil utilisateur',
+    type: UserResponseDto,
+  })
+  async getMe(
+    @CurrentUser() user: Record<string, unknown>,
+  ): Promise<UserResponseDto> {
     return this.usersService.getProfileByAuth0Id(user.sub as string);
   }
 

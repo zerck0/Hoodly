@@ -14,6 +14,15 @@ import {
   FileTypeValidator,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { GetFeedDto } from './dto/get-feed.dto';
@@ -22,12 +31,18 @@ import { JwtGuard } from '../../core/auth/guards/jwt.guard';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 
+@ApiTags('Posts')
+@ApiBearerAuth()
 @UseGuards(JwtGuard, ThrottlerGuard)
 @Controller()
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Get('zones/:zoneId/posts')
+  @ApiOperation({ summary: "Récupérer le flux de publications d'une zone" })
+  @ApiParam({ name: 'zoneId', description: 'ID de la zone' })
+  @ApiResponse({ status: 200, description: 'Flux récupéré avec succès' })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
   async getFeed(@Param('zoneId') zoneId: string, @Query() query: GetFeedDto) {
     return this.postsService.getFeedByZone(
       zoneId,
@@ -40,6 +55,15 @@ export class PostsController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('zones/:zoneId/posts')
   @UseInterceptors(FilesInterceptor('files', 5))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Créer une publication dans une zone' })
+  @ApiParam({ name: 'zoneId', description: 'ID de la zone' })
+  @ApiResponse({ status: 201, description: 'Publication créée avec succès' })
+  @ApiResponse({
+    status: 400,
+    description: 'Format de fichier ou données invalides',
+  })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
   async createPost(
     @Param('zoneId') zoneId: string,
     @Body() createPostDto: CreatePostDto,
@@ -65,11 +89,34 @@ export class PostsController {
 
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @Post('posts/:postId/like')
+  @ApiOperation({ summary: "Liker ou retirer le like d'une publication" })
+  @ApiParam({ name: 'postId', description: 'ID de la publication' })
+  @ApiResponse({ status: 200, description: 'Statut du like modifié' })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 404, description: 'Publication non trouvée' })
   async toggleLike(@Param('postId') postId: string, @CurrentUser() user: any) {
     return this.postsService.toggleLike(postId, user.userId);
   }
 
   @Get('posts/:postId/comments')
+  @ApiOperation({ summary: "Récupérer les commentaires d'une publication" })
+  @ApiParam({ name: 'postId', description: 'ID de la publication' })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    description: 'Curseur pour la pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Nombre maximum de commentaires à retourner',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Commentaires récupérés avec succès',
+  })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 404, description: 'Publication non trouvée' })
   async getComments(
     @Param('postId') postId: string,
     @Query('cursor') cursor?: string,
@@ -84,6 +131,11 @@ export class PostsController {
 
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @Post('posts/:postId/comments')
+  @ApiOperation({ summary: 'Ajouter un commentaire à une publication' })
+  @ApiParam({ name: 'postId', description: 'ID de la publication' })
+  @ApiResponse({ status: 201, description: 'Commentaire ajouté avec succès' })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 404, description: 'Publication non trouvée' })
   async addComment(
     @Param('postId') postId: string,
     @Body() createCommentDto: CreateCommentDto,
@@ -93,11 +145,26 @@ export class PostsController {
   }
 
   @Delete('posts/:postId')
+  @ApiOperation({ summary: 'Supprimer une publication' })
+  @ApiParam({ name: 'postId', description: 'ID de la publication' })
+  @ApiResponse({
+    status: 200,
+    description: 'Publication supprimée avec succès',
+  })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 403, description: 'Action non autorisée' })
+  @ApiResponse({ status: 404, description: 'Publication non trouvée' })
   async deletePost(@Param('postId') postId: string, @CurrentUser() user: any) {
     return this.postsService.deletePost(postId, user.userId);
   }
 
   @Delete('comments/:commentId')
+  @ApiOperation({ summary: 'Supprimer un commentaire' })
+  @ApiParam({ name: 'commentId', description: 'ID du commentaire' })
+  @ApiResponse({ status: 200, description: 'Commentaire supprimé avec succès' })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 403, description: 'Action non autorisée' })
+  @ApiResponse({ status: 404, description: 'Commentaire non trouvé' })
   async deleteComment(
     @Param('commentId') commentId: string,
     @CurrentUser() user: any,

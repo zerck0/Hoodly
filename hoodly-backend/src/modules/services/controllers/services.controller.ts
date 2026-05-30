@@ -21,12 +21,13 @@ import { ServicesService } from '../services/services.service';
 import { CreateServiceDto } from '../dto/create-service.dto';
 import { UpdateServiceDto } from '../dto/update-service.dto';
 import { JwtGuard } from '../../../core/auth/guards/jwt.guard';
+import { VerifiedGuard } from '../../../core/auth/guards/verified.guard';
 import { CurrentUser } from '../../../core/auth/decorators/current-user.decorator';
 import { MongoIdValidationPipe } from '../../../shared/pipes/mongo-id-validation.pipe';
 
 @ApiTags('Services')
 @ApiBearerAuth()
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, VerifiedGuard)
 @Controller('services')
 export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}

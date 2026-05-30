@@ -10,7 +10,8 @@ function DashboardPage() {
   const { user, isRefreshing, refreshProfile } = useUser()
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const isZoneActive = user?.zoneStatut === ZoneMembershipStatus.ACTIVE && user?.zoneId;
+  const hasZone = !!user?.zoneId;
+  const isVerified = user?.zoneStatut === ZoneMembershipStatus.ACTIVE;
 
   return (
     <div className="font-sans flex flex-col h-full bg-slate-50 min-h-screen pb-12">
@@ -22,7 +23,7 @@ function DashboardPage() {
       />
 
       <main className="flex-1 max-w-3xl w-full mx-auto p-4 md:p-6 lg:p-8">
-        {!isZoneActive ? (
+        {!hasZone ? (
           <div className="rounded-2xl bg-white p-12 text-center shadow-sm border border-gray-100">
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
               Bienvenue sur Hoodly !
@@ -33,7 +34,7 @@ function DashboardPage() {
           </div>
         ) : (
           <>
-            <CreatePostForm zoneId={user.zoneId!} />
+            {isVerified && <CreatePostForm zoneId={user.zoneId!} />}
             <Feed zoneId={user.zoneId!} />
           </>
         )}

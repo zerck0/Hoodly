@@ -38,6 +38,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         role: user.role,
         userId: user.id,
         zoneId: user.zoneId,
+        zoneStatut: user.zoneStatut,
       };
     } catch {
       return payload;

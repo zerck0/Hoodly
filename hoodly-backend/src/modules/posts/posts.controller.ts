@@ -28,6 +28,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { GetFeedDto } from './dto/get-feed.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { JwtGuard } from '../../core/auth/guards/jwt.guard';
+import { VerifiedGuard } from '../../core/auth/guards/verified.guard';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 
@@ -54,6 +55,7 @@ export class PostsController {
 
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('zones/:zoneId/posts')
+  @UseGuards(VerifiedGuard)
   @UseInterceptors(FilesInterceptor('files', 5))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Créer une publication dans une zone' })
@@ -89,6 +91,7 @@ export class PostsController {
 
   @Throttle({ default: { limit: 60, ttl: 60000 } })
   @Post('posts/:postId/like')
+  @UseGuards(VerifiedGuard)
   @ApiOperation({ summary: "Liker ou retirer le like d'une publication" })
   @ApiParam({ name: 'postId', description: 'ID de la publication' })
   @ApiResponse({ status: 200, description: 'Statut du like modifié' })
@@ -131,6 +134,7 @@ export class PostsController {
 
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @Post('posts/:postId/comments')
+  @UseGuards(VerifiedGuard)
   @ApiOperation({ summary: 'Ajouter un commentaire à une publication' })
   @ApiParam({ name: 'postId', description: 'ID de la publication' })
   @ApiResponse({ status: 201, description: 'Commentaire ajouté avec succès' })
@@ -145,6 +149,7 @@ export class PostsController {
   }
 
   @Delete('posts/:postId')
+  @UseGuards(VerifiedGuard)
   @ApiOperation({ summary: 'Supprimer une publication' })
   @ApiParam({ name: 'postId', description: 'ID de la publication' })
   @ApiResponse({
@@ -159,6 +164,7 @@ export class PostsController {
   }
 
   @Delete('comments/:commentId')
+  @UseGuards(VerifiedGuard)
   @ApiOperation({ summary: 'Supprimer un commentaire' })
   @ApiParam({ name: 'commentId', description: 'ID du commentaire' })
   @ApiResponse({ status: 200, description: 'Commentaire supprimé avec succès' })

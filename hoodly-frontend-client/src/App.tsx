@@ -14,6 +14,7 @@ import AppLayout from './components/shared/AppLayout'
 import ProtectedRoute from './components/shared/ProtectedRoute'
 import OnboardingGuard from './components/shared/OnboardingGuard'
 import DashboardGuard from './components/shared/DashboardGuard'
+import VerifiedRouteGuard from './components/shared/VerifiedRouteGuard'
 import { useAuthSync } from './hooks/useAuthSync'
 
 function App() {
@@ -55,11 +56,14 @@ function App() {
         }
       >
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/services" element={<ServicesPage />} />
-        <Route path="/services/nouveau" element={<NewServicePage />} />
-        <Route path="/messages" element={<MessagesPage />} />
-        <Route path="/points" element={<PointsPage />} />
-        <Route path="/planning" element={<PlanningPage />} />
+
+        <Route element={<VerifiedRouteGuard />}>
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/services/nouveau" element={<NewServicePage />} />
+          <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/points" element={<PointsPage />} />
+          <Route path="/planning" element={<PlanningPage />} />
+        </Route>
       </Route>
     </Routes>
   )

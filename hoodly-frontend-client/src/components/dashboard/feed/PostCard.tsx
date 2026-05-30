@@ -12,6 +12,8 @@ import type { Post } from '../../../types/post.types'
 import { PostType } from '../../../types/post.types'
 import { CommentSection } from './CommentSection'
 import { toast } from 'sonner'
+import { useAuthStore } from '../../../stores/auth.store'
+import { ZoneMembershipStatus } from '../../../types/status.enum'
 
 interface PostCardProps {
   post: Post
@@ -26,7 +28,10 @@ const typeConfig = {
 }
 
 export function PostCard({ post, currentUserId }: PostCardProps) {
-  const [isLiked, setIsLiked] = useState(() => 
+  const user = useAuthStore((state) => state.user)
+  const isVerified = user?.zoneStatut === ZoneMembershipStatus.ACTIVE
+
+  const [isLiked, setIsLiked] = useState(() =>
     currentUserId ? post.likes.includes(currentUserId) : false
   )
   const [likesCount, setLikesCount] = useState(post.likes.length)
@@ -106,17 +111,17 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
           </Badge>
         </div>
       </CardHeader>
-      
+
       <CardContent className="p-4 pt-2">
         <p className="whitespace-pre-wrap text-sm leading-relaxed">{post.content}</p>
-        
+
         {post.media && post.media.length > 0 && (
           <div className={`mt-3 grid gap-2 ${post.media.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {post.media.map((url, i) => (
-              <img 
-                key={i} 
-                src={url} 
-                alt="Post media" 
+              <img
+                key={i}
+                src={url}
+                alt="Post media"
                 className="rounded-md object-cover w-full max-h-64 cursor-zoom-in hover:brightness-95 transition"
                 onClick={() => setActiveImage(url)}
                 loading="lazy"
@@ -127,18 +132,24 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
       </CardContent>
 
       <CardFooter className="p-4 pt-0 flex gap-4">
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           className={`flex items-center gap-1.5 ${isLiked ? 'text-red-500 hover:text-red-600' : 'text-muted-foreground'}`}
-          onClick={() => toggleLike()}
+          onClick={() => {
+            if (!isVerified) {
+              toast.error("Veuillez faire vérifier votre compte avec vos justificatifs pour interagir avec les publications.")
+              return
+            }
+            toggleLike()
+          }}
         >
           <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
           <span>{likesCount}</span>
         </Button>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           className={`flex items-center gap-1.5 ${isCommentsExpanded ? 'text-primary' : 'text-muted-foreground'}`}
           onClick={() => setIsCommentsExpanded((prev) => !prev)}
         >
@@ -147,7 +158,7 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
         </Button>
       </CardFooter>
 
-      <div 
+      <div
         className={`grid transition-all duration-300 ease-in-out ${
           isCommentsExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0 overflow-hidden'
         }`}
@@ -155,10 +166,10 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
         <div className="overflow-hidden">
           {isCommentsExpanded && (
             <CardContent className="p-4 pt-0">
-              <CommentSection 
-                postId={post._id} 
-                onCommentAdded={() => setCommentsCount((prev) => prev + 1)} 
-                onCommentDeleted={() => setCommentsCount((prev) => prev - 1)} 
+              <CommentSection
+                postId={post._id}
+                onCommentAdded={() => setCommentsCount((prev) => prev + 1)}
+                onCommentDeleted={() => setCommentsCount((prev) => prev - 1)}
               />
             </CardContent>
           )}
@@ -166,13 +177,13 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
       </div>
 
       {activeImage && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 cursor-zoom-out"
           onClick={() => setActiveImage(null)}
         >
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="absolute top-4 right-4 text-white hover:bg-white/10 rounded-full"
             onClick={(e) => {
               e.stopPropagation()
@@ -181,9 +192,9 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
           >
             <X className="h-6 w-6" />
           </Button>
-          <img 
-            src={activeImage} 
-            alt="Aperçu grand écran" 
+          <img
+            src={activeImage}
+            alt="Aperçu grand écran"
             className="max-w-full max-h-[90vh] object-contain rounded-md animate-in zoom-in-95 duration-200"
           />
         </div>

@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 
 import { postsApi } from '../../../services/api/posts'
 import { useUser } from '../../../hooks/useUser'
+import { ZoneMembershipStatus } from '../../../types/status.enum'
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar'
 import { Button } from '../../ui/button'
 import { Input } from '../../ui/input'
@@ -22,6 +23,7 @@ interface CommentSectionProps {
 
 export function CommentSection({ postId, onCommentAdded, onCommentDeleted }: CommentSectionProps) {
   const { user } = useUser()
+  const isVerified = user?.zoneStatut === ZoneMembershipStatus.ACTIVE
   const queryClient = useQueryClient()
   const [content, setContent] = useState('')
 
@@ -115,17 +117,17 @@ export function CommentSection({ postId, onCommentAdded, onCommentDeleted }: Com
         </Avatar>
         <div className="flex-1 flex gap-2">
           <Input
-            placeholder="Écrire un commentaire..."
+            placeholder={isVerified ? "Écrire un commentaire..." : "Faites vérifier votre compte pour commenter..."}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !isVerified}
             className="h-9 text-sm rounded-full bg-slate-50 border-slate-200 focus-visible:ring-1"
           />
-          <Button 
-            type="submit" 
-            size="icon" 
-            className="h-9 w-9 rounded-full shrink-0" 
-            disabled={!content.trim() || isSubmitting}
+          <Button
+            type="submit"
+            size="icon"
+            className="h-9 w-9 rounded-full shrink-0"
+            disabled={!content.trim() || isSubmitting || !isVerified}
           >
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />

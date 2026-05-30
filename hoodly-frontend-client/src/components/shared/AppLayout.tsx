@@ -1,6 +1,8 @@
 import { Outlet, NavLink, Link } from "react-router-dom"
 import { useAuth0 } from "@auth0/auth0-react"
 import { useUser } from "../../hooks/useUser"
+import { ZoneMembershipStatus } from "../../types/status.enum"
+import { toast } from "sonner"
 import {
   Home,
   Users,
@@ -51,7 +53,7 @@ const items = [
 export default function AppLayout() {
   const { logout } = useAuth0()
   const { user } = useUser()
-
+  const isVerified = user?.zoneStatut === ZoneMembershipStatus.ACTIVE
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-[#f5f3ed]">
@@ -72,25 +74,54 @@ export default function AppLayout() {
               <SidebarGroupContent>
                 <SidebarMenu className="px-4 gap-2">
                   {(() => {
-                    return items.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild tooltip={item.title}>
-                          <NavLink
-                            to={item.url}
-                            className={({ isActive }) =>
-                              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                                isActive
-                                  ? "bg-[#e9eaf6] text-[#2c308e] font-semibold shadow-sm"
-                                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                              }`
-                            }
-                          >
-                            <item.icon className="h-5 w-5" />
-                            <span>{item.title}</span>
-                          </NavLink>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))
+                    return items.map((item) => {
+                      const isRestricted = !isVerified && item.url !== "/dashboard"
+
+                      return (
+                        <SidebarMenuItem key={item.title}>
+                          <SidebarMenuButton asChild tooltip={item.title}>
+                            <NavLink
+                              to={isRestricted ? "#" : item.url}
+                              onClick={(e) => {
+                                if (isRestricted) {
+                                  e.preventDefault()
+
+                                  let msg = "Veuillez faire vérifier votre compte pour accéder à cette fonctionnalité."
+                                  if (item.url === "/messages") {
+                                    msg = "Vérifiez votre compte pour pouvoir communiquer avec vos voisins."
+                                  } else if (item.url === "/services") {
+                                    msg = "Vérifiez votre compte pour pouvoir accéder aux services de quartier."
+                                  } else if (item.url === "/planning") {
+                                    msg = "Vérifiez votre compte pour pouvoir accéder à l'agenda de quartier."
+                                  } else if (item.url === "/incidents") {
+                                    msg = "Vérifiez votre compte pour pouvoir accéder au signalement d'incidents."
+                                  } else if (item.url === "/map") {
+                                    msg = "Vérifiez votre compte pour pouvoir accéder à la carte de quartier."
+                                  }
+
+                                  toast.error(msg, {
+                                    id: `restricted-${item.title}`,
+                                    duration: 4000,
+                                  })
+                                }
+                              }}
+                              className={({ isActive }) =>
+                                `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 w-full ${
+                                  isRestricted ? "cursor-not-allowed text-[#2c308e] hover:bg-gray-100" : ""
+                                } ${
+                                  isActive && !isRestricted
+                                    ? "bg-[#e9eaf6] text-[#2c308e] font-semibold shadow-sm"
+                                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                                }`
+                              }
+                            >
+                              <item.icon className="h-5 w-5" />
+                              <span>{item.title}</span>
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      )
+                    })
                   })()}
                 </SidebarMenu>
               </SidebarGroupContent>
@@ -111,9 +142,15 @@ export default function AppLayout() {
                     <p className="truncate text-sm font-semibold text-gray-900">
                       {user?.name || "Habitant"}
                     </p>
-                    <p className="truncate text-xs font-semibold text-[#2c308e] flex items-center gap-1">
-                      🪙 {user?.points ?? 100} pts
-                    </p>
+                    {isVerified ? (
+                      <p className="truncate text-xs font-semibold text-[#2c308e] flex items-center gap-1">
+                        🪙 {user?.points ?? 100} pts
+                      </p>
+                    ) : (
+                      <p className="truncate text-[10px] font-bold text-amber-600 flex items-center gap-1">
+                        ⚠️ Compte non vérifié
+                      </p>
+                    )}
                   </div>
                   <Settings className="h-4 w-4 text-gray-400" />
                 </button>

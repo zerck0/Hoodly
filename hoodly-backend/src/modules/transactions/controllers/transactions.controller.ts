@@ -6,12 +6,13 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { JwtGuard } from '../../../core/auth/guards/jwt.guard';
+import { VerifiedGuard } from '../../../core/auth/guards/verified.guard';
 import { CurrentUser } from '../../../core/auth/decorators/current-user.decorator';
 import { TransactionsService } from '../services/transactions.service';
 
 @ApiTags('Transactions')
 @ApiBearerAuth()
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, VerifiedGuard)
 @Controller('transactions')
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}

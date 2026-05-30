@@ -16,6 +16,7 @@ import {
 } from '@nestjs/swagger';
 import { ConversationsService } from '../services/conversations.service';
 import { JwtGuard } from '../../../core/auth/guards/jwt.guard';
+import { VerifiedGuard } from '../../../core/auth/guards/verified.guard';
 import { CurrentUser } from '../../../core/auth/decorators/current-user.decorator';
 import { MongoIdValidationPipe } from '../../../shared/pipes/mongo-id-validation.pipe';
 import { CreateConversationDto } from '../dto/create-conversation.dto';
@@ -24,7 +25,7 @@ import { ProposeCreneauDto } from '../dto/propose-creneau.dto';
 
 @ApiTags('Conversations')
 @ApiBearerAuth()
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, VerifiedGuard)
 @Controller('conversations')
 export class ConversationsController {
   constructor(private readonly conversationsService: ConversationsService) {}

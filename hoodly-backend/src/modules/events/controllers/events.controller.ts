@@ -23,11 +23,12 @@ import { CreateEventDto } from '../dto/create-event.dto';
 import { UpdateEventDto } from '../dto/update-event.dto';
 import { EventResponseDto } from '../dto/event-response.dto';
 import { JwtGuard } from '../../../core/auth/guards/jwt.guard';
+import { VerifiedGuard } from '../../../core/auth/guards/verified.guard';
 import { MongoIdValidationPipe } from '../../../shared/pipes/mongo-id-validation.pipe';
 
 @ApiTags('Events')
 @ApiBearerAuth()
-@UseGuards(JwtGuard)
+@UseGuards(JwtGuard, VerifiedGuard)
 @Controller('events')
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}

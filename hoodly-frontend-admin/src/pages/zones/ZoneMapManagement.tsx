@@ -75,8 +75,8 @@ export default function ZoneMapManagement() {
       setMapReady(true);
     });
 
-    m.on('draw.create', (e) => setNewZonePolygon(e.features[0].geometry));
-    m.on('draw.update', (e) => setNewZonePolygon(e.features[0].geometry));
+    m.on('draw.create', (e: any) => setNewZonePolygon(e.features[0].geometry));
+    m.on('draw.update', (e: any) => setNewZonePolygon(e.features[0].geometry));
     m.on('draw.delete', () => setNewZonePolygon(null));
 
     return () => {
@@ -132,7 +132,7 @@ export default function ZoneMapManagement() {
 
     const activeZones = zonesData?.zones?.filter(z => z.statut === 'active' && z.polygone) || [];
     const features = activeZones.map((z) => ({
-      type: 'Feature',
+      type: 'Feature' as const,
       properties: {
         id: z.id,
         nom: z.nom,

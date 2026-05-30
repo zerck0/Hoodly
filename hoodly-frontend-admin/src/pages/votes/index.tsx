@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '../../components/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Card, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
@@ -18,7 +18,6 @@ import {
 } from 'lucide-react';
 import { votesApi } from '../../services/api/votes';
 import { zonesApi } from '../../services/api/zones';
-import type { IVoteResponse } from '../../types/vote.types';
 import { toast } from 'sonner';
 
 export default function VotesPage() {
@@ -168,7 +167,7 @@ export default function VotesPage() {
                     <div className="flex gap-2 shrink-0">
                       {isActive && (
                         <Button
-                          size="xs"
+                          size="sm"
                           variant="outline"
                           className="border-gray-850 hover:bg-gray-800 text-[10px] h-7 px-2.5 font-bold"
                           onClick={() => id && handleClose(id)}
@@ -179,7 +178,7 @@ export default function VotesPage() {
                         </Button>
                       )}
                       <Button
-                        size="xs"
+                        size="sm"
                         variant="ghost"
                         className="text-gray-500 hover:text-red-400 hover:bg-red-500/10 text-[10px] h-7 px-2.5 font-bold"
                         onClick={() => id && handleDelete(id)}

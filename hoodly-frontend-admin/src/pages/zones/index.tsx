@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MapPin, Plus, Search, FileText } from 'lucide-react';
+import { MapPin, Search, FileText } from 'lucide-react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { zonesApi } from '@/services/api/zones';
 import type { IZoneResponse } from '@/types/zone.types';
-import CreateZoneDialog from './CreateZoneDialog';
 import { useNavigate } from 'react-router-dom';
 
 export default function ZonesPage() {
@@ -16,7 +15,6 @@ export default function ZonesPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['zones', page, search],
@@ -59,11 +57,7 @@ export default function ZonesPage() {
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => navigate('/zones/map')}>
               <FileText className="h-4 w-4 mr-2" />
-              Radar Ouvertures
-            </Button>
-            <Button onClick={() => setCreateDialogOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nouveau Quartier
+              Ouverture & Tracé
             </Button>
           </div>
         </div>
@@ -163,11 +157,6 @@ export default function ZonesPage() {
           </CardContent>
         </Card>
       </div>
-
-      <CreateZoneDialog
-        open={createDialogOpen}
-        onClose={() => setCreateDialogOpen(false)}
-      />
     </DashboardLayout>
   );
 }

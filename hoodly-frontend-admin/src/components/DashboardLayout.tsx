@@ -9,7 +9,6 @@ import {
   Users,
   AlertTriangle,
   CalendarDays,
-  Wrench,
   Vote,
   LogOut,
   MapPin,
@@ -17,15 +16,14 @@ import {
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-  { label: 'Utilisateurs', icon: Users, path: '/users' },
-  { label: 'Incidents', icon: AlertTriangle, path: '/incidents' },
-  { label: 'Catalogue Quartiers', icon: MapPin, path: '/zones' },
-  { label: 'Radar Ouvertures', icon: FileText, path: '/zones/map' },
-  { label: 'Vérification Résidents', icon: Users, path: '/zones/memberships' },
-  { label: 'Événements', icon: CalendarDays, path: '/events' },
-  { label: 'Services', icon: Wrench, path: '/services' },
-  { label: 'Votes', icon: Vote, path: '/votes' },
+  { label: 'Tableau de bord', icon: LayoutDashboard, path: '/dashboard' },
+  { label: 'Gestion des Utilisateurs', icon: Users, path: '/users' },
+  { label: 'Modération Incidents', icon: AlertTriangle, path: '/incidents' },
+  { label: 'Liste des Quartiers', icon: MapPin, path: '/zones' },
+  { label: 'Ouverture & Tracé', icon: FileText, path: '/zones/map' },
+  { label: 'Validation Adhésions', icon: Users, path: '/zones/memberships' },
+  { label: 'Activités', icon: CalendarDays, path: '/activities' },
+  { label: 'Sondages & Consultations', icon: Vote, path: '/votes' },
 ];
 
 

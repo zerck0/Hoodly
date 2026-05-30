@@ -7,6 +7,9 @@ import { setTokenGetter } from './lib/axios';
 import LoginPage from './pages/login';
 import DashboardPage from './pages/dashboard';
 import UsersPage from './pages/users';
+import IncidentsPage from './pages/incidents';
+import ActivitiesPage from './pages/activities';
+import VotesPage from './pages/votes';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import ZonesPage from './pages/zones';
@@ -79,6 +82,16 @@ export default function App() {
             }
           />
           <Route
+            path="/incidents"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <IncidentsPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/zones"
             element={
               <ProtectedRoute>
@@ -104,6 +117,26 @@ export default function App() {
               <ProtectedRoute>
                 <AdminRoute>
                   <MembershipsPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activities"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <ActivitiesPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/votes"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <VotesPage />
                 </AdminRoute>
               </ProtectedRoute>
             }

@@ -7,7 +7,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { zonesApi } from '@/services/api/zones';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -35,7 +34,7 @@ export default function ZoneMapManagement() {
     queryKey: ['zones', 'all'],
     queryFn: () => zonesApi.getAll({ limit: 1000 })
   });
-  const { data: requestsData, isLoading: isLoadingRequests } = useQuery({
+  const { data: requestsData } = useQuery({
     queryKey: ['zone-requests'],
     queryFn: () => zonesApi.getRequests()
   });
@@ -127,6 +126,76 @@ export default function ZoneMapManagement() {
     }
   }, [mapReady, requestsData, selectedRequestIds, zonesData]);
 
+  useEffect(() => {
+    if (!mapReady || !map.current) return;
+    const m = map.current;
+
+    const activeZones = zonesData?.zones?.filter(z => z.statut === 'active' && z.polygone) || [];
+    const features = activeZones.map((z) => ({
+      type: 'Feature',
+      properties: {
+        id: z.id,
+        nom: z.nom,
+        ville: z.ville,
+      },
+      geometry: z.polygone as any,
+    }));
+
+    const geojson: GeoJSON.FeatureCollection = {
+      type: 'FeatureCollection',
+      features,
+    };
+
+    if (m.getSource('existing-zones')) {
+      const source = m.getSource('existing-zones') as mapboxgl.GeoJSONSource;
+      source.setData(geojson);
+    } else {
+      m.addSource('existing-zones', {
+        type: 'geojson',
+        data: geojson,
+      });
+
+      m.addLayer({
+        id: 'existing-zones-fill',
+        type: 'fill',
+        source: 'existing-zones',
+        paint: {
+          'fill-color': '#6366f1',
+          'fill-opacity': 0.12,
+        },
+      });
+
+      m.addLayer({
+        id: 'existing-zones-stroke',
+        type: 'line',
+        source: 'existing-zones',
+        paint: {
+          'line-color': '#6366f1',
+          'line-width': 1.5,
+          'line-dasharray': [3, 3],
+        },
+      });
+
+      m.addLayer({
+        id: 'existing-zones-labels',
+        type: 'symbol',
+        source: 'existing-zones',
+        layout: {
+          'text-field': ['get', 'nom'],
+          'text-size': 11,
+          'text-offset': [0, 0],
+          'text-anchor': 'center',
+          'text-max-width': 8,
+        },
+        paint: {
+          'text-color': '#a5b4fc',
+          'text-halo-color': '#030712',
+          'text-halo-width': 1.5,
+        },
+      });
+    }
+  }, [mapReady, zonesData]);
+
   const handleOpenCreate = () => {
     if (selectedRequestIds.length === 0) return toast.error('Veuillez sélectionner au moins un habitant.');
     if (!newZonePolygon) return toast.error('Veuillez tracer le périmètre du quartier.');
@@ -137,7 +206,7 @@ export default function ZoneMapManagement() {
     <DashboardLayout>
       <div className="flex flex-col h-[calc(100vh-120px)] space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white">Radar des Ouvertures</h1>
+          <h1 className="text-2xl font-bold text-white">Ouverture & Tracé des Quartiers</h1>
           <Button
             onClick={handleOpenCreate}
             disabled={bulkAcceptMutation.isPending || selectedRequestIds.length === 0}
@@ -155,7 +224,7 @@ export default function ZoneMapManagement() {
             <div className="absolute inset-0 bg-gray-900 flex items-center justify-center z-50">
               <div className="text-center">
                 <Loader2 className="h-10 w-10 animate-spin text-indigo-500 mx-auto mb-4" />
-                <p className="text-gray-400 text-sm">Chargement du Radar...</p>
+                <p className="text-gray-400 text-sm">Chargement de la carte...</p>
               </div>
             </div>
           )}

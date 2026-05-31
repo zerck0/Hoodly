@@ -51,7 +51,6 @@ const items = [
   { title: "Services", url: "/services", icon: Users },
   { title: "Messages", url: "/messages", icon: MessageSquare },
   { title: "Mon Agenda", url: "/planning", icon: Calendar },
-  { title: "Profil", url: "/profil", icon: UserIcon },
   { title: "Incidents", url: "/incidents", icon: AlertTriangle },
   { title: "Carte du quartier", url: "/map", icon: MapIcon },
 ]

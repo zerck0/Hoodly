@@ -81,7 +81,11 @@ describe('IncidentsController', () => {
       const created = makeIncident({ ...dto, priorite: IncidentPriority.HIGH });
       incidentsService.create.mockResolvedValue(created);
 
-      const result = await controller.create(dto);
+      const result = await controller.create(dto, {
+        userId: 'auth0|reporter',
+        role: 'habitant' as any,
+        sub: 'auth0|reporter',
+      });
 
       expect(incidentsService.create).toHaveBeenCalledWith(dto);
       expect(result).toEqual(created);

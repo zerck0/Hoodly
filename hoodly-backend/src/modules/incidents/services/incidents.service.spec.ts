@@ -5,10 +5,15 @@ import { Incident } from '../schemas/incident.schema';
 import { CreateIncidentDto } from '../dto/create-incident.dto';
 import { IncidentStatus } from '../enums/incident-status.enum';
 import { IncidentPriority } from '../enums/incident-priority.enum';
+import { Types } from 'mongoose';
+import { NotFoundException } from '@nestjs/common';
 
 describe('IncidentsService', () => {
   let service: IncidentsService;
-  let incidentModel: jest.Mock & { find: jest.Mock };
+  let incidentModel: jest.Mock & {
+    find: jest.Mock;
+    findByIdAndUpdate: jest.Mock;
+  };
 
   const makeIncident = (overrides: Record<string, unknown> = {}) => {
     const now = new Date('2026-01-01T10:00:00.000Z');
@@ -30,8 +35,9 @@ describe('IncidentsService', () => {
 
   beforeEach(async () => {
     const modelConstructor = jest.fn();
-    incidentModel = modelConstructor as jest.Mock & { find: jest.Mock };
+    incidentModel = modelConstructor as any;
     incidentModel.find = jest.fn();
+    incidentModel.findByIdAndUpdate = jest.fn();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -61,7 +67,10 @@ describe('IncidentsService', () => {
         }),
       ];
       const exec = jest.fn().mockResolvedValue(incidents);
-      incidentModel.find.mockReturnValue({ exec });
+      incidentModel.find.mockReturnValue({
+        lean: jest.fn().mockReturnThis(),
+        exec,
+      });
 
       const result = await service.findAll();
 
@@ -72,9 +81,30 @@ describe('IncidentsService', () => {
 
     it('should propagate errors from the model', async () => {
       const exec = jest.fn().mockRejectedValue(new Error('Mongo query failed'));
-      incidentModel.find.mockReturnValue({ exec });
+      incidentModel.find.mockReturnValue({
+        lean: jest.fn().mockReturnThis(),
+        exec,
+      });
 
       await expect(service.findAll()).rejects.toThrow('Mongo query failed');
+    });
+
+    it('should apply zoneId and signaledPar filters if provided', async () => {
+      const exec = jest.fn().mockResolvedValue([]);
+      incidentModel.find.mockReturnValue({
+        lean: jest.fn().mockReturnThis(),
+        exec,
+      });
+
+      const zoneId = '507f191e810c19729de860bb';
+      const signaledPar = 'auth0|reporter';
+
+      await service.findAll(zoneId, signaledPar);
+
+      expect(incidentModel.find).toHaveBeenCalledWith({
+        zoneId: new Types.ObjectId(zoneId),
+        signaledPar,
+      });
     });
   });
 
@@ -119,6 +149,107 @@ describe('IncidentsService', () => {
       }));
 
       await expect(service.create(dto)).rejects.toThrow('Mongo save failed');
+    });
+
+    it('should create and convert assignedTo to ObjectId if provided', async () => {
+      const assignedToId = '507f191e810c19729de860cc';
+      const dto: CreateIncidentDto = {
+        type: 'voirie',
+        description: 'Nid de poule sur la chaussée',
+        assignedTo: assignedToId,
+      };
+
+      const save = jest.fn().mockResolvedValue(dto);
+      incidentModel.mockImplementation((data: any) => ({
+        ...data,
+        save,
+      }));
+
+      await service.create(dto);
+
+      expect(incidentModel).toHaveBeenCalledWith({
+        ...dto,
+        assignedTo: new Types.ObjectId(assignedToId),
+      });
+    });
+  });
+
+  describe('updateStatut', () => {
+    it('should update incident status and resolution comment', async () => {
+      const incidentId = '507f191e810c19729de860aa';
+      const updatedIncident = makeIncident({
+        statut: IncidentStatus.RESOLVED,
+        resolutionComment: 'Fixed the issue',
+      });
+
+      const exec = jest.fn().mockResolvedValue(updatedIncident);
+      const lean = jest.fn().mockReturnValue({ exec });
+      incidentModel.findByIdAndUpdate.mockReturnValue({ lean });
+
+      const result = await service.updateStatut(incidentId, {
+        statut: IncidentStatus.RESOLVED,
+        resolutionComment: 'Fixed the issue',
+      });
+
+      expect(incidentModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        incidentId,
+        {
+          statut: IncidentStatus.RESOLVED,
+          resolutionComment: 'Fixed the issue',
+        },
+        { returnDocument: 'after' },
+      );
+      expect(result).toEqual(updatedIncident);
+    });
+
+    it('should handle assignedTo update correctly (convert to ObjectId or set null)', async () => {
+      const incidentId = '507f191e810c19729de860aa';
+      const assignedToId = '507f191e810c19729de860cc';
+
+      const exec = jest.fn().mockResolvedValue({});
+      const lean = jest.fn().mockReturnValue({ exec });
+      incidentModel.findByIdAndUpdate.mockReturnValue({ lean });
+
+      // Test with non-empty string assignedTo
+      await service.updateStatut(incidentId, {
+        statut: IncidentStatus.IN_PROGRESS,
+        assignedTo: assignedToId,
+      });
+
+      expect(incidentModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        incidentId,
+        {
+          statut: IncidentStatus.IN_PROGRESS,
+          assignedTo: new Types.ObjectId(assignedToId),
+        },
+        { returnDocument: 'after' },
+      );
+
+      // Test with empty string / null assignedTo
+      await service.updateStatut(incidentId, {
+        statut: IncidentStatus.IN_PROGRESS,
+        assignedTo: '',
+      });
+
+      expect(incidentModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        incidentId,
+        {
+          statut: IncidentStatus.IN_PROGRESS,
+          assignedTo: null,
+        },
+        { returnDocument: 'after' },
+      );
+    });
+
+    it('should throw NotFoundException if incident is not found', async () => {
+      const incidentId = '507f191e810c19729de860aa';
+      const exec = jest.fn().mockResolvedValue(null);
+      const lean = jest.fn().mockReturnValue({ exec });
+      incidentModel.findByIdAndUpdate.mockReturnValue({ lean });
+
+      await expect(
+        service.updateStatut(incidentId, { statut: IncidentStatus.RESOLVED }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

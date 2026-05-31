@@ -7,9 +7,14 @@ import {
 import { UsersService } from './users.service';
 import { User, UserRole } from '../schemas/user.schema';
 
+import { TransactionsService } from '../../transactions/services/transactions.service';
+
 describe('UsersService', () => {
   let service: UsersService;
-  let userModel: {
+  let transactionsService: {
+    create: jest.Mock;
+  };
+  let userModel: jest.Mock & {
     findOneAndUpdate: jest.Mock;
     findOne: jest.Mock;
     findById: jest.Mock;
@@ -55,15 +60,19 @@ describe('UsersService', () => {
   });
 
   beforeEach(async () => {
-    userModel = {
-      findOneAndUpdate: jest.fn(),
-      findOne: jest.fn(),
-      findById: jest.fn(),
-      find: jest.fn(),
-      countDocuments: jest.fn(),
-      findByIdAndUpdate: jest.fn(),
-      findByIdAndDelete: jest.fn(),
+    transactionsService = {
+      create: jest.fn(),
     };
+
+    const modelConstructor = jest.fn();
+    userModel = modelConstructor as any;
+    userModel.findOneAndUpdate = jest.fn();
+    userModel.findOne = jest.fn();
+    userModel.findById = jest.fn();
+    userModel.find = jest.fn();
+    userModel.countDocuments = jest.fn();
+    userModel.findByIdAndUpdate = jest.fn();
+    userModel.findByIdAndDelete = jest.fn();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -71,6 +80,10 @@ describe('UsersService', () => {
         {
           provide: getModelToken(User.name),
           useValue: userModel,
+        },
+        {
+          provide: TransactionsService,
+          useValue: transactionsService,
         },
       ],
     }).compile();
@@ -84,7 +97,9 @@ describe('UsersService', () => {
 
   describe('syncFromAuth0', () => {
     it('should sync a user profile and return a dto', async () => {
+      const dbUser = makeUser({ name: undefined, picture: undefined });
       const user = makeUser();
+      userModel.findOne.mockResolvedValue(dbUser);
       userModel.findOneAndUpdate.mockResolvedValue(user);
 
       const result = await service.syncFromAuth0(user.auth0Id, {
@@ -101,15 +116,15 @@ describe('UsersService', () => {
             name: user.name,
             picture: user.picture,
           },
-          $setOnInsert: { role: 'user', isActive: true },
         },
-        { upsert: true, returnDocument: 'after' },
+        { returnDocument: 'after' },
       );
       expect(result).toEqual(toExpectedDto(user));
     });
 
     it('should sync only required fields when optional values are missing', async () => {
       const user = makeUser({ name: undefined, picture: undefined });
+      userModel.findOne.mockResolvedValue(user);
       userModel.findOneAndUpdate.mockResolvedValue(user);
 
       await service.syncFromAuth0(user.auth0Id, {
@@ -122,9 +137,8 @@ describe('UsersService', () => {
           $set: {
             email: user.email,
           },
-          $setOnInsert: { role: 'user', isActive: true },
         },
-        { upsert: true, returnDocument: 'after' },
+        { returnDocument: 'after' },
       );
     });
 
@@ -143,6 +157,54 @@ describe('UsersService', () => {
           email: 'broken@example.com',
         }),
       ).rejects.toThrow('Erreur lors de la synchronisation du profil');
+    });
+
+    it('should sync a new user and create welcome points transaction', async () => {
+      userModel.findOne.mockResolvedValue(null);
+      const savedUser = makeUser({ points: 100 });
+      const save = jest.fn().mockResolvedValue(savedUser);
+      userModel.mockImplementation(() => ({
+        ...savedUser,
+        save,
+      }));
+
+      const result = await service.syncFromAuth0('auth0|newuser', {
+        email: 'new@example.com',
+        name: 'New User',
+        picture: 'pic.jpg',
+      });
+
+      expect(userModel).toHaveBeenCalled();
+      expect(save).toHaveBeenCalled();
+      expect(transactionsService.create).toHaveBeenCalledWith(
+        null,
+        savedUser._id,
+        100,
+        'welcome_grant',
+        'Cadeau de Bienvenue Hoodly',
+      );
+      expect(result).toBeDefined();
+    });
+
+    it('should handle welcome transaction error gracefully when syncing a new user', async () => {
+      userModel.findOne.mockResolvedValue(null);
+      const savedUser = makeUser({ points: 100 });
+      const save = jest.fn().mockResolvedValue(savedUser);
+      userModel.mockImplementation(() => ({
+        ...savedUser,
+        save,
+      }));
+      transactionsService.create.mockRejectedValue(
+        new Error('Transaction failed'),
+      );
+
+      const result = await service.syncFromAuth0('auth0|newuser', {
+        email: 'new@example.com',
+      });
+
+      expect(userModel).toHaveBeenCalled();
+      expect(save).toHaveBeenCalled();
+      expect(result).toBeDefined();
     });
   });
 
@@ -318,6 +380,209 @@ describe('UsersService', () => {
       await expect(
         service.deleteUser('507f191e810c19729de860ff'),
       ).rejects.toThrow('Utilisateur introuvable');
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('should update profile and return DTO when points do not change', async () => {
+      const existingUser = makeUser({ points: 100 });
+      const updatedUser = makeUser({ name: 'Updated Name', points: 100 });
+      userModel.findOne.mockResolvedValue(existingUser);
+      userModel.findOneAndUpdate.mockResolvedValue(updatedUser);
+
+      const result = await service.updateProfile('auth0|abc123', {
+        name: 'Updated Name',
+      });
+
+      expect(userModel.findOne).toHaveBeenCalledWith({
+        auth0Id: 'auth0|abc123',
+      });
+      expect(userModel.findOneAndUpdate).toHaveBeenCalledWith(
+        { auth0Id: 'auth0|abc123' },
+        { $set: { name: 'Updated Name' } },
+        { returnDocument: 'after' },
+      );
+      expect(result.name).toEqual('Updated Name');
+    });
+
+    it('should update profile, record point transaction when points increase by 20', async () => {
+      const existingUser = makeUser({ points: 100 });
+      const updatedUser = makeUser({ points: 120 });
+      userModel.findOne.mockResolvedValue(existingUser);
+      userModel.findOneAndUpdate.mockResolvedValue(updatedUser);
+
+      await service.updateProfile('auth0|abc123', {
+        points: 120,
+      });
+
+      expect(transactionsService.create).toHaveBeenCalledWith(
+        null,
+        updatedUser._id,
+        20,
+        'admin_adjustment',
+        'Mission accomplie : Discussion active',
+      );
+    });
+
+    it('should update profile, record point transaction when points increase by 30', async () => {
+      const existingUser = makeUser({ points: 100 });
+      const updatedUser = makeUser({ points: 130 });
+      userModel.findOne.mockResolvedValue(existingUser);
+      userModel.findOneAndUpdate.mockResolvedValue(updatedUser);
+
+      await service.updateProfile('auth0|abc123', {
+        points: 130,
+      });
+
+      expect(transactionsService.create).toHaveBeenCalledWith(
+        null,
+        updatedUser._id,
+        30,
+        'admin_adjustment',
+        'Mission accomplie : Premier pas sur le feed',
+      );
+    });
+
+    it('should update profile, record point transaction when points increase by 50', async () => {
+      const existingUser = makeUser({ points: 100 });
+      const updatedUser = makeUser({ points: 150 });
+      userModel.findOne.mockResolvedValue(existingUser);
+      userModel.findOneAndUpdate.mockResolvedValue(updatedUser);
+
+      await service.updateProfile('auth0|abc123', {
+        points: 150,
+      });
+
+      expect(transactionsService.create).toHaveBeenCalledWith(
+        null,
+        updatedUser._id,
+        50,
+        'admin_adjustment',
+        'Mission accomplie : Présentation au quartier',
+      );
+    });
+
+    it('should update profile, record generic adjustment when points change by custom amount', async () => {
+      const existingUser = makeUser({ points: 100 });
+      const updatedUser = makeUser({ points: 200 });
+      userModel.findOne.mockResolvedValue(existingUser);
+      userModel.findOneAndUpdate.mockResolvedValue(updatedUser);
+
+      await service.updateProfile('auth0|abc123', {
+        points: 200,
+      });
+
+      expect(transactionsService.create).toHaveBeenCalledWith(
+        null,
+        updatedUser._id,
+        100,
+        'admin_adjustment',
+        'Ajustement de points',
+      );
+    });
+
+    it('should handle point transaction failure gracefully', async () => {
+      const existingUser = makeUser({ points: 100 });
+      const updatedUser = makeUser({ points: 120 });
+      userModel.findOne.mockResolvedValue(existingUser);
+      userModel.findOneAndUpdate.mockResolvedValue(updatedUser);
+      transactionsService.create.mockRejectedValue(
+        new Error('Transaction fail'),
+      );
+
+      const result = await service.updateProfile('auth0|abc123', {
+        points: 120,
+      });
+
+      expect(result).toBeDefined();
+    });
+
+    it('should throw NotFoundException when user not found on initial find', async () => {
+      userModel.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.updateProfile('auth0|missing', { name: 'New' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when user not found on update', async () => {
+      const existingUser = makeUser();
+      userModel.findOne.mockResolvedValue(existingUser);
+      userModel.findOneAndUpdate.mockResolvedValue(null);
+
+      await expect(
+        service.updateProfile('auth0|abc123', { name: 'New' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('findVoisins', () => {
+    it('should return neighbors in the same zone when global is false', async () => {
+      const user1 = makeUser({ _id: '1', zoneId: 'zoneA' });
+      const user2 = makeUser({ _id: '2', zoneId: 'zoneA' });
+      const lean = jest.fn().mockResolvedValue([user2]);
+      const limit = jest.fn().mockReturnValue({ lean });
+      userModel.find.mockReturnValue({ limit });
+
+      const result = await service.findVoisins('1', 'zoneA', undefined, false);
+
+      expect(userModel.find).toHaveBeenCalledWith({
+        _id: { $ne: '1' },
+        isActive: true,
+        zoneId: 'zoneA',
+      });
+      expect(limit).toHaveBeenCalledWith(20);
+      expect(result).toEqual([
+        {
+          id: '2',
+          name: user2.name,
+          email: user2.email,
+          picture: user2.picture,
+          zoneId: 'zoneA',
+        },
+      ]);
+    });
+
+    it('should return neighbors globally when global is true', async () => {
+      const user1 = makeUser({ _id: '1', zoneId: 'zoneA' });
+      const user2 = makeUser({ _id: '2', zoneId: 'zoneB' });
+      const lean = jest.fn().mockResolvedValue([user2]);
+      const limit = jest.fn().mockReturnValue({ lean });
+      userModel.find.mockReturnValue({ limit });
+
+      const result = await service.findVoisins('1', 'zoneA', undefined, true);
+
+      expect(userModel.find).toHaveBeenCalledWith({
+        _id: { $ne: '1' },
+        isActive: true,
+      });
+      expect(result).toEqual([
+        {
+          id: '2',
+          name: user2.name,
+          email: user2.email,
+          picture: user2.picture,
+          zoneId: 'zoneB',
+        },
+      ]);
+    });
+
+    it('should filter neighbors by search query', async () => {
+      const lean = jest.fn().mockResolvedValue([]);
+      const limit = jest.fn().mockReturnValue({ lean });
+      userModel.find.mockReturnValue({ limit });
+
+      await service.findVoisins('1', 'zoneA', 'alex', false);
+
+      expect(userModel.find).toHaveBeenCalledWith({
+        _id: { $ne: '1' },
+        isActive: true,
+        zoneId: 'zoneA',
+        $or: [
+          { email: { $regex: 'alex', $options: 'i' } },
+          { name: { $regex: 'alex', $options: 'i' } },
+        ],
+      });
     });
   });
 });

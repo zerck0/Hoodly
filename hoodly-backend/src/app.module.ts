@@ -16,8 +16,12 @@ import { PostsModule } from './modules/posts/posts.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { VotesModule } from './modules/votes/votes.module';
 import { ContractsModule } from './modules/contracts/contracts.module';
+import { DocumentsModule } from './modules/documents/documents.module';
+import { EmailsModule } from './modules/emails/emails.module';
 import { RgpdModule } from './modules/rgpd/rgpd.module';
+
 import { VersionModule } from './modules/version/version.module';
+
 
 @Module({
   imports: [
@@ -46,6 +50,8 @@ import { VersionModule } from './modules/version/version.module';
     TransactionsModule,
     VotesModule,
     ContractsModule,
+    DocumentsModule,
+    EmailsModule,
     RgpdModule,
     VersionModule,
   ],

@@ -76,9 +76,13 @@ export class EventResponseDto {
   @ApiPropertyOptional({ description: 'ID de la discussion de groupe' })
   conversationId?: string;
 
+  @ApiPropertyOptional({ description: "ID du document PDF d'origine (charte/décharge)" })
+  templateDocumentId?: string;
+
   @ApiPropertyOptional({ description: 'Date de création' })
   createdAt?: Date;
 
   @ApiPropertyOptional({ description: 'Date de mise à jour' })
   updatedAt?: Date;
 }
+

@@ -22,6 +22,7 @@ export interface Creneau {
   debut: string
   fin: string
   statut: 'en_attente' | 'confirme' | 'annule'
+  proposeurId?: string
 }
 
 export interface Conversation {

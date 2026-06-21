@@ -3,6 +3,8 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -16,11 +18,22 @@ import { CreateContractDto } from './dto/create-contract.dto';
 import { SignContractDto } from './dto/sign-contract.dto';
 import { UsersService } from '../users/services/users.service';
 import { TransactionsService } from '../transactions/services/transactions.service';
+import { TransactionType } from '../transactions/schemas/transaction.schema';
 import {
   Service,
   ServiceDocument,
   ServiceStatus,
 } from '../services/schemas/service.schema';
+import {
+  Event,
+  EventDocument,
+} from '../events/schemas/event.schema';
+import { DocumentsService } from '../documents/documents.service';
+import { EmailsService } from '../emails/emails.service';
+import { UploadsService } from '../uploads/services/uploads.service';
+import { DocumentType, DocumentStatus } from '../documents/schemas/document.schema';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { ConversationsService } from '../conversations/services/conversations.service';
 
 @Injectable()
 export class ContractsService {
@@ -29,15 +42,31 @@ export class ContractsService {
     private readonly contractModel: Model<ContractDocument>,
     @InjectModel(Service.name)
     private readonly serviceModel: Model<ServiceDocument>,
+    @InjectModel(Event.name)
+    private readonly eventModel: Model<EventDocument>,
     private readonly usersService: UsersService,
     private readonly transactionsService: TransactionsService,
+    private readonly documentsService: DocumentsService,
+    private readonly emailsService: EmailsService,
+    private readonly uploadsService: UploadsService,
+    @Inject(forwardRef(() => ConversationsService))
+    private readonly conversationsService: ConversationsService,
   ) {}
 
   async create(
     createContractDto: CreateContractDto,
   ): Promise<ContractDocument> {
-    const { clientId, providerId, serviceId, title, terms, pricePoints } =
-      createContractDto;
+    const {
+      clientId,
+      providerId,
+      serviceId,
+      eventId,
+      title,
+      terms,
+      pricePoints,
+      templateDocumentId,
+      signatureZones,
+    } = createContractDto;
 
     if (clientId === providerId) {
       throw new BadRequestException(
@@ -45,15 +74,15 @@ export class ContractsService {
       );
     }
 
-    const [client, provider, service] = await Promise.all([
+    const [client, provider, templateDoc] = await Promise.all([
       this.usersService.findById(clientId),
       this.usersService.findById(providerId),
-      this.serviceModel.findById(serviceId),
+      this.documentsService.findById(templateDocumentId),
     ]);
 
     if (!client) throw new NotFoundException('Client introuvable');
     if (!provider) throw new NotFoundException('Prestataire introuvable');
-    if (!service) throw new NotFoundException('Service introuvable');
+    if (!templateDoc) throw new NotFoundException('Document modèle introuvable');
 
     if (client.points < pricePoints) {
       throw new BadRequestException(
@@ -64,10 +93,13 @@ export class ContractsService {
     const contract = new this.contractModel({
       clientId: new Types.ObjectId(clientId),
       providerId: new Types.ObjectId(providerId),
-      serviceId: new Types.ObjectId(serviceId),
+      serviceId: serviceId ? new Types.ObjectId(serviceId) : undefined,
+      eventId: eventId ? new Types.ObjectId(eventId) : undefined,
       title,
       terms,
       pricePoints,
+      templateDocumentId: new Types.ObjectId(templateDocumentId),
+      signatureZones: signatureZones || [],
       status: ContractStatus.PENDING,
       clientSignature: { signed: false },
       providerSignature: { signed: false },
@@ -75,11 +107,60 @@ export class ContractsService {
 
     const savedContract = await contract.save();
 
-    service.contractId = savedContract._id;
-    service.statut = ServiceStatus.EN_COURS;
-    await service.save();
+    if (serviceId) {
+      const service = await this.serviceModel.findById(serviceId);
+      if (service) {
+        service.contractId = savedContract._id as Types.ObjectId;
+        service.statut = ServiceStatus.EN_COURS;
+        await service.save();
+      }
+    }
 
     return savedContract;
+  }
+
+  async sendOtp(contractId: string, userId: string): Promise<{ message: string }> {
+    const contract = await this.contractModel.findById(contractId).exec();
+    if (!contract) {
+      throw new NotFoundException('Contrat introuvable');
+    }
+
+    if (contract.status !== ContractStatus.PENDING) {
+      throw new BadRequestException('Le contrat n’est pas en attente de signature');
+    }
+
+    const isClient = contract.clientId.toString() === userId;
+    const isProvider = contract.providerId.toString() === userId;
+
+    if (!isClient && !isProvider) {
+      throw new ForbiddenException("Vous n'êtes pas partie prenante de ce contrat");
+    }
+
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+
+    // Générer un code OTP de 6 chiffres
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
+    const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    if (isClient) {
+      contract.clientSignature.otpHash = otpHash;
+      contract.clientSignature.otpExpiresAt = otpExpiresAt;
+    } else {
+      contract.providerSignature.otpHash = otpHash;
+      contract.providerSignature.otpExpiresAt = otpExpiresAt;
+    }
+
+    await contract.save();
+
+    const subject = `Votre code de validation de signature Hoodly`;
+    const body = `Bonjour ${user.name},\n\nVous avez demandé à signer le contrat "${contract.title}".\n\nVotre code de vérification MFA est : ${otp}\n\nCe code est valable pendant 5 minutes.\n\nL'équipe Hoodly.`;
+    await this.emailsService.sendEmail(user.email, subject, body);
+
+    return { message: 'Code de vérification envoyé par e-mail' };
   }
 
   async sign(
@@ -87,7 +168,10 @@ export class ContractsService {
     userId: string,
     signContractDto: SignContractDto,
   ): Promise<ContractDocument> {
-    const contract = await this.contractModel.findById(contractId).exec();
+    const contract = await this.contractModel
+      .findById(contractId)
+      .select('+clientSignature.otpHash +clientSignature.otpExpiresAt +providerSignature.otpHash +providerSignature.otpExpiresAt')
+      .exec();
     if (!contract) {
       throw new NotFoundException('Contrat introuvable');
     }
@@ -107,44 +191,285 @@ export class ContractsService {
       );
     }
 
+    const signatureDetail = isClient ? contract.clientSignature : contract.providerSignature;
+
+    if (signatureDetail.signed) {
+      throw new BadRequestException('Vous avez déjà signé ce contrat');
+    }
+
+    // Validation OTP
+    if (!signatureDetail.otpHash || !signatureDetail.otpExpiresAt) {
+      throw new BadRequestException('Aucun code OTP n’a été généré pour cette signature');
+    }
+
+    if (new Date() > signatureDetail.otpExpiresAt) {
+      throw new BadRequestException('Le code OTP a expiré. Veuillez en demander un nouveau.');
+    }
+
+    const submittedOtpHash = crypto.createHash('sha256').update(signContractDto.otp).digest('hex');
+    if (submittedOtpHash !== signatureDetail.otpHash) {
+      throw new BadRequestException('Code de validation OTP incorrect');
+    }
+
     const ipAddress = signContractDto.ipAddress || '127.0.0.1';
     const metadata = signContractDto.signatureMetadata;
 
-    const payloadToHash = `${contract._id}-${userId}-${contract.terms}-${contract.pricePoints}-${ipAddress}-${metadata}-${new Date().toISOString()}`;
+    const payloadToHash = `${contract._id}-${userId}-${contract.terms}-${contract.pricePoints}-${ipAddress}-${metadata}-${signContractDto.otp}-${new Date().toISOString()}`;
     const hash = crypto
       .createHash('sha256')
       .update(payloadToHash)
       .digest('hex');
 
-    if (isClient) {
-      if (contract.clientSignature.signed) {
-        throw new BadRequestException('Vous avez déjà signé ce contrat');
+    signatureDetail.signed = true;
+    signatureDetail.signedAt = new Date();
+    signatureDetail.ipAddress = ipAddress;
+    signatureDetail.signatureMetadata = metadata;
+    signatureDetail.hash = hash;
+    signatureDetail.signatureImage = signContractDto.signatureImage;
+
+    // Nettoyer l'OTP
+    signatureDetail.otpHash = undefined;
+    signatureDetail.otpExpiresAt = undefined;
+
+    let savedContract = await contract.save();
+
+    if (savedContract.clientSignature.signed && savedContract.providerSignature.signed) {
+      // 1. Persister immédiatement le statut SIGNED en BDD
+      savedContract.status = ContractStatus.SIGNED;
+      savedContract = await savedContract.save();
+
+      // 2. Tenter le scellage PDF — non-bloquant : si ça échoue, le contrat reste SIGNED
+      try {
+        savedContract = (await this.sealAndArchiveContract(savedContract)) as any;
+      } catch (sealErr: any) {
+        console.error(
+          '[ContractsService] Scellage PDF échoué (non-bloquant) — le contrat reste SIGNED:',
+          sealErr?.message,
+        );
       }
-      contract.clientSignature = {
-        signed: true,
-        signedAt: new Date(),
-        ipAddress,
-        signatureMetadata: metadata,
-        hash,
-      };
-    } else {
-      if (contract.providerSignature.signed) {
-        throw new BadRequestException('Vous avez déjà signé ce contrat');
+
+      // 3. Workflow post-signature (planning, séquestre, événement)
+      if (savedContract.serviceId) {
+        const serviceIdStr = savedContract.serviceId.toString();
+        const conversation = await this.conversationsService.findByServiceId(serviceIdStr);
+        if (conversation && conversation.creneau) {
+          conversation.prestationStatut = 'valide';
+          await conversation.save();
+
+          const dateStr = new Date(conversation.creneau.date).toLocaleDateString('fr-FR');
+          await this.conversationsService.sendSystemMessage(
+            conversation._id.toString(),
+            `🎉 Rendez-vous confirmé ! La prestation est planifiée pour le ${dateStr} de ${conversation.creneau.debut} à ${conversation.creneau.fin}.`,
+          );
+        }
+
+        if (savedContract.pricePoints > 0) {
+          await this.usersService.updatePoints(savedContract.clientId.toString(), -savedContract.pricePoints);
+          savedContract.pointsEscrowed = true;
+          savedContract = await savedContract.save();
+
+          await this.transactionsService.create(
+            savedContract.clientId.toString(),
+            null,
+            savedContract.pricePoints,
+            TransactionType.SERVICE_PAYMENT,
+            `Points mis sous séquestre pour le service sous contrat : ${savedContract.title}`,
+            serviceIdStr,
+          );
+        }
       }
-      contract.providerSignature = {
-        signed: true,
-        signedAt: new Date(),
-        ipAddress,
-        signatureMetadata: metadata,
-        hash,
-      };
+
+      // Si rattaché à un événement payant, on valide l'inscription
+      if (savedContract.eventId) {
+        const event = await this.eventModel.findById(savedContract.eventId);
+        if (event && event.payant && event.pointsCout) {
+          await this.transactionsService.transferPoints(
+            savedContract.clientId.toString(),
+            savedContract.providerId.toString(),
+            savedContract.pricePoints,
+            `Inscription confirmée pour l'événement "${event.titre}"`,
+            event._id.toString(),
+          );
+
+          await this.eventModel.findByIdAndUpdate(event._id, {
+            $addToSet: { participants: savedContract.clientId },
+          });
+        }
+      }
     }
 
-    if (contract.clientSignature.signed && contract.providerSignature.signed) {
-      contract.status = ContractStatus.SIGNED;
-    }
+    return savedContract;
+  }
 
-    return contract.save();
+  private async sealAndArchiveContract(contract: ContractDocument): Promise<ContractDocument> {
+    try {
+      const templateDoc = await this.documentsService.findById(contract.templateDocumentId.toString());
+      if (!templateDoc) throw new NotFoundException('Document modèle introuvable');
+
+      const [clientUser, providerUser] = await Promise.all([
+        this.usersService.findById(contract.clientId.toString()),
+        this.usersService.findById(contract.providerId.toString()),
+      ]);
+      if (!clientUser || !providerUser) {
+        throw new NotFoundException('Utilisateurs associés au contrat introuvables');
+      }
+
+      // Télécharger le PDF original via le SDK Cloudinary (gère l'auth)
+      const pdfBytes = await this.uploadsService.downloadFile(templateDoc.fileUrl);
+
+      // Charger le PDF dans pdf-lib
+      const pdfDoc = await PDFDocument.load(pdfBytes);
+      const pages = pdfDoc.getPages();
+
+      // Incruster les signatures
+      for (const zone of contract.signatureZones) {
+        const pageIndex = zone.page - 1;
+        if (pageIndex < 0 || pageIndex >= pages.length) continue;
+        const page = pages[pageIndex];
+        const { height: pageHeight } = page.getSize();
+        
+        // Coordonnées Y inversées
+        const yPdf = pageHeight - zone.y - zone.height;
+
+        let signatureBase64: string | undefined;
+        if (zone.assignee === 'client') {
+          signatureBase64 = contract.clientSignature.signatureImage;
+        } else if (zone.assignee === 'provider') {
+          signatureBase64 = contract.providerSignature.signatureImage;
+        }
+
+        if (signatureBase64) {
+          const pureBase64 = signatureBase64.split(',')[1] || signatureBase64;
+          const imgBuffer = Buffer.from(pureBase64, 'base64');
+          const embeddedImg = await pdfDoc.embedPng(imgBuffer);
+          
+          page.drawImage(embeddedImg, {
+            x: zone.x,
+            y: yPdf,
+            width: zone.width,
+            height: zone.height,
+          });
+        }
+      }
+
+      // Ajouter la page d'audit
+      const newPage = pdfDoc.addPage([595, 842]);
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+      newPage.drawText('Certificat de Signature Electronique - Hoodly', {
+        x: 50,
+        y: 780,
+        size: 16,
+        font: fontBold,
+        color: rgb(0, 0.4, 0.2),
+      });
+
+      newPage.drawLine({
+        start: { x: 50, y: 760 },
+        end: { x: 545, y: 760 },
+        thickness: 1,
+        color: rgb(0.8, 0.8, 0.8),
+      });
+
+      let currentY = 720;
+      newPage.drawText(`Document : ${contract.title}`, { x: 50, y: currentY, size: 12, font: fontBold });
+      currentY -= 20;
+      newPage.drawText(`Identifiant du contrat : ${contract._id}`, { x: 50, y: currentY, size: 10, font });
+      currentY -= 20;
+      newPage.drawText(`Date de scellage : ${new Date().toLocaleString('fr-FR')}`, { x: 50, y: currentY, size: 10, font });
+      currentY -= 40;
+
+      // Client
+      newPage.drawText('Signataire 1 : Client', { x: 50, y: currentY, size: 12, font: fontBold });
+      currentY -= 20;
+      newPage.drawText(`Nom : ${clientUser.name}`, { x: 50, y: currentY, size: 10, font });
+      currentY -= 15;
+      newPage.drawText(`Email : ${clientUser.email}`, { x: 50, y: currentY, size: 10, font });
+      currentY -= 15;
+      newPage.drawText(`IP : ${contract.clientSignature.ipAddress || 'Non enregistrée'}`, { x: 50, y: currentY, size: 10, font });
+      currentY -= 15;
+      newPage.drawText(`Date : ${contract.clientSignature.signedAt?.toLocaleString('fr-FR') || 'Non signée'}`, { x: 50, y: currentY, size: 10, font });
+      currentY -= 15;
+      newPage.drawText(`Empreinte (Hash) : ${contract.clientSignature.hash || 'N/A'}`, { x: 50, y: currentY, size: 8, font });
+      currentY -= 40;
+
+      // Provider
+      newPage.drawText('Signataire 2 : Prestataire / Organisateur', { x: 50, y: currentY, size: 12, font: fontBold });
+      currentY -= 20;
+      newPage.drawText(`Nom : ${providerUser.name}`, { x: 50, y: currentY, size: 10, font });
+      currentY -= 15;
+      newPage.drawText(`Email : ${providerUser.email}`, { x: 50, y: currentY, size: 10, font });
+      currentY -= 15;
+      newPage.drawText(`IP : ${contract.providerSignature.ipAddress || 'Non enregistrée'}`, { x: 50, y: currentY, size: 10, font });
+      currentY -= 15;
+      newPage.drawText(`Date : ${contract.providerSignature.signedAt?.toLocaleString('fr-FR') || 'Non signée'}`, { x: 50, y: currentY, size: 10, font });
+      currentY -= 15;
+      newPage.drawText(`Empreinte (Hash) : ${contract.providerSignature.hash || 'N/A'}`, { x: 50, y: currentY, size: 8, font });
+      currentY -= 40;
+
+      newPage.drawLine({
+        start: { x: 50, y: currentY },
+        end: { x: 545, y: currentY },
+        thickness: 1,
+        color: rgb(0.8, 0.8, 0.8),
+      });
+      currentY -= 30;
+      
+      newPage.drawText('Document certifie et scelle par Hoodly', {
+        x: 50,
+        y: currentY,
+        size: 11,
+        font: fontBold,
+        color: rgb(0, 0.4, 0.2),
+      });
+      currentY -= 15;
+      newPage.drawText('Ce document PDF a ete signe numeriquement avec authentification double facteur (OTP e-mail).', {
+        x: 50,
+        y: currentY,
+        size: 8,
+        font,
+      });
+
+      const finalPdfBytes = await pdfDoc.save();
+      const signedPdfHash = crypto.createHash('sha256').update(finalPdfBytes).digest('hex');
+
+      // Upload Cloudinary
+      const fileUrl = await this.uploadsService.uploadFile({
+        fieldname: 'file',
+        originalname: `contract_${contract._id}_signed.pdf`,
+        encoding: '7bit',
+        mimetype: 'application/pdf',
+        size: finalPdfBytes.length,
+        buffer: Buffer.from(finalPdfBytes),
+      });
+
+      // Création Document
+      const finalDocument = await this.documentsService.create({
+        ownerId: contract.providerId.toString(),
+        title: `Contrat Signe - ${contract.title}`,
+        fileUrl,
+        pdfHash: signedPdfHash,
+        type: DocumentType.SIGNED_CONTRACT,
+      });
+      await this.documentsService.updateStatus(finalDocument._id.toString(), DocumentStatus.ARCHIVED);
+
+      contract.signedDocumentId = finalDocument._id as Types.ObjectId;
+
+      // Envoyer e-mails
+      const subject = `Contrat signe et archive : ${contract.title}`;
+      const emailBody = `Bonjour,\n\nLe contrat "${contract.title}" a ete signe avec succes par les deux parties.\n\nVous trouverez le PDF final contenant la signature et le certificat à l'adresse suivante :\n${fileUrl}\n\nL'equipe Hoodly.`;
+      
+      await Promise.all([
+        this.emailsService.sendEmail(clientUser.email, subject, emailBody),
+        this.emailsService.sendEmail(providerUser.email, subject, emailBody),
+      ]);
+
+      return contract;
+    } catch (err: any) {
+      console.error('[ContractsService] Erreur scellage PDF:', err);
+      throw new BadRequestException(`Erreur scellage PDF: ${err.message}`);
+    }
   }
 
   async complete(
@@ -171,23 +496,52 @@ export class ContractsService {
       );
     }
 
-    await this.transactionsService.transferPoints(
-      contract.clientId.toString(),
-      contract.providerId.toString(),
-      contract.pricePoints,
-      `Paiement pour le service sous contrat : ${contract.title}`,
-      contract.serviceId.toString(),
-    );
+    if (contract.serviceId) {
+      if (contract.pointsEscrowed && contract.pricePoints > 0) {
+        // Créditer le prestataire
+        await this.usersService.updatePoints(contract.providerId.toString(), contract.pricePoints);
+
+        // Enregistrer la transaction
+        await this.transactionsService.create(
+          contract.clientId.toString(),
+          contract.providerId.toString(),
+          contract.pricePoints,
+          TransactionType.SERVICE_PAYMENT,
+          `Paiement pour le service sous contrat : ${contract.title}`,
+          contract.serviceId.toString(),
+        );
+      } else if (!contract.pointsEscrowed && contract.pricePoints > 0) {
+        // Fallback si pas de séquestre
+        await this.transactionsService.transferPoints(
+          contract.clientId.toString(),
+          contract.providerId.toString(),
+          contract.pricePoints,
+          `Paiement pour le service sous contrat : ${contract.title}`,
+          contract.serviceId.toString(),
+        );
+      }
+
+      await this.serviceModel.findByIdAndUpdate(contract.serviceId, {
+        statut: ServiceStatus.TERMINE,
+        realisationValidee: true,
+      });
+
+      // Mettre à jour la conversation
+      const conversation = await this.conversationsService.findByServiceId(contract.serviceId.toString());
+      if (conversation) {
+        conversation.prestationStatut = 'termine';
+        conversation.realisationValidee = true;
+        await conversation.save();
+
+        await this.conversationsService.sendSystemMessage(
+          conversation._id.toString(),
+          `✅ Prestation validée et terminée ! Le transfert de ${contract.pricePoints} points au prestataire a été effectué.`,
+        );
+      }
+    }
 
     contract.status = ContractStatus.COMPLETED;
-    const saved = await contract.save();
-
-    await this.serviceModel.findByIdAndUpdate(contract.serviceId, {
-      statut: ServiceStatus.TERMINE,
-      realisationValidee: true,
-    });
-
-    return saved;
+    return contract.save();
   }
 
   async cancel(contractId: string, userId: string): Promise<ContractDocument> {
@@ -215,11 +569,46 @@ export class ContractsService {
     }
 
     contract.status = ContractStatus.CANCELLED;
+
+    if (contract.pointsEscrowed && contract.pricePoints > 0) {
+      // Rembourser le client
+      await this.usersService.updatePoints(contract.clientId.toString(), contract.pricePoints);
+
+      // Enregistrer la transaction
+      await this.transactionsService.create(
+        null,
+        contract.clientId.toString(),
+        contract.pricePoints,
+        TransactionType.SERVICE_PAYMENT,
+        `Remboursement du séquestre pour le contrat annulé : ${contract.title}`,
+        contract.serviceId?.toString(),
+      );
+
+      contract.pointsEscrowed = false;
+    }
+
     const saved = await contract.save();
 
-    await this.serviceModel.findByIdAndUpdate(contract.serviceId, {
-      statut: ServiceStatus.ANNULE,
-    });
+    if (contract.serviceId) {
+      await this.serviceModel.findByIdAndUpdate(contract.serviceId, {
+        statut: ServiceStatus.ANNULE,
+      });
+
+      // Mettre à jour la conversation
+      const conversation = await this.conversationsService.findByServiceId(contract.serviceId.toString());
+      if (conversation) {
+        conversation.prestationStatut = 'aucun';
+        if (conversation.creneau) {
+          conversation.creneau.statut = 'annule';
+        }
+        await conversation.save();
+
+        await this.conversationsService.sendSystemMessage(
+          conversation._id.toString(),
+          `❌ Le contrat d'entraide payant a été annulé. Le rendez-vous a été annulé et les points ont été restitués au client.`,
+        );
+      }
+    }
 
     return saved;
   }
@@ -230,6 +619,8 @@ export class ContractsService {
       .populate('clientId', 'name email picture')
       .populate('providerId', 'name email picture')
       .populate('serviceId', 'titre description categorie')
+      .populate('templateDocumentId')
+      .populate('signedDocumentId')
       .exec();
 
     if (!contract) {
@@ -248,6 +639,13 @@ export class ContractsService {
     return contract;
   }
 
+  async findActiveContractForService(serviceId: string): Promise<ContractDocument | null> {
+    return this.contractModel.findOne({
+      serviceId: new Types.ObjectId(serviceId),
+      status: { $ne: ContractStatus.CANCELLED },
+    }).exec();
+  }
+
   async findAllForUser(userId: string): Promise<ContractDocument[]> {
     const userObjectId = new Types.ObjectId(userId);
     return this.contractModel
@@ -258,6 +656,9 @@ export class ContractsService {
       .populate('clientId', 'name email picture')
       .populate('providerId', 'name email picture')
       .populate('serviceId', 'titre description categorie')
+      .populate('templateDocumentId')
+      .populate('signedDocumentId')
       .exec();
   }
 }
+

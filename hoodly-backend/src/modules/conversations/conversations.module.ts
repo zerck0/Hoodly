@@ -11,6 +11,9 @@ import { Message, MessageSchema } from './schemas/message.schema';
 import { ServicesModule } from '../services/services.module';
 import { UsersModule } from '../users/users.module';
 import { User, UserSchema } from '../users/schemas/user.schema';
+import { ContractsModule } from '../contracts/contracts.module';
+import { DocumentsModule } from '../documents/documents.module';
+import { UploadsModule } from '../uploads/uploads.module';
 
 @Module({
   imports: [
@@ -21,6 +24,9 @@ import { User, UserSchema } from '../users/schemas/user.schema';
     ]),
     forwardRef(() => ServicesModule),
     UsersModule,
+    forwardRef(() => ContractsModule),
+    DocumentsModule,
+    UploadsModule,
   ],
   controllers: [ConversationsController],
   providers: [ConversationsService, ConversationsGateway],

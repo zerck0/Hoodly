@@ -56,7 +56,7 @@ describe('ContractsService', () => {
     mockServiceDoc = {
       _id: new Types.ObjectId(),
       contractId: null,
-      statut: ServiceStatus.DISPONIBLE,
+      statut: ServiceStatus.ACTIF,
       save: jest.fn().mockImplementation(function (this: any) {
         return Promise.resolve(this);
       }),
@@ -131,7 +131,7 @@ describe('ContractsService', () => {
       const providerId = new Types.ObjectId().toString();
       const serviceId = new Types.ObjectId().toString();
 
-      const createDto = {
+      const createDto: any = {
         clientId,
         providerId,
         serviceId,
@@ -161,7 +161,7 @@ describe('ContractsService', () => {
 
     it('should throw BadRequestException if client and provider are the same', async () => {
       const clientId = new Types.ObjectId().toString();
-      const createDto = {
+      const createDto: any = {
         clientId,
         providerId: clientId,
         serviceId: new Types.ObjectId().toString(),
@@ -176,7 +176,7 @@ describe('ContractsService', () => {
     });
 
     it('should throw NotFoundException if client is not found', async () => {
-      const createDto = {
+      const createDto: any = {
         clientId: new Types.ObjectId().toString(),
         providerId: new Types.ObjectId().toString(),
         serviceId: new Types.ObjectId().toString(),
@@ -197,7 +197,7 @@ describe('ContractsService', () => {
     });
 
     it('should throw NotFoundException if provider is not found', async () => {
-      const createDto = {
+      const createDto: any = {
         clientId: new Types.ObjectId().toString(),
         providerId: new Types.ObjectId().toString(),
         serviceId: new Types.ObjectId().toString(),
@@ -218,7 +218,7 @@ describe('ContractsService', () => {
     });
 
     it('should throw NotFoundException if service is not found', async () => {
-      const createDto = {
+      const createDto: any = {
         clientId: new Types.ObjectId().toString(),
         providerId: new Types.ObjectId().toString(),
         serviceId: new Types.ObjectId().toString(),
@@ -243,7 +243,7 @@ describe('ContractsService', () => {
       const providerId = new Types.ObjectId().toString();
       const serviceId = new Types.ObjectId().toString();
 
-      const createDto = {
+      const createDto: any = {
         clientId,
         providerId,
         serviceId,
@@ -283,7 +283,7 @@ describe('ContractsService', () => {
       const result = await service.sign(
         mockContractDoc._id.toString(),
         userId.toString(),
-        signDto,
+        signDto as any,
       );
 
       expect(result.clientSignature.signed).toBe(true);
@@ -307,7 +307,7 @@ describe('ContractsService', () => {
       const result = await service.sign(
         mockContractDoc._id.toString(),
         userId.toString(),
-        signDto,
+        signDto as any,
       );
 
       expect(result.providerSignature.signed).toBe(true);
@@ -327,7 +327,7 @@ describe('ContractsService', () => {
       const result = await service.sign(
         mockContractDoc._id.toString(),
         userId.toString(),
-        signDto,
+        signDto as any,
       );
 
       expect(result.providerSignature.signed).toBe(true);
@@ -337,7 +337,7 @@ describe('ContractsService', () => {
     it('should throw NotFoundException if contract does not exist', async () => {
       mockContractModel.findById().exec.mockResolvedValueOnce(null);
 
-      await expect(service.sign('any-id', 'any-user', {})).rejects.toThrow(
+      await expect(service.sign('any-id', 'any-user', {} as any)).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -346,7 +346,7 @@ describe('ContractsService', () => {
       mockContractDoc.status = ContractStatus.COMPLETED;
 
       await expect(
-        service.sign(mockContractDoc._id.toString(), 'any-user', {}),
+        service.sign(mockContractDoc._id.toString(), 'any-user', {} as any),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -359,7 +359,7 @@ describe('ContractsService', () => {
         service.sign(
           mockContractDoc._id.toString(),
           new Types.ObjectId().toString(),
-          {},
+          {} as any,
         ),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -371,7 +371,7 @@ describe('ContractsService', () => {
       mockContractDoc.clientSignature = { signed: true };
 
       await expect(
-        service.sign(mockContractDoc._id.toString(), userId.toString(), {}),
+        service.sign(mockContractDoc._id.toString(), userId.toString(), {} as any),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -382,7 +382,7 @@ describe('ContractsService', () => {
       mockContractDoc.providerSignature = { signed: true };
 
       await expect(
-        service.sign(mockContractDoc._id.toString(), userId.toString(), {}),
+        service.sign(mockContractDoc._id.toString(), userId.toString(), {} as any),
       ).rejects.toThrow(BadRequestException);
     });
   });

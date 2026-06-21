@@ -180,7 +180,7 @@ describe('ZonesController', () => {
       };
       zoneRequestsService.create.mockResolvedValue({ id: 'request-1' });
 
-      await controller.createZoneRequest(body, user);
+      await controller.createZoneRequest(body as any, user);
 
       expect(zoneRequestsService.create).toHaveBeenCalledWith(body, user.sub);
     });

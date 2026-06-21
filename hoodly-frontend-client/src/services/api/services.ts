@@ -46,6 +46,11 @@ export const servicesApi = {
   demarrer: (id: string, body?: { conversationId?: string }) =>
     api.patch<Service>(`/services/${id}/demarrer`, body),
 
+  // 🧪 DEV ONLY — Supprimer avant la mise en prod
+  devDemarrer: (id: string, body?: { conversationId?: string }) =>
+    api.patch<Service>(`/services/${id}/dev-demarrer`, body),
+  // Fin DEV ONLY
+
   terminer: (id: string, body?: { conversationId?: string }) =>
     api.patch<Service>(`/services/${id}/terminer`, body),
 

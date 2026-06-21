@@ -21,6 +21,12 @@ import { User, UserDocument } from '../../users/schemas/user.schema';
 import { ServicesService } from '../../services/services/services.service';
 import { ConversationsGateway } from '../gateways/conversations.gateway';
 import { normalizeDateOnly } from '../../../shared/utils/date.util';
+import { ContractsService } from '../../contracts/contracts.service';
+import { DocumentsService } from '../../documents/documents.service';
+import { UploadsService } from '../../uploads/services/uploads.service';
+import { DocumentType } from '../../documents/schemas/document.schema';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class ConversationsService {
@@ -33,6 +39,9 @@ export class ConversationsService {
     private servicesService: ServicesService,
     @Inject(forwardRef(() => ConversationsGateway))
     private conversationsGateway: ConversationsGateway,
+    private readonly contractsService: ContractsService,
+    private readonly documentsService: DocumentsService,
+    private readonly uploadsService: UploadsService,
   ) {}
 
   async createForEvent(
@@ -342,6 +351,12 @@ export class ConversationsService {
     }
   }
 
+  async findByServiceId(serviceId: string): Promise<ConversationDocument | null> {
+    return this.conversationModel.findOne({
+      serviceId: new Types.ObjectId(serviceId),
+    });
+  }
+
   async updatePrestationStatus(
     conversationId: string,
     prestationStatut: 'aucun' | 'valide' | 'en_cours' | 'termine' | 'refuse',
@@ -442,6 +457,7 @@ export class ConversationsService {
       debut,
       fin,
       statut: 'en_attente',
+      proposeurId: new Types.ObjectId(userId),
     };
 
     await conversation.save();
@@ -471,8 +487,27 @@ export class ConversationsService {
       );
     }
 
+    if (conversation.creneau.proposeurId?.toString() === userId) {
+      throw new ForbiddenException(
+        "Vous ne pouvez pas accepter votre propre proposition de créneau",
+      );
+    }
+
     conversation.creneau.statut = 'confirme';
-    conversation.prestationStatut = 'valide';
+    
+    let isPaid = false;
+    if (conversation.serviceId) {
+      const service = conversation.serviceId as any;
+      if (!service.gratuit && service.points && service.points > 0) {
+        isPaid = true;
+      }
+    }
+
+    if (isPaid) {
+      conversation.prestationStatut = 'aucun';
+    } else {
+      conversation.prestationStatut = 'valide';
+    }
     await conversation.save();
 
     if (conversation.serviceId) {
@@ -481,6 +516,130 @@ export class ConversationsService {
       const visitorId = conversation.participants.find(
         (p) => p._id.toString() !== service.createurId.toString(),
       );
+
+      // Create contract automatically if service is paid!
+      if (!service.gratuit && service.points && service.points > 0) {
+        try {
+          const existingContract = await this.contractsService.findActiveContractForService(serviceId);
+          if (!existingContract && visitorId) {
+            const isDemande = service.type === 'demande';
+            const clientId = isDemande ? service.createurId.toString() : visitorId._id.toString();
+            const providerId = isDemande ? visitorId._id.toString() : service.createurId.toString();
+
+            const [clientUser, providerUser] = await Promise.all([
+              this.userModel.findById(clientId),
+              this.userModel.findById(providerId),
+            ]);
+
+            if (clientUser && providerUser) {
+              const dateStr = new Date(conversation.creneau.date).toLocaleDateString('fr-FR');
+              const terms = `CONTRAT D'ENTRAIDE DE QUARTIER\n\n` +
+                `Le présent contrat est conclu entre :\n` +
+                `- Client / Bénéficiaire : ${clientUser.name} (${clientUser.email})\n` +
+                `- Prestataire / Intervenant : ${providerUser.name} (${providerUser.email})\n\n` +
+                `OBJET DE L'ENTRAIDE :\n` +
+                `Le prestataire s'engage à réaliser le service "${service.titre}" au profit du client.\n` +
+                `Description : ${service.description || 'Non renseignée'}\n\n` +
+                `MODALITÉS DE RÉALISATION :\n` +
+                `- Date d'exécution convenue : Le ${dateStr}\n` +
+                `- Créneau horaire : De ${conversation.creneau.debut} à ${conversation.creneau.fin}\n\n` +
+                `VALEUR DE L'ÉCHANGE :\n` +
+                `L'entraide est valorisée à un montant de ${service.points} points.\n` +
+                `Ces points seront transférés du compte du client vers celui du prestataire lors de la validation finale du service.\n\n` +
+                `SIGNATURES :\n` +
+                `En signant ce contrat, les deux parties valident la planification et les termes ci-dessus décrits.`;
+
+              // Generate PDF template dynamically
+              const pdfDoc = await PDFDocument.create();
+              const page = pdfDoc.addPage([595, 842]);
+              const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+              const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+              page.drawText(`CONTRAT D'ENTRAIDE - HOODLY`, {
+                x: 50,
+                y: 780,
+                size: 18,
+                font: fontBold,
+                color: rgb(0.05, 0.2, 0.5),
+              });
+
+              page.drawLine({
+                start: { x: 50, y: 760 },
+                end: { x: 545, y: 760 },
+                thickness: 1,
+                color: rgb(0.8, 0.8, 0.8),
+              });
+
+              const lines = terms.split('\n');
+              let yPos = 720;
+              for (const line of lines) {
+                const isHeader = line.endsWith(':') || line.startsWith('CONTRAT');
+                page.drawText(line, {
+                  x: 50,
+                  y: yPos,
+                  size: isHeader ? 10 : 9,
+                  font: isHeader ? fontBold : font,
+                  color: isHeader ? rgb(0.1, 0.1, 0.1) : rgb(0.3, 0.3, 0.3),
+                });
+                yPos -= 15;
+              }
+
+              // Draw signature placeholders
+              page.drawText(`Prestataire (Signez ci-dessous)`, { x: 80, y: 145, size: 9, font: fontBold });
+              page.drawRectangle({ x: 80, y: 70, width: 160, height: 60, borderColor: rgb(0.8, 0.8, 0.8), borderWidth: 1 });
+
+              page.drawText(`Client (Signez ci-dessous)`, { x: 355, y: 145, size: 9, font: fontBold });
+              page.drawRectangle({ x: 355, y: 70, width: 160, height: 60, borderColor: rgb(0.8, 0.8, 0.8), borderWidth: 1 });
+
+              const pdfBytes = await pdfDoc.save();
+              const pdfBuffer = Buffer.from(pdfBytes);
+
+              // Upload to Cloudinary
+              const fileUrl = await this.uploadsService.uploadFile({
+                fieldname: 'file',
+                originalname: `contrat_service_${serviceId}.pdf`,
+                encoding: '7bit',
+                mimetype: 'application/pdf',
+                size: pdfBuffer.length,
+                buffer: pdfBuffer,
+              });
+
+              const pdfHash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+
+              // Create Document
+              const doc = await this.documentsService.create({
+                ownerId: clientId,
+                title: `Modèle Contrat - ${service.titre}`,
+                fileUrl,
+                pdfHash,
+                type: DocumentType.CONTRACT_TEMPLATE,
+              });
+
+              // Create Contract
+              await this.contractsService.create({
+                clientId,
+                providerId,
+                serviceId,
+                title: `Contrat d'entraide - ${service.titre}`,
+                terms,
+                pricePoints: service.points,
+                templateDocumentId: doc._id.toString(),
+                signatureZones: [
+                  { page: 1, x: 80, y: 712, width: 160, height: 60, assignee: 'provider' },
+                  { page: 1, x: 355, y: 712, width: 160, height: 60, assignee: 'client' },
+                ],
+              });
+
+              await this.sendSystemMessage(
+                conversation._id.toString(),
+                `📄 Un contrat d'entraide payant a été généré automatiquement pour ce service. Vous pouvez dès à présent le consulter et le signer depuis votre espace Contrats.`,
+              );
+            }
+          }
+        } catch (err) {
+          console.error('[ConversationsService] Erreur lors de la création du contrat pour service payant:', err);
+        }
+      }
 
       if (service.type === 'demande') {
         try {
@@ -496,13 +655,15 @@ export class ConversationsService {
       }
     }
 
-    const dateStr = new Date(conversation.creneau.date).toLocaleDateString(
-      'fr-FR',
-    );
-    await this.sendSystemMessage(
-      conversation._id.toString(),
-      `🎉 Rendez-vous confirmé ! La prestation est planifiée pour le ${dateStr} de ${conversation.creneau.debut} à ${conversation.creneau.fin}.`,
-    );
+    if (!isPaid) {
+      const dateStr = new Date(conversation.creneau.date).toLocaleDateString(
+        'fr-FR',
+      );
+      await this.sendSystemMessage(
+        conversation._id.toString(),
+        `🎉 Rendez-vous confirmé ! La prestation est planifiée pour le ${dateStr} de ${conversation.creneau.debut} à ${conversation.creneau.fin}.`,
+      );
+    }
 
     return conversation;
   }

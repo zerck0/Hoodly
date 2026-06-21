@@ -73,6 +73,9 @@ export class Event {
   @Prop()
   photoUrl?: string;
 
+  @Prop({ type: Types.ObjectId, ref: 'Document' })
+  templateDocumentId?: Types.ObjectId;
+
   createdAt?: Date;
   updatedAt?: Date;
 }

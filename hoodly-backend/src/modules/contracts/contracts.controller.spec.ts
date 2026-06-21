@@ -51,7 +51,7 @@ describe('ContractsController', () => {
       };
       mockContractsService.create.mockResolvedValueOnce({ _id: 'contract-id' });
 
-      const result = await controller.create(dto);
+      const result = await controller.create(dto as any);
 
       expect(result).toEqual({ _id: 'contract-id' });
       expect(mockContractsService.create).toHaveBeenCalledWith(dto);
@@ -98,7 +98,7 @@ describe('ContractsController', () => {
       const result = await controller.sign(
         'contract-id',
         user,
-        dto,
+        dto as any,
         '127.0.0.1',
       );
 

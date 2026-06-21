@@ -7,7 +7,9 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import * as crypto from 'crypto';
 import { Event, EventDocument, EventStatus } from '../schemas/event.schema';
+import { Contract, ContractDocument, ContractStatus } from '../../contracts/schemas/contract.schema';
 import { CreateEventDto } from '../dto/create-event.dto';
 import { UpdateEventDto } from '../dto/update-event.dto';
 import { EventResponseDto } from '../dto/event-response.dto';
@@ -18,6 +20,7 @@ import { TransactionsService } from '../../transactions/services/transactions.se
 export class EventsService {
   constructor(
     @InjectModel(Event.name) private eventModel: Model<EventDocument>,
+    @InjectModel(Contract.name) private contractModel: Model<ContractDocument>,
     private readonly conversationsService: ConversationsService,
     private readonly transactionsService: TransactionsService,
   ) {}
@@ -126,21 +129,32 @@ export class EventsService {
       );
     }
 
-    if (event.participants.some((p) => p.equals(userObjId))) {
-      // Se désinscrire — rembourser si payant
-      if (event.payant && event.pointsCout && event.pointsCout > 0) {
-        try {
-          await this.transactionsService.transferPoints(
-            event.createurId.toString(),
-            userId,
-            event.pointsCout,
-            `Remboursement désinscription "${event.titre}"`,
-            id,
-          );
-        } catch {
-          // Solde insuffisant du créateur : on désinscrit quand même
+    const isRegistered = event.participants.some((p) => p.equals(userObjId));
+
+    if (isRegistered) {
+      // Se désinscrire
+      if (event.payant) {
+        // Annuler le contrat associé actif
+        await this.contractModel.findOneAndUpdate(
+          { eventId: event._id, clientId: userObjId, status: { $ne: ContractStatus.CANCELLED } },
+          { $set: { status: ContractStatus.CANCELLED } },
+        );
+
+        if (event.pointsCout && event.pointsCout > 0) {
+          try {
+            await this.transactionsService.transferPoints(
+              event.createurId.toString(),
+              userId,
+              event.pointsCout,
+              `Remboursement désinscription "${event.titre}"`,
+              id,
+            );
+          } catch {
+            // Solde insuffisant du créateur : on désinscrit quand même
+          }
         }
       }
+
       await this.eventModel.findByIdAndUpdate(id, {
         $pull: { participants: userObjId },
       });
@@ -152,15 +166,62 @@ export class EventsService {
       throw new BadRequestException('Cet événement est complet');
     }
 
-    // Paiement à l'inscription si payant
+    // Gestion du paiement et du contrat pour les événements payants
     if (event.payant && event.pointsCout && event.pointsCout > 0) {
-      await this.transactionsService.transferPoints(
-        userId,
-        event.createurId.toString(),
-        event.pointsCout,
-        `Inscription à l'événement "${event.titre}"`,
-        id,
-      );
+      const contract = await this.contractModel.findOne({
+        eventId: event._id,
+        clientId: userObjId,
+        status: { $ne: ContractStatus.CANCELLED },
+      }).exec();
+
+      if (!contract) {
+        if (!event.templateDocumentId) {
+          throw new BadRequestException(
+            "Cet événement payant requiert une charte de participation qui n'a pas encore été configurée par l'organisateur.",
+          );
+        }
+
+        // Créer automatiquement le contrat de participation
+        const newContract = new this.contractModel({
+          clientId: userObjId,
+          providerId: event.createurId,
+          eventId: event._id,
+          title: `Charte de participation - ${event.titre}`,
+          terms: `En signant ce document, je m'engage à participer à l'événement ${event.titre} et accepte le transfert de ${event.pointsCout} points de mon compte.`,
+          pricePoints: event.pointsCout,
+          templateDocumentId: event.templateDocumentId,
+          signatureZones: [
+            { page: 1, x: 380, y: 720, width: 150, height: 50, assignee: 'client' },
+          ],
+          status: ContractStatus.PENDING,
+          clientSignature: { signed: false },
+          providerSignature: {
+            signed: true,
+            signedAt: new Date(),
+            ipAddress: '127.0.0.1',
+            signatureMetadata: 'System Auto-Sign (Waiver template)',
+            hash: crypto.createHash('sha256').update(`event-${event._id}-creator-${event.createurId}`).digest('hex'),
+            signatureImage: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', // clean 1x1 generic transparent png
+          },
+        });
+        await newContract.save();
+
+        throw new BadRequestException({
+          message: 'Signature du contrat requise pour participer',
+          code: 'CONTRACT_SIGNATURE_REQUIRED',
+          contractId: newContract._id.toString(),
+        });
+      }
+
+      if (contract.status === ContractStatus.PENDING) {
+        throw new BadRequestException({
+          message: 'Signature du contrat requise pour participer',
+          code: 'CONTRACT_SIGNATURE_REQUIRED',
+          contractId: contract._id.toString(),
+        });
+      }
+      
+      // Si le contrat est SIGNED ou COMPLETED, on autorise l'inscription sans prélever les points à nouveau
     }
 
     await this.eventModel.findByIdAndUpdate(id, {
@@ -313,6 +374,7 @@ export class EventsService {
       ),
       photoUrl: event.photoUrl,
       conversationId: raw.conversationId?.toString(),
+      templateDocumentId: raw.templateDocumentId?.toString(),
       createdAt: event.createdAt,
       updatedAt: event.updatedAt,
     };

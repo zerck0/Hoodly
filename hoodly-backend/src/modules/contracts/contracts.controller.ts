@@ -74,6 +74,18 @@ export class ContractsController {
     return this.contractsService.findOne(id, user.userId);
   }
 
+  @Post(':id/send-otp')
+  @ApiOperation({ summary: 'Envoyer un code OTP par e-mail pour la signature' })
+  @ApiResponse({ status: 200, description: 'OTP envoyé' })
+  @ApiResponse({ status: 403, description: 'Utilisateur non partie prenante' })
+  @ApiResponse({ status: 404, description: 'Contrat introuvable' })
+  async sendOtp(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.contractsService.sendOtp(id, user.userId);
+  }
+
   @Post(':id/sign')
   @ApiOperation({ summary: 'Signer numériquement un contrat' })
   @ApiResponse({

@@ -21,6 +21,7 @@ import { ConversationsService } from '../../conversations/services/conversations
 import { User, UserDocument } from '../../users/schemas/user.schema';
 import { TransactionsService } from '../../transactions/services/transactions.service';
 import { TransactionType } from '../../transactions/schemas/transaction.schema';
+import { ContractsService } from '../../contracts/contracts.service';
 
 @Injectable()
 export class ServicesService {
@@ -30,6 +31,8 @@ export class ServicesService {
     @Inject(forwardRef(() => ConversationsService))
     private conversationsService: ConversationsService,
     private transactionsService: TransactionsService,
+    @Inject(forwardRef(() => ContractsService))
+    private contractsService: ContractsService,
   ) {}
 
   async create(
@@ -322,6 +325,77 @@ export class ServicesService {
     return updatedService;
   }
 
+  // ============================================================
+  // 🧪 DEV ONLY — Supprimer cette méthode avant la mise en prod
+  // ============================================================
+  async devDemarrer(
+    id: string,
+    userId: string,
+    conversationId?: string,
+  ): Promise<ServiceDocument> {
+    if (process.env.NODE_ENV === 'production') {
+      throw new ForbiddenException('Non disponible en production');
+    }
+
+    const service = await this.serviceModel.findById(id);
+    if (!service) throw new NotFoundException('Service introuvable');
+
+    let conv: any = null;
+    if (conversationId) {
+      conv = await this.conversationsService.findOne(conversationId, userId);
+    } else {
+      const userConversations =
+        await this.conversationsService.getUserConversations(userId);
+      conv = userConversations.find(
+        (c) => c.serviceId && c.serviceId._id.toString() === id,
+      );
+    }
+
+    if (!conv) {
+      throw new BadRequestException(
+        'Aucune conversation trouvée pour ce service',
+      );
+    }
+
+    await this.conversationsService.updatePrestationStatus(
+      conv._id.toString(),
+      'en_cours',
+    );
+
+    let updatedService = service;
+
+    if (service.type === ServiceType.DEMANDE) {
+      updatedService = (await this.serviceModel
+        .findByIdAndUpdate(
+          id,
+          { $set: { statut: ServiceStatus.EN_COURS } },
+          { returnDocument: 'after' },
+        )
+        .populate('createurId', 'name email picture')
+        .populate('responderId', 'name email picture')
+        .populate('zoneId', 'nom ville'))!;
+    } else {
+      updatedService = (await this.serviceModel
+        .findById(id)
+        .populate('createurId', 'name email picture')
+        .populate('zoneId', 'nom ville'))!;
+    }
+
+    try {
+      await this.conversationsService.sendSystemMessage(
+        conv._id.toString(),
+        `🧪 [TEST DEV] Prestation démarrée manuellement sans vérification horaire.`,
+      );
+    } catch (e) {
+      console.warn('[DEV] Could not send system message:', e);
+    }
+
+    return updatedService;
+  }
+  // ============================================================
+  // Fin bloc DEV ONLY
+  // ============================================================
+
   async demarrer(
     id: string,
     userId: string,
@@ -522,6 +596,13 @@ export class ServicesService {
       throw new BadRequestException(
         'Aucune prestation accomplie trouvée à valider',
       );
+    }
+
+    if (service.contractId) {
+      await this.contractsService.complete(service.contractId.toString(), userId);
+      const updatedService = await this.serviceModel.findById(id);
+      if (!updatedService) throw new NotFoundException('Service introuvable');
+      return updatedService;
     }
 
     if (service.type === ServiceType.DEMANDE) {

@@ -46,7 +46,7 @@ export default function PlanningPage() {
   const { user } = useUser()
   const navigate = useNavigate()
   const { conversations } = useConversations()
-  const { demarrerService, terminerService, validerService } = useServices()
+  const { demarrerService, terminerService, validerService, devDemarrerService } = useServices()
   const { events } = useEvents()
 
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -56,7 +56,7 @@ export default function PlanningPage() {
 
   // Services : rendez-vous confirmés
   const confirmedBookings = conversations.filter(
-    (c) => c.serviceId && c.creneau && c.creneau.statut === 'confirme'
+    (c) => c.serviceId && c.creneau && c.creneau.statut === 'confirme' && (c.serviceId.gratuit || c.prestationStatut !== 'aucun')
   )
   const upcomingBookings = confirmedBookings.filter(
     (b) => b.prestationStatut !== 'termine' && !b.realisationValidee
@@ -383,6 +383,31 @@ export default function PlanningPage() {
                       <Award className="h-4 w-4" /><span>Valider la réalisation (Payer)</span>
                     </Button>
                   )}
+
+                  {/* ============================================================ */}
+                  {/* 🧪 DEV ONLY — Supprimer ce bloc avant la mise en prod        */}
+                  {/* ============================================================ */}
+                  {import.meta.env.DEV && (
+                    <button
+                      onClick={async () => {
+                        if (!ev.serviceId) return
+                        try {
+                          await devDemarrerService({ id: ev.serviceId._id, body: { conversationId: ev._id } })
+                          toast.success('[TEST] Prestation démarrée sans vérification horaire !')
+                          setSelectedItem(null)
+                        } catch (err: any) {
+                          toast.error(err?.response?.data?.message || '[TEST] Erreur')
+                        }
+                      }}
+                      className="w-full border border-dashed border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl py-3 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                    >
+                      🧪 [TEST] Démarrer maintenant (bypass heure)
+                    </button>
+                  )}
+                  {/* ============================================================ */}
+                  {/* Fin bloc DEV ONLY                                             */}
+                  {/* ============================================================ */}
+
                   <div className="flex gap-2">
                     <Button variant="outline" onClick={() => { setSelectedItem(null); navigate(`/messages?id=${ev._id}`) }} className="flex-1 rounded-xl py-5 text-xs font-semibold flex items-center justify-center gap-2">
                       <MessageSquare className="h-4 w-4 text-gray-500" /><span>Écrire au voisin</span>

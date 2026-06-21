@@ -22,6 +22,7 @@ import {
   MessageSquare,
   Coins,
   PartyPopper,
+  FileText,
 } from "lucide-react"
 import { Bell } from "../animate-ui/icons/bell"
 import {
@@ -52,6 +53,7 @@ const items = [
   { title: "Services", url: "/services", icon: Users },
   { title: "Événements", url: "/evenements", icon: PartyPopper },
   { title: "Messages", url: "/messages", icon: MessageSquare },
+  { title: "Contrats", url: "/contrats", icon: FileText },
   { title: "Mon Agenda", url: "/planning", icon: Calendar },
   { title: "Incidents", url: "/incidents", icon: AlertTriangle },
   { title: "Carte du quartier", url: "/map", icon: MapIcon },

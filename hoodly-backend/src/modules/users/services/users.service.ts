@@ -2,6 +2,7 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -257,5 +258,24 @@ export class UsersService {
       points: user.points ?? 100,
       bio: user.bio,
     };
+  }
+
+  async updatePoints(id: string, amount: number): Promise<UserDocument> {
+    const user = await this.userModel.findById(id);
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+
+    if (amount < 0 && (user.points ?? 100) < Math.abs(amount)) {
+      throw new BadRequestException(
+        `Solde de points insuffisant (${user.points ?? 100} pts) pour débiter ${Math.abs(amount)} pts.`,
+      );
+    }
+
+    const updatedUser = await this.userModel.findByIdAndUpdate(
+      id,
+      { $inc: { points: amount } },
+      { new: true },
+    );
+    if (!updatedUser) throw new NotFoundException('Utilisateur introuvable');
+    return updatedUser;
   }
 }

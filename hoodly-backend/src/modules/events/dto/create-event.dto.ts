@@ -99,4 +99,10 @@ export class CreateEventDto {
   @IsOptional()
   @IsString()
   photoUrl?: string;
+
+  @ApiPropertyOptional({ description: "ID du document PDF d'origine (charte/décharge)" })
+  @IsOptional()
+  @IsString()
+  templateDocumentId?: string;
 }
+

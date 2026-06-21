@@ -6,6 +6,7 @@ import { Service, ServiceSchema } from './schemas/service.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { ConversationsModule } from '../conversations/conversations.module';
 import { TransactionsModule } from '../transactions/transactions.module';
+import { ContractsModule } from '../contracts/contracts.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { TransactionsModule } from '../transactions/transactions.module';
     ]),
     forwardRef(() => ConversationsModule),
     TransactionsModule,
+    forwardRef(() => ContractsModule),
   ],
   controllers: [ServicesController],
   providers: [ServicesService],

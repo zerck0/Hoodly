@@ -40,6 +40,7 @@ export class Conversation {
         enum: ['en_attente', 'confirme', 'annule'],
         default: 'en_attente',
       },
+      proposeurId: { type: Types.ObjectId, ref: 'User' },
     },
     required: false,
   })
@@ -48,6 +49,7 @@ export class Conversation {
     debut: string;
     fin: string;
     statut: 'en_attente' | 'confirme' | 'annule';
+    proposeurId?: Types.ObjectId;
   };
 
   createdAt?: Date;

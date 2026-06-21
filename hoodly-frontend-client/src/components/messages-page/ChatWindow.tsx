@@ -162,7 +162,8 @@ export function ChatWindow({
             size="sm"
             onClick={async () => {
               try {
-                await accepterService({ id: service._id, body: { responderId: otherId } })
+                const responderId = isCreator ? otherId : (currentUser?.id || currentUser?._id || '')
+                await accepterService({ id: service._id, body: { responderId } })
                 toast.success("Vous avez accepté de rendre ce service d'entraide ! Le calendrier est ouvert.")
               } catch (err: any) {
                 const errMsg = err?.response?.data?.message || "Erreur lors de l'acceptation."
@@ -388,12 +389,11 @@ export function ChatWindow({
           <div className="flex items-center gap-1.5 shrink-0">
             {activeConv.creneau.statut === 'en_attente' ? (
               (() => {
-                const isCreator = activeConv.serviceId && (typeof activeConv.serviceId.createurId === 'object'
-                  ? activeConv.serviceId.createurId.email === currentUser?.email
-                  : activeConv.serviceId.createurId === currentUser?.id)
-                const isClient = activeConv.serviceId && (activeConv.serviceId.type === 'demande' ? isCreator : !isCreator)
+                const iProposed = activeConv.creneau?.proposeurId
+                  ? activeConv.creneau.proposeurId === currentUser?.id
+                  : false
 
-                if (isClient) {
+                if (!iProposed) {
                   return (
                     <>
                       <button
@@ -430,7 +430,7 @@ export function ChatWindow({
 
                 return (
                   <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-md border border-amber-100 uppercase tracking-wider animate-pulse">
-                    En attente du bénéficiaire
+                    En attente de l'autre voisin
                   </span>
                 )
               })()

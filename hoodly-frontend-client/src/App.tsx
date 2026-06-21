@@ -12,6 +12,8 @@ import PointsPage from './pages/PointsPage'
 import PlanningPage from './pages/PlanningPage'
 import ProfilePage from './pages/ProfilePage'
 import EventsPage from './pages/EventsPage'
+import ContractsPage from './pages/ContractsPage'
+import ContractDetailPage from './pages/ContractDetailPage'
 import AppLayout from './components/shared/AppLayout'
 import ProtectedRoute from './components/shared/ProtectedRoute'
 import OnboardingGuard from './components/shared/OnboardingGuard'
@@ -67,6 +69,8 @@ function App() {
           <Route path="/planning" element={<PlanningPage />} />
           <Route path="/evenements" element={<EventsPage />} />
           <Route path="/profil" element={<ProfilePage />} />
+          <Route path="/contrats" element={<ContractsPage />} />
+          <Route path="/contrats/:id" element={<ContractDetailPage />} />
         </Route>
       </Route>
     </Routes>

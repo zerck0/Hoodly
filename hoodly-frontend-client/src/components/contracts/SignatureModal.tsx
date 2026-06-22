@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { SignaturePad } from './SignaturePad'
 import { contractsApi } from '../../services/api/contracts'
-import { Mail, Check, AlertCircle, X } from 'lucide-react'
+import { Check, AlertCircle, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface SignatureModalProps {
@@ -24,9 +24,20 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
   const [signing, setSigning] = useState<boolean>(false)
   const [consent, setConsent] = useState<boolean>(false)
 
+  useEffect(() => {
+    if (isOpen) {
+      handleSendOtp()
+    }
+    return () => {
+      setSignatureImage('')
+      setOtp('')
+      setOtpSent(false)
+      setConsent(false)
+    }
+  }, [isOpen])
+
   if (!isOpen) return null
 
-  // Demander l'envoi de l'OTP
   const handleSendOtp = async () => {
     try {
       setLoadingOtp(true)
@@ -41,7 +52,6 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
     }
   }
 
-  // Soumettre la signature + OTP
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!signatureImage) {
@@ -78,7 +88,6 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
       <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden border border-slate-100 shadow-2xl flex flex-col relative animate-scale-up">
-        {/* Header */}
         <div className="bg-slate-900 text-white p-6 relative">
           <button
             type="button"
@@ -93,7 +102,6 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
           </p>
         </div>
 
-        {/* Formulaire */}
         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5 overflow-y-auto max-h-[80vh]">
           {/* Étape 1 : Signature Pad */}
           <div className="flex flex-col gap-2">
@@ -103,7 +111,6 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
             <SignaturePad onSave={(img) => setSignatureImage(img)} onClear={() => setSignatureImage('')} />
           </div>
 
-          {/* Étape 2 : OTP E-mail (MFA) */}
           <div className="flex flex-col gap-2 border-t border-slate-100 pt-4">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center justify-between">
               2. Validation Double Facteur (MFA)
@@ -115,15 +122,23 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
             </label>
 
             {!otpSent ? (
-              <button
-                type="button"
-                onClick={handleSendOtp}
-                disabled={loadingOtp}
-                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium text-sm transition-all disabled:opacity-50"
-              >
-                <Mail size={16} />
-                {loadingOtp ? 'Envoi...' : 'M’envoyer le code par e-mail'}
-              </button>
+              loadingOtp ? (
+                <div className="flex items-center justify-center gap-2 py-3 text-xs text-[#0c3383] font-medium bg-slate-50 border border-slate-100 rounded-xl">
+                  <Loader2 className="animate-spin h-4 w-4" />
+                  Génération et envoi du code par e-mail...
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-2 py-3 text-xs text-red-500 bg-rose-50/50 border border-rose-100 rounded-xl">
+                  Impossible d'envoyer le code automatiquement.
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    className="text-xs font-bold underline ml-1 hover:text-red-700 cursor-pointer"
+                  >
+                    Réessayer
+                  </button>
+                </div>
+              )
             ) : (
               <div className="flex flex-col gap-2">
                 <p className="text-[11px] text-slate-500 flex items-center gap-1">
@@ -143,7 +158,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
                     type="button"
                     onClick={handleSendOtp}
                     disabled={loadingOtp}
-                    className="text-xs text-emerald-600 hover:text-emerald-700 px-3 py-2.5 font-medium border border-emerald-100 rounded-xl hover:bg-emerald-50/50 transition-colors"
+                    className="text-xs text-[#0c3383] hover:text-[#0c3383]/80 px-3 py-2.5 font-medium border border-blue-100 rounded-xl hover:bg-blue-50/50 transition-colors cursor-pointer"
                   >
                     Renvoyer
                   </button>
@@ -152,7 +167,6 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
             )}
           </div>
 
-          {/* Étape 3 : Consentement légal */}
           <div className="flex gap-3 items-start border-t border-slate-100 pt-4 bg-slate-50 -mx-6 px-6 py-4">
             <input
               type="checkbox"
@@ -166,7 +180,6 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
             </label>
           </div>
 
-          {/* Boutons d'action */}
           <div className="flex gap-3 mt-2">
             <button
               type="button"

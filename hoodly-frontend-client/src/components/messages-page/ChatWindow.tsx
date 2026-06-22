@@ -17,6 +17,9 @@ import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar'
 import { useConversations } from '../../hooks/useConversations'
 import { useServices } from '../../hooks/useServices'
 import { toast } from 'sonner'
+import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { contractsApi } from '../../services/api/contracts'
 import { SchedulerModal } from './SchedulerModal'
 
 interface ChatWindowProps {
@@ -32,6 +35,7 @@ export function ChatWindow({
   onlineUsers,
   conversations
 }: ChatWindowProps) {
+  const navigate = useNavigate()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -48,6 +52,18 @@ export function ChatWindow({
     editMessage,
     deleteMessage
   } = useConversations(activeId as string)
+
+  const contractId = activeConv && typeof activeConv.serviceId === 'object' ? activeConv.serviceId?.contractId : undefined
+
+  const { data: contract } = useQuery({
+    queryKey: ['contract-detail', contractId],
+    queryFn: async () => {
+      if (!contractId) return null
+      const { data } = await contractsApi.getOne(contractId)
+      return data
+    },
+    enabled: !!contractId,
+  })
 
   const {
     accepterService,
@@ -374,6 +390,47 @@ export function ChatWindow({
           <div className="flex items-center gap-2">
             {renderChatBannerActions(activeConv.serviceId)}
           </div>
+        </div>
+      )}
+
+      {contract && contract.status === 'pending' && (
+        (() => {
+          const isClient = (typeof contract.clientId === 'object' ? contract.clientId?._id : contract.clientId) === currentUser?.id
+          const isProvider = (typeof contract.providerId === 'object' ? contract.providerId?._id : contract.providerId) === currentUser?.id
+          const signed = isClient ? contract.clientSignature.signed : isProvider ? contract.providerSignature.signed : true
+
+          if (!signed) {
+            return (
+              <div className="bg-amber-50 border-b border-amber-100 px-4 py-3 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-in fade-in duration-300">
+                <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
+                  ✍️ <strong>Signature du contrat requise</strong> pour activer la cagnotte sécurisée et confirmer votre rendez-vous.
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => navigate(`/contrats/${contract._id}`)}
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] h-8 px-3 rounded-lg shrink-0 w-max cursor-pointer"
+                >
+                  Voir et signer le contrat
+                </Button>
+              </div>
+            )
+          }
+
+          return (
+            <div className="bg-blue-50 border-b border-blue-100 px-4 py-2.5 shrink-0 animate-in fade-in duration-300">
+              <p className="text-[11px] text-blue-800 font-medium">
+                ⏳ Vous avez signé le contrat. En attente de la signature de votre voisin pour activer la cagnotte sécurisée et valider la réservation.
+              </p>
+            </div>
+          )
+        })()
+      )}
+
+      {contract && contract.status === 'signed' && (
+        <div className="bg-emerald-50 border-b border-emerald-100 px-4 py-2.5 shrink-0 animate-in fade-in duration-300">
+          <p className="text-[11px] text-emerald-800 font-medium">
+            🔒 <strong>Contrat signé</strong> : La cagnotte sécurisée Hoodly est active. La prestation peut être réalisée comme prévu !
+          </p>
         </div>
       )}
 

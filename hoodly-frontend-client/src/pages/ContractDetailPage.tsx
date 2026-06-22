@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { contractsApi } from '../services/api/contracts'
 import { useUser } from '../hooks/useUser'
-import { PDFSignatureViewer } from '../components/contracts/PDFSignatureViewer'
 import { SignatureModal } from '../components/contracts/SignatureModal'
 import {
   Loader2,
@@ -28,8 +27,6 @@ export default function ContractDetailPage() {
   const { user } = useUser()
   const queryClient = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'pdf' | 'terms'>('pdf')
-
   const { data: contract, isLoading, error } = useQuery({
     queryKey: ['contract-detail', id],
     queryFn: async () => {
@@ -40,7 +37,6 @@ export default function ContractDetailPage() {
     enabled: !!id,
   })
 
-  // Mutation pour finaliser/valider le contrat
   const completeMutation = useMutation({
     mutationFn: async () => {
       if (!id) return
@@ -57,7 +53,6 @@ export default function ContractDetailPage() {
     },
   })
 
-  // Mutation pour annuler le contrat
   const cancelMutation = useMutation({
     mutationFn: async () => {
       if (!id) return
@@ -73,6 +68,7 @@ export default function ContractDetailPage() {
       toast.error(errorMsg)
     },
   })
+
 
   if (isLoading) {
     return (
@@ -122,12 +118,11 @@ export default function ContractDetailPage() {
     setModalOpen(true)
   }
 
-  // URLs via Backend Proxy
   const templateDocId = contract.templateDocumentId?._id || contract.templateDocumentId
   const signedDocId = contract.signedDocumentId?._id || contract.signedDocumentId
   const activeDocId = signedDocId || templateDocId
   const pdfProxyUrl = activeDocId ? `${import.meta.env.VITE_API_URL}/documents/${activeDocId}/pdf` : ''
-  const activeZones = signedDocId ? [] : contract.signatureZones
+
 
   const canSign = currentUserRole !== 'none' && (
     (currentUserRole === 'client' && !clientSigned) ||
@@ -136,7 +131,6 @@ export default function ContractDetailPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto pb-24 space-y-8 animate-in fade-in duration-300">
-      {/* Bouton retour */}
       <button
         onClick={() => navigate('/contrats')}
         className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 transition-colors font-medium font-sans cursor-pointer"
@@ -145,7 +139,6 @@ export default function ContractDetailPage() {
         Retour aux contrats
       </button>
 
-      {/* Header Info */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-2xs">
         <div className="space-y-2">
           <div className="flex items-center gap-2 flex-wrap font-sans">
@@ -161,20 +154,18 @@ export default function ContractDetailPage() {
         </div>
 
         <div className="flex items-center gap-3 font-sans">
-          {/* Actions de téléchargement */}
-          {contract.status === 'completed' && pdfProxyUrl && (
+          {(contract.status === 'signed' || contract.status === 'completed') && pdfProxyUrl && (
             <a
               href={pdfProxyUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 bg-[#0c3383] hover:bg-[#0c3383]/95 text-white font-bold text-xs px-4 py-3 rounded-xl shadow-xs transition-all hover:scale-102 cursor-pointer"
+              className="flex items-center gap-1.5 bg-[#0c3383] hover:bg-[#0c3383]/95 text-white font-bold text-xs px-4 py-3 rounded-xl shadow-xs transition-all hover:scale-102 cursor-pointer font-sans"
             >
               <Download size={14} />
-              Télécharger le PDF signé
+              Télécharger le contrat (PDF)
             </a>
           )}
 
-          {/* Validation finale (pour les services payants par le prestataire/créateur) */}
           {contract.status === 'signed' && (isClient || isProvider) && contract.serviceId && (
             <Button
               onClick={() => completeMutation.mutate()}
@@ -186,7 +177,6 @@ export default function ContractDetailPage() {
             </Button>
           )}
 
-          {/* Annulation du contrat */}
           {(contract.status === 'pending' || contract.status === 'signed') && (isClient || isProvider) && (
             <Button
               onClick={() => {
@@ -203,12 +193,11 @@ export default function ContractDetailPage() {
         </div>
       </div>
 
-      {/* Stepper de statut */}
       <div className="grid grid-cols-4 gap-4 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-2xs text-center relative overflow-hidden font-sans">
         {[
           { label: '1. Création', desc: 'Contrat généré', done: true, active: contract.status === 'pending' },
           { label: '2. Signatures', desc: 'Attente signatures', done: contract.status !== 'pending', active: contract.status === 'pending' },
-          { label: '3. Séquestre', desc: contract.status === 'pending' ? 'Attente fonds' : 'Fonds sécurisés', done: contract.status === 'signed' || contract.status === 'completed', active: contract.status === 'signed' },
+          { label: '3. Cagnotte', desc: contract.status === 'pending' ? 'Attente points' : 'Cagnotte sécurisée', done: contract.status === 'signed' || contract.status === 'completed', active: contract.status === 'signed' },
           { label: '4. Clôturé', desc: 'Service validé & payé', done: contract.status === 'completed', active: contract.status === 'completed' },
         ].map((step, idx) => (
           <div key={idx} className="flex flex-col items-center relative z-10">
@@ -227,62 +216,113 @@ export default function ContractDetailPage() {
         ))}
       </div>
 
-      {/* Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Visualiseur / Termes à gauche */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Tabs header */}
-          <div className="flex border-b border-slate-200 gap-6 font-sans">
-            <button
-              onClick={() => setActiveTab('pdf')}
-              className={`pb-3 text-xs font-bold transition-all relative cursor-pointer ${
-                activeTab === 'pdf' ? 'text-[#0c3383] border-b-2 border-[#0c3383]' : 'text-slate-400 hover:text-slate-700'
-              }`}
-            >
-              📄 Document Officiel (PDF)
-            </button>
-            <button
-              onClick={() => setActiveTab('terms')}
-              className={`pb-3 text-xs font-bold transition-all relative cursor-pointer ${
-                activeTab === 'terms' ? 'text-[#0c3383] border-b-2 border-[#0c3383]' : 'text-slate-400 hover:text-slate-700'
-              }`}
-            >
-              📝 Conditions générales (Texte)
-            </button>
-          </div>
+          <Card className="bg-white border border-slate-100 rounded-[2rem] p-8 shadow-2xs font-sans relative overflow-hidden">
+            <div className="absolute top-6 right-6 opacity-[0.03] select-none pointer-events-none">
+              <ShieldAlert size={180} className="text-slate-900" />
+            </div>
 
-          {activeTab === 'pdf' ? (
-            pdfProxyUrl ? (
-              <PDFSignatureViewer
-                pdfUrl={pdfProxyUrl}
-                zones={activeZones}
-                clientSigned={clientSigned}
-                providerSigned={providerSigned}
-                clientSignatureImage={contract.clientSignature.signatureImage}
-                providerSignatureImage={contract.providerSignature.signatureImage}
-                userRole={currentUserRole}
-                onSignZoneClick={handleSignZoneClick}
-              />
-            ) : (
-              <Card className="p-16 bg-white border border-gray-100 rounded-[2rem] text-center shadow-2xs">
-                <p className="text-xs text-slate-400 italic">Aucun document PDF lié</p>
-              </Card>
-            )
-          ) : (
-            <Card className="bg-white border border-slate-100 rounded-[2rem] p-8 shadow-2xs font-sans">
-              <div className="prose prose-slate max-w-none">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">Contrat d'entraide de quartier</h3>
-                <div className="text-xs text-slate-700 font-light whitespace-pre-wrap leading-relaxed">
-                  {contract.terms}
+            <div className="prose prose-slate max-w-none relative z-10">
+              <div className="flex flex-col gap-2 pb-6 border-b border-slate-100">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-md w-max">
+                  Document d'entraide officiel
+                </span>
+                <h2 className="text-xl font-bold text-slate-800 tracking-tight">
+                  {contract.title}
+                </h2>
+              </div>
+
+              <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed font-light py-8 border-b border-slate-100">
+                {contract.terms}
+              </div>
+
+              <div className="pt-8">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-6">
+                  Signatures des parties
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50/50 flex flex-col justify-between min-h-[160px] relative">
+                    <div>
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">
+                        Le Client (Bénéficiaire)
+                      </span>
+                      <span className="text-xs font-bold text-slate-800 block mt-1 font-sans">
+                        {contract.clientId?.name || 'Voisin (Client)'}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 flex-1 flex items-center justify-center bg-white rounded-xl border border-slate-100/80 p-2 min-h-[80px]">
+                      {clientSigned && contract.clientSignature.signatureImage ? (
+                        <div className="flex flex-col items-center gap-1.5 w-full">
+                          <img
+                            src={contract.clientSignature.signatureImage}
+                            alt="Signature Client"
+                            className="max-h-[60px] object-contain pointer-events-none"
+                          />
+                          <span className="text-[8px] text-slate-400 font-light">
+                            Signé électroniquement le {format(new Date(contract.clientSignature.signedAt!), 'dd/MM/yyyy à HH:mm', { locale: fr })}
+                          </span>
+                        </div>
+                      ) : canSign && currentUserRole === 'client' ? (
+                        <Button
+                          onClick={() => setModalOpen(true)}
+                          className="bg-[#0c3383] hover:bg-[#0c3383]/95 text-white font-bold text-[10px] px-4 py-2 rounded-lg cursor-pointer"
+                        >
+                          ✍️ Signer maintenant
+                        </Button>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 italic font-light">
+                          En attente de signature
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50/50 flex flex-col justify-between min-h-[160px] relative">
+                    <div>
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">
+                        Le Prestataire (Intervenant)
+                      </span>
+                      <span className="text-xs font-bold text-slate-800 block mt-1 font-sans">
+                        {contract.providerId?.name || 'Voisin (Prestataire)'}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 flex-1 flex items-center justify-center bg-white rounded-xl border border-slate-100/80 p-2 min-h-[80px]">
+                      {providerSigned && contract.providerSignature.signatureImage ? (
+                        <div className="flex flex-col items-center gap-1.5 w-full">
+                          <img
+                            src={contract.providerSignature.signatureImage}
+                            alt="Signature Prestataire"
+                            className="max-h-[60px] object-contain pointer-events-none"
+                          />
+                          <span className="text-[8px] text-slate-400 font-light">
+                            Signé électroniquement le {format(new Date(contract.providerSignature.signedAt!), 'dd/MM/yyyy à HH:mm', { locale: fr })}
+                          </span>
+                        </div>
+                      ) : canSign && currentUserRole === 'provider' ? (
+                        <Button
+                          onClick={() => setModalOpen(true)}
+                          className="bg-[#0c3383] hover:bg-[#0c3383]/95 text-white font-bold text-[10px] px-4 py-2 rounded-lg cursor-pointer"
+                        >
+                          ✍️ Signer maintenant
+                        </Button>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 italic font-light">
+                          En attente de signature
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </Card>
-          )}
+            </div>
+          </Card>
         </div>
 
-        {/* Sidebar à droite */}
         <div className="space-y-6 font-sans">
-          {/* Fiche de transaction */}
           <Card className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-2xs overflow-hidden relative">
             <div className="space-y-4">
               <div className="flex justify-between items-center text-xs text-slate-400 uppercase tracking-wider font-semibold">
@@ -301,7 +341,7 @@ export default function ContractDetailPage() {
                   )}
                   {contract.status === 'signed' && (
                     <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200/50 text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 w-max">
-                      🔒 Séquestre activé
+                      🔒 Cagnotte sécurisée
                     </Badge>
                   )}
                   {contract.status === 'completed' && (
@@ -311,31 +351,30 @@ export default function ContractDetailPage() {
                   )}
                   {contract.status === 'cancelled' && (
                     <Badge className="bg-rose-50 text-rose-700 border border-rose-200/50 text-[9px] font-bold px-2 py-0.5 rounded-full">
-                      Annulé & Remboursé
+                      Annulé & Restitué
                     </Badge>
                   )}
                 </div>
               </div>
-              
+
               <div className="border-t border-slate-100 pt-4 text-xs font-light text-slate-500 leading-relaxed space-y-2">
-                <span className="font-bold text-slate-800 block">Statut du séquestre :</span>
+                <span className="font-bold text-slate-800 block">Statut de la cagnotte :</span>
                 {contract.status === 'pending' && (
-                  <p>Les points requis seront automatiquement débités du client et placés sous séquestre dès que les deux parties auront signé le contrat.</p>
+                  <p>Les points requis seront automatiquement débités du client et placés dans la cagnotte sécurisée dès que les deux parties auront signé le contrat.</p>
                 )}
                 {contract.status === 'signed' && (
-                  <p className="text-emerald-700 font-medium">Les points ont été débités du client et sont conservés en toute sécurité par Hoodly. Ils seront transférés au prestataire dès la validation finale du service.</p>
+                  <p className="text-emerald-700 font-medium">Les points ont été débités du client et sont conservés en toute sécurité dans la cagnotte Hoodly. Ils seront transférés au prestataire dès la validation finale du service.</p>
                 )}
                 {contract.status === 'completed' && (
                   <p>Le service a été validé. Les points ont été transférés avec succès au prestataire.</p>
                 )}
                 {contract.status === 'cancelled' && (
-                  <p>Le contrat a été annulé. Les points sous séquestre ont été entièrement remboursés sur le compte du client.</p>
+                  <p>Le contrat a été annulé. Les points réservés dans la cagnotte ont été entièrement restitués sur le compte du client.</p>
                 )}
               </div>
             </div>
           </Card>
 
-          {/* États de signature */}
           <Card className="bg-white border border-slate-100 rounded-[2rem] shadow-2xs">
             <CardHeader className="border-b border-slate-50 p-6">
               <CardTitle className="text-sm font-bold text-slate-900">Signatures & Empreintes</CardTitle>
@@ -344,7 +383,6 @@ export default function ContractDetailPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
-              {/* Client */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -360,14 +398,13 @@ export default function ContractDetailPage() {
                 {clientSigned && (
                   <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-[10px] text-slate-500 space-y-1 font-light leading-relaxed">
                     <p><strong>Date :</strong> {format(new Date(contract.clientSignature.signedAt!), 'dd MMMM yyyy à HH:mm', { locale: fr })}</p>
-                    <p><strong>IP :</strong> {contract.clientSignature.ipAddress}</p>
-                    <p className="truncate"><strong>Metadata :</strong> {contract.clientSignature.signatureMetadata}</p>
-                    <p className="font-mono text-[8px] bg-slate-100 p-1.5 rounded text-slate-600 truncate"><strong>Hash :</strong> {contract.clientSignature.hash}</p>
+                    <p className="text-emerald-600 font-semibold flex items-center gap-1 mt-1">
+                      <CheckCircle size={10} /> Validé par double facteur e-mail (MFA)
+                    </p>
                   </div>
                 )}
               </div>
 
-              {/* Provider */}
               <div className="space-y-2 border-t border-slate-50 pt-4">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -383,14 +420,13 @@ export default function ContractDetailPage() {
                 {providerSigned && (
                   <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 text-[10px] text-slate-500 space-y-1 font-light leading-relaxed">
                     <p><strong>Date :</strong> {format(new Date(contract.providerSignature.signedAt!), 'dd MMMM yyyy à HH:mm', { locale: fr })}</p>
-                    <p><strong>IP :</strong> {contract.providerSignature.ipAddress}</p>
-                    <p className="truncate"><strong>Metadata :</strong> {contract.providerSignature.signatureMetadata}</p>
-                    <p className="font-mono text-[8px] bg-slate-100 p-1.5 rounded text-slate-600 truncate"><strong>Hash :</strong> {contract.providerSignature.hash}</p>
+                    <p className="text-emerald-600 font-semibold flex items-center gap-1 mt-1">
+                      <CheckCircle size={10} /> Validé par double facteur e-mail (MFA)
+                    </p>
                   </div>
                 )}
               </div>
 
-              {/* Action de signature directe */}
               {canSign && (
                 <Button
                   onClick={handleSignZoneClick}

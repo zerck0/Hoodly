@@ -52,7 +52,7 @@ export class UploadsService {
    */
   async downloadFile(fileUrl: string): Promise<Buffer> {
     // Extraire le public_id depuis la secure_url Cloudinary
-    // Format: https://res.cloudinary.com/<cloud>/image/upload/v<v>/<folder>/<name>.<ext>
+    // Format: https://res.cloudinary.com/<cloud>/<resource_type>/upload/v<v>/<folder>/<name>.<ext>
     const urlObj = new URL(fileUrl);
     const pathParts = urlObj.pathname.split('/');
     // Trouver l'index de 'upload' ou 'raw'
@@ -64,6 +64,14 @@ export class UploadsService {
       return Buffer.from(await res.arrayBuffer());
     }
 
+    const detectedResourceType = pathParts[uploadIdx - 1] || 'image';
+
+    let version: string | undefined;
+    const versionPart = pathParts[uploadIdx + 1];
+    if (versionPart && versionPart.startsWith('v') && /^\d+$/.test(versionPart.slice(1))) {
+      version = versionPart.slice(1);
+    }
+
     // Retirer la version (v1234567) si présente
     let publicIdParts = pathParts.slice(uploadIdx + 1);
     if (publicIdParts[0]?.match(/^v\d+$/)) {
@@ -71,13 +79,15 @@ export class UploadsService {
     }
     const ext = publicIdParts[publicIdParts.length - 1]?.split('.').pop() || '';
     const publicIdWithExt = publicIdParts.join('/');
-    const publicId = ext ? publicIdWithExt.replace(new RegExp(`\.${ext}$`), '') : publicIdWithExt;
+    const publicId = ext ? publicIdWithExt.replace(new RegExp(`\\.${ext}$`), '') : publicIdWithExt;
 
     // Générer une URL signée valable 60 secondes
     const signedUrl = cloudinary.url(publicId, {
-      resource_type: 'raw',
+      resource_type: detectedResourceType,
+      type: 'upload',
       sign_url: true,
       expires_at: Math.floor(Date.now() / 1000) + 60,
+      version: version || undefined,
       format: ext || undefined,
     });
 

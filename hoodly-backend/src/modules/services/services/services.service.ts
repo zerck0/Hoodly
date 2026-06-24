@@ -189,6 +189,12 @@ export class ServicesService {
     const service = await this.serviceModel.findById(id);
     if (!service) throw new NotFoundException('Service introuvable');
 
+    if (service.contractId) {
+      throw new BadRequestException(
+        'Un contrat est déjà lié à ce service. Veuillez le signer pour continuer.',
+      );
+    }
+
     if (service.statut !== ServiceStatus.ACTIF) {
       throw new BadRequestException("Ce service n'est plus disponible");
     }
@@ -404,6 +410,15 @@ export class ServicesService {
     const service = await this.serviceModel.findById(id);
     if (!service) throw new NotFoundException('Service introuvable');
 
+    if (service.contractId) {
+      const contract = await this.contractsService.findById(service.contractId.toString());
+      if (!contract || contract.status !== 'signed') {
+        throw new BadRequestException(
+          'Le contrat doit être signé par les deux parties avant de pouvoir démarrer la prestation.',
+        );
+      }
+    }
+
     let conv: any = null;
     if (conversationId) {
       conv = await this.conversationsService.findOne(conversationId, userId);
@@ -501,6 +516,15 @@ export class ServicesService {
   ): Promise<ServiceDocument> {
     const service = await this.serviceModel.findById(id);
     if (!service) throw new NotFoundException('Service introuvable');
+
+    if (service.contractId) {
+      const contract = await this.contractsService.findById(service.contractId.toString());
+      if (!contract || contract.status !== 'signed') {
+        throw new BadRequestException(
+          'Le contrat doit être signé par les deux parties avant de pouvoir finaliser le service.',
+        );
+      }
+    }
 
     let conv: any = null;
     if (conversationId) {

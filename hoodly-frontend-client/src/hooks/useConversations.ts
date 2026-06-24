@@ -52,6 +52,8 @@ export function useConversations(conversationId?: string) {
           return [...existing, message]
         })
         queryClient.invalidateQueries({ queryKey: ['conversations'] })
+        queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] })
+        queryClient.invalidateQueries({ queryKey: ['contract-detail'] })
       }
     }
 

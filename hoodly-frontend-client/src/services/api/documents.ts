@@ -40,4 +40,7 @@ export const documentsApi = {
 
   delete: (id: string) =>
     api.delete(`/documents/${id}`),
+
+  downloadPdf: (id: string) =>
+    api.get(`/documents/${id}/pdf`, { responseType: 'blob' }),
 }

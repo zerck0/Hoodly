@@ -71,7 +71,7 @@ export default function AppLayout() {
       const { data } = await conversationsApi.getAll()
       return data
     },
-    enabled: !!user?.id
+    enabled: !!user?.id && isVerified
   })
 
   const { data: feedData } = useQuery({

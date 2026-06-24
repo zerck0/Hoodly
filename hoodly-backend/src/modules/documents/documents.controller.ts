@@ -25,6 +25,7 @@ import { JwtGuard } from '../../core/auth/guards/jwt.guard';
 import { RolesGuard } from '../../core/auth/guards/roles.guard';
 import { Roles } from '../../core/auth/decorators/roles.decorator';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
+import { UploadsService } from '../uploads/services/uploads.service';
 
 interface AuthenticatedUser {
   userId: string;
@@ -38,7 +39,10 @@ interface AuthenticatedUser {
 @Controller('documents')
 @UseGuards(RolesGuard)
 export class DocumentsController {
-  constructor(private readonly documentsService: DocumentsService) {}
+  constructor(
+    private readonly documentsService: DocumentsService,
+    private readonly uploadsService: UploadsService,
+  ) {}
 
   @Post()
   @ApiOperation({ summary: 'Enregistrer les métadonnées d’un document' })
@@ -97,16 +101,14 @@ export class DocumentsController {
       throw new NotFoundException('Document introuvable');
     }
 
-    const response = await fetch(doc.fileUrl);
-    if (!response.ok) {
-      throw new NotFoundException('Fichier PDF introuvable sur le stockage distant');
+    try {
+      const buffer = await this.uploadsService.downloadFile(doc.fileUrl);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${doc.title}.pdf"`);
+      res.send(buffer);
+    } catch (err: any) {
+      throw new NotFoundException(`Fichier PDF introuvable sur le stockage distant : ${err.message}`);
     }
-
-    const buffer = await response.arrayBuffer();
-    
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="${doc.title}.pdf"`);
-    res.send(Buffer.from(buffer));
   }
 
   @Patch(':id/status')

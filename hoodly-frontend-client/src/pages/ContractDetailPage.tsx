@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { contractsApi } from '../services/api/contracts'
+import { documentsApi } from '../services/api/documents'
 import { useUser } from '../hooks/useUser'
 import { SignatureModal } from '../components/contracts/SignatureModal'
+import { PDFSignatureViewer } from '../components/contracts/PDFSignatureViewer'
 import {
   Loader2,
   Calendar,
@@ -24,9 +26,12 @@ import { toast } from 'sonner'
 export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const fromChat = searchParams.get('fromChat')
   const { user } = useUser()
   const queryClient = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
+  const [downloading, setDownloading] = useState(false)
   const { data: contract, isLoading, error } = useQuery({
     queryKey: ['contract-detail', id],
     queryFn: async () => {
@@ -37,37 +42,7 @@ export default function ContractDetailPage() {
     enabled: !!id,
   })
 
-  const completeMutation = useMutation({
-    mutationFn: async () => {
-      if (!id) return
-      const { data } = await contractsApi.complete(id)
-      return data
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contract-detail', id] })
-      toast.success('Le contrat a été validé et clôturé ! Les points ont été transférés.')
-    },
-    onError: (err: any) => {
-      const errorMsg = err.response?.data?.message || 'Erreur lors de la validation.'
-      toast.error(errorMsg)
-    },
-  })
 
-  const cancelMutation = useMutation({
-    mutationFn: async () => {
-      if (!id) return
-      const { data } = await contractsApi.cancel(id)
-      return data
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contract-detail', id] })
-      toast.success('Le contrat a été annulé avec succès.')
-    },
-    onError: (err: any) => {
-      const errorMsg = err.response?.data?.message || 'Erreur lors de l’annulation.'
-      toast.error(errorMsg)
-    },
-  })
 
 
   if (isLoading) {
@@ -123,6 +98,29 @@ export default function ContractDetailPage() {
   const activeDocId = signedDocId || templateDocId
   const pdfProxyUrl = activeDocId ? `${import.meta.env.VITE_API_URL}/documents/${activeDocId}/pdf` : ''
 
+  const handleDownload = async () => {
+    if (!activeDocId) return
+    try {
+      setDownloading(true)
+      const response = await documentsApi.downloadPdf(activeDocId)
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `contrat_${contract.title.replace(/\s+/g, '_')}.pdf`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      toast.success('Téléchargement du contrat PDF démarré !')
+    } catch (err) {
+      console.error(err)
+      toast.error('Erreur lors du téléchargement du contrat PDF.')
+    } finally {
+      setDownloading(false)
+    }
+  }
+
 
   const canSign = currentUserRole !== 'none' && (
     (currentUserRole === 'client' && !clientSigned) ||
@@ -132,11 +130,17 @@ export default function ContractDetailPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto pb-24 space-y-8 animate-in fade-in duration-300">
       <button
-        onClick={() => navigate('/contrats')}
+        onClick={() => {
+          if (fromChat) {
+            navigate(`/messages?id=${fromChat}`)
+          } else {
+            navigate('/contrats')
+          }
+        }}
         className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-900 transition-colors font-medium font-sans cursor-pointer"
       >
         <ArrowLeft size={16} />
-        Retour aux contrats
+        {fromChat ? 'Retourner à la discussion' : 'Retour aux contrats'}
       </button>
 
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-2xs">
@@ -154,66 +158,21 @@ export default function ContractDetailPage() {
         </div>
 
         <div className="flex items-center gap-3 font-sans">
-          {(contract.status === 'signed' || contract.status === 'completed') && pdfProxyUrl && (
-            <a
-              href={pdfProxyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 bg-[#0c3383] hover:bg-[#0c3383]/95 text-white font-bold text-xs px-4 py-3 rounded-xl shadow-xs transition-all hover:scale-102 cursor-pointer font-sans"
-            >
-              <Download size={14} />
-              Télécharger le contrat (PDF)
-            </a>
-          )}
-
-          {contract.status === 'signed' && (isClient || isProvider) && contract.serviceId && (
+          {(contract.status === 'signed' || contract.status === 'completed') && activeDocId && (
             <Button
-              onClick={() => completeMutation.mutate()}
-              disabled={completeMutation.isPending}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-3 rounded-xl shadow-xs transition-all hover:scale-102 flex items-center gap-1.5 cursor-pointer"
+              onClick={handleDownload}
+              disabled={downloading}
+              className="flex items-center gap-1.5 bg-[#0c3383] hover:bg-[#0c3383]/95 text-white font-bold text-xs px-4 py-3 rounded-xl shadow-xs transition-all hover:scale-102 cursor-pointer font-sans h-max"
             >
-              <CheckCircle size={14} />
-              {completeMutation.isPending ? 'En cours...' : 'Valider la réalisation du service'}
-            </Button>
-          )}
-
-          {(contract.status === 'pending' || contract.status === 'signed') && (isClient || isProvider) && (
-            <Button
-              onClick={() => {
-                if (window.confirm('Voulez-vous vraiment annuler ce contrat ?')) {
-                  cancelMutation.mutate()
-                }
-              }}
-              disabled={cancelMutation.isPending}
-              className="bg-transparent hover:bg-rose-50 text-rose-600 border border-rose-200/50 font-bold text-xs px-4 py-3 rounded-xl transition-all cursor-pointer"
-            >
-              Annuler
+              {downloading ? (
+                <Loader2 className="animate-spin" size={14} />
+              ) : (
+                <Download size={14} />
+              )}
+              {downloading ? 'Téléchargement...' : 'Télécharger le contrat (PDF)'}
             </Button>
           )}
         </div>
-      </div>
-
-      <div className="grid grid-cols-4 gap-4 bg-white p-6 rounded-[2rem] border border-slate-100 shadow-2xs text-center relative overflow-hidden font-sans">
-        {[
-          { label: '1. Création', desc: 'Contrat généré', done: true, active: contract.status === 'pending' },
-          { label: '2. Signatures', desc: 'Attente signatures', done: contract.status !== 'pending', active: contract.status === 'pending' },
-          { label: '3. Cagnotte', desc: contract.status === 'pending' ? 'Attente points' : 'Cagnotte sécurisée', done: contract.status === 'signed' || contract.status === 'completed', active: contract.status === 'signed' },
-          { label: '4. Clôturé', desc: 'Service validé & payé', done: contract.status === 'completed', active: contract.status === 'completed' },
-        ].map((step, idx) => (
-          <div key={idx} className="flex flex-col items-center relative z-10">
-            <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold transition-all border ${
-              step.done
-                ? 'bg-emerald-50 text-emerald-600 border-emerald-200 shadow-3xs'
-                : step.active
-                ? 'bg-blue-50 text-blue-600 border-blue-200 animate-pulse'
-                : 'bg-slate-50 text-slate-300 border-slate-100'
-            }`}>
-              {step.done && contract.status !== 'cancelled' ? '✓' : idx + 1}
-            </div>
-            <span className={`text-[10px] font-bold mt-2 ${step.active || step.done ? 'text-slate-800' : 'text-slate-400'}`}>{step.label}</span>
-            <span className="text-[8px] font-light text-slate-400 mt-0.5">{contract.status === 'cancelled' && step.active ? 'Contrat Annulé' : step.desc}</span>
-          </div>
-        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -233,8 +192,23 @@ export default function ContractDetailPage() {
                 </h2>
               </div>
 
-              <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed font-light py-8 border-b border-slate-100">
-                {contract.terms}
+              <div className="py-8 border-b border-slate-100 overflow-hidden">
+                {pdfProxyUrl ? (
+                  <PDFSignatureViewer
+                    pdfUrl={pdfProxyUrl}
+                    zones={contract.signatureZones}
+                    clientSigned={clientSigned}
+                    providerSigned={providerSigned}
+                    clientSignatureImage={contract.clientSignature.signatureImage}
+                    providerSignatureImage={contract.providerSignature.signatureImage}
+                    userRole={currentUserRole}
+                    onSignZoneClick={handleSignZoneClick}
+                  />
+                ) : (
+                  <div className="text-xs text-slate-700 whitespace-pre-wrap leading-relaxed font-light">
+                    {contract.terms}
+                  </div>
+                )}
               </div>
 
               <div className="pt-8">
@@ -447,6 +421,12 @@ export default function ContractDetailPage() {
           onClose={() => setModalOpen(false)}
           onSuccess={() => {
             queryClient.invalidateQueries({ queryKey: ['contract-detail', id] })
+            if (fromChat) {
+              toast.success('Signature enregistrée ! Redirection vers votre discussion dans 2 secondes...', { duration: 2000 })
+              setTimeout(() => {
+                navigate(`/messages?id=${fromChat}`)
+              }, 2000)
+            }
           }}
         />
       )}

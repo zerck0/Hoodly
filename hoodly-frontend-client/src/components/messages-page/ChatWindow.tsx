@@ -11,6 +11,12 @@ import {
   PartyPopper,
   ChevronDown,
   ChevronUp,
+  CheckCircle,
+  XCircle,
+  Clock,
+  ShieldCheck,
+  Download,
+  FileText,
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar'
@@ -18,9 +24,11 @@ import { useConversations } from '../../hooks/useConversations'
 import { useServices } from '../../hooks/useServices'
 import { toast } from 'sonner'
 import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { contractsApi } from '../../services/api/contracts'
+import { documentsApi } from '../../services/api/documents'
 import { SchedulerModal } from './SchedulerModal'
+import { Badge } from '../ui/badge'
 
 interface ChatWindowProps {
   activeId: string | null
@@ -71,6 +79,34 @@ export function ChatWindow({
     terminerService,
     validerService
   } = useServices()
+
+  const queryClient = useQueryClient()
+  const [downloading, setDownloading] = useState(false)
+
+  const handleDownloadContract = async () => {
+    const signedDocId = contract?.signedDocumentId?._id || contract?.signedDocumentId
+    if (!signedDocId) return
+    try {
+      setDownloading(true)
+      const response = await documentsApi.downloadPdf(signedDocId)
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      const titre = activeConv?.serviceId && typeof activeConv.serviceId === 'object' ? activeConv.serviceId.titre : 'service'
+      link.setAttribute('download', `contrat_final_${titre.replace(/\s+/g, '_')}.pdf`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      toast.success('Téléchargement du contrat PDF signé démarré !')
+    } catch (err) {
+      console.error(err)
+      toast.error('Erreur lors du téléchargement du contrat PDF.')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   const [newMessage, setNewMessage] = useState('')
   const [showScheduler, setShowScheduler] = useState(false)
@@ -162,145 +198,7 @@ export function ChatWindow({
     }
   }
 
-  const renderChatBannerActions = (service: any) => {
-    const isCreator = typeof service.createurId === 'object'
-      ? service.createurId.email === currentUser?.email
-      : service.createurId === currentUser?.id
 
-    const otherId = otherParticipant?.id || otherParticipant?._id || ''
-    const isProvider = service.type === 'demande' ? !isCreator : isCreator
-    const isClient = service.type === 'demande' ? isCreator : !isCreator
-
-    if (activeConv.prestationStatut === 'aucun' || !activeConv.prestationStatut) {
-      if (isProvider) {
-        return (
-          <Button
-            size="sm"
-            onClick={async () => {
-              try {
-                const responderId = isCreator ? otherId : (currentUser?.id || currentUser?._id || '')
-                await accepterService({ id: service._id, body: { responderId } })
-                toast.success("Vous avez accepté de rendre ce service d'entraide ! Le calendrier est ouvert.")
-              } catch (err: any) {
-                const errMsg = err?.response?.data?.message || "Erreur lors de l'acceptation."
-                toast.error(errMsg)
-              }
-            }}
-            className="bg-[#2c308e] hover:bg-[#2c308e]/95 text-white font-bold rounded-lg text-xs"
-          >
-            Se proposer pour ce service
-          </Button>
-        )
-      }
-      return (
-        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 uppercase tracking-wider shrink-0">
-          En attente de proposition d'aide
-        </span>
-      )
-    }
-
-    if (activeConv.prestationStatut === 'refuse') {
-      return (
-        <span className="text-[10px] font-bold text-red-600 bg-red-50 px-3 py-1.5 rounded-lg border border-red-100 uppercase tracking-wider shrink-0">
-          Entraide refusée ou annulée
-        </span>
-      )
-    }
-
-    if (activeConv.prestationStatut === 'valide') {
-      if (!activeConv.creneau || activeConv.creneau.statut !== 'confirme') {
-        return (
-          <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 uppercase tracking-wider shrink-0">
-            💬 Proposez un créneau d'agenda ci-dessous
-          </span>
-        )
-      }
-
-      if (isProvider) {
-        return (
-          <Button
-            size="sm"
-            onClick={async () => {
-              try {
-                await demarrerService({ id: service._id, body: { conversationId: activeConv._id } })
-                toast.success('Service démarré avec succès !')
-              } catch (err: any) {
-                const errMsg = err?.response?.data?.message || "Erreur lors du démarrage."
-                toast.error(errMsg)
-              }
-            }}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs"
-          >
-            Démarrer la réalisation
-          </Button>
-        )
-      }
-
-      return (
-        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 uppercase tracking-wider shrink-0 animate-pulse">
-          En attente du démarrage par le prestataire
-        </span>
-      )
-    }
-
-    if (activeConv.prestationStatut === 'en_cours') {
-      if (isProvider) {
-        return (
-          <Button
-            size="sm"
-            onClick={async () => {
-              try {
-                await terminerService({ id: service._id, body: { conversationId: activeConv._id } })
-                toast.success('Réalisation déclarée terminée ! En attente de validation du bénéficiaire.')
-              } catch (err: any) {
-                const errMsg = err?.response?.data?.message || "Erreur lors de la finalisation."
-                toast.error(errMsg)
-              }
-            }}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs animate-pulse"
-          >
-            Déclarer la réalisation terminée
-          </Button>
-        )
-      }
-
-      return (
-        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg border border-indigo-100 uppercase tracking-wider shrink-0 animate-pulse">
-          ⚡ Entraide en cours de réalisation...
-        </span>
-      )
-    }
-
-    if (activeConv.prestationStatut === 'termine') {
-      if (isClient) {
-        return (
-          <Button
-            size="sm"
-            onClick={async () => {
-              try {
-                await validerService({ id: service._id, body: { conversationId: activeConv._id } })
-                toast.success('Félicitations, réalisation validée et transaction de points réglée !')
-              } catch (err: any) {
-                const errMsg = err?.response?.data?.message || "Erreur lors de la validation."
-                toast.error(errMsg)
-              }
-            }}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-xs"
-          >
-            Valider la réalisation
-          </Button>
-        )
-      }
-
-      return (
-        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-100 uppercase tracking-wider shrink-0 animate-pulse">
-          En attente de confirmation du bénéficiaire
-        </span>
-      )
-    }
-
-    return null
-  }
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#fcfbfa]">
@@ -365,140 +263,327 @@ export function ChatWindow({
         </div>
       )}
 
-      {activeConv.serviceId && (
-        <div className="bg-white border-b border-gray-100 p-4 shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-xl bg-gray-50 border border-gray-100 shrink-0 text-[#2c308e]">
-              <HeartHandshake className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className={`text-[8px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 border ${
-                  activeConv.serviceId.type === 'offre' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100'
-                }`}>
-                  {activeConv.serviceId.type === 'offre' ? 'Offre' : 'Demande'}
-                </span>
-                <h4 className="text-xs font-bold text-gray-900 leading-tight truncate max-w-[200px]">
-                  {activeConv.serviceId.titre}
-                </h4>
-              </div>
-              <p className="text-[10px] text-gray-400 mt-0.5 leading-relaxed font-light">
-                Contrepartie de <strong>{activeConv.serviceId.points || 0} points</strong> · Statut : <strong className="capitalize">{activeConv.prestationStatut === 'aucun' ? 'Proposition' : activeConv.prestationStatut}</strong>
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {renderChatBannerActions(activeConv.serviceId)}
-          </div>
-        </div>
-      )}
+      {(() => {
+        const service = activeConv.serviceId
+        if (!service) return null
 
-      {contract && contract.status === 'pending' && (
-        (() => {
-          const isClient = (typeof contract.clientId === 'object' ? contract.clientId?._id : contract.clientId) === currentUser?.id
-          const isProvider = (typeof contract.providerId === 'object' ? contract.providerId?._id : contract.providerId) === currentUser?.id
-          const signed = isClient ? contract.clientSignature.signed : isProvider ? contract.providerSignature.signed : true
+        const isPaid = service && (service.points || 0) > 0 && !service.gratuit
+        const isCreator = typeof service.createurId === 'object'
+          ? service.createurId.email === currentUser?.email
+          : service.createurId === currentUser?.id
 
-          if (!signed) {
-            return (
-              <div className="bg-amber-50 border-b border-amber-100 px-4 py-3 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 animate-in fade-in duration-300">
-                <p className="text-[11px] text-amber-800 font-medium leading-relaxed">
-                  ✍️ <strong>Signature du contrat requise</strong> pour activer la cagnotte sécurisée et confirmer votre rendez-vous.
-                </p>
+        const otherId = otherParticipant?.id || otherParticipant?._id || ''
+        const isProvider = service.type === 'demande' ? !isCreator : isCreator
+        const isClient = service.type === 'demande' ? isCreator : !isCreator
+
+        // Calculer l'étape actuelle du workflow
+        let currentStep = 1 // 1: Proposition, 2: Planification, 3: Signature, 4: Réalisation, 5: Validation, 6: Clôturé, 7: Refusé
+        if (activeConv.prestationStatut === 'aucun' || !activeConv.prestationStatut) {
+          if (isPaid && contract) {
+            currentStep = 3 // Signature
+          } else {
+            currentStep = 1 // Proposition d'aide
+          }
+        } else if (activeConv.prestationStatut === 'valide') {
+          if (!activeConv.creneau || activeConv.creneau.statut !== 'confirme') {
+            currentStep = 2 // Planification
+          } else if (isPaid && contract && contract.status === 'pending') {
+            currentStep = 3 // Signature
+          } else {
+            currentStep = 4 // Réalisation
+          }
+        } else if (activeConv.prestationStatut === 'en_cours') {
+          currentStep = 4 // Réalisation
+        } else if (activeConv.prestationStatut === 'termine') {
+          if (isPaid && contract && contract.status === 'completed') {
+            currentStep = 6 // Clôturé
+          } else if (!isPaid && activeConv.realisationValidee) {
+            currentStep = 6 // Clôturé
+          } else {
+            currentStep = 5 // Validation
+          }
+        } else if (activeConv.prestationStatut === 'refuse') {
+          currentStep = 7 // Refusé
+        }
+
+        if (contract && contract.status === 'completed') {
+          currentStep = 6
+        }
+
+        let cardTitle = ''
+        let cardDescription = ''
+        let cardIcon = null
+        let primaryAction = null
+        let secondaryAction = null
+
+        const rdvDateStr = activeConv.creneau?.date
+          ? new Date(activeConv.creneau.date).toLocaleDateString('fr-FR', { weekday: 'long', month: 'long', day: 'numeric' })
+          : ''
+        const rdvTimeStr = activeConv.creneau?.debut && activeConv.creneau?.fin
+          ? `de ${activeConv.creneau.debut} à ${activeConv.creneau.fin}`
+          : ''
+
+        switch (currentStep) {
+          case 1:
+            cardTitle = "Proposition d'aide"
+            cardDescription = isProvider
+              ? "Proposez votre aide pour ce service pour ouvrir l'agenda et planifier les détails."
+              : "En attente qu'un voisin se propose pour vous aider."
+            cardIcon = <HeartHandshake className="h-5 w-5 text-[#2c308e]" />
+            if (isProvider) {
+              primaryAction = (
                 <Button
                   size="sm"
-                  onClick={() => navigate(`/contrats/${contract._id}`)}
-                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] h-8 px-3 rounded-lg shrink-0 w-max cursor-pointer"
+                  onClick={async () => {
+                    try {
+                      const responderId = isCreator ? otherId : (currentUser?.id || currentUser?._id || '')
+                      await accepterService({ id: service._id, body: { responderId } })
+                      queryClient.invalidateQueries({ queryKey: ['conversation', activeConv._id] })
+                      toast.success("Vous avez proposé votre aide ! L'agenda est ouvert.")
+                    } catch (err: any) {
+                      toast.error(err?.response?.data?.message || "Erreur lors de la proposition d'aide.")
+                    }
+                  }}
+                  className="bg-[#2c308e] hover:bg-[#2c308e]/95 text-white font-bold text-xs rounded-xl"
                 >
-                  Voir et signer le contrat
+                  Se proposer pour ce service
                 </Button>
-              </div>
-            )
-          }
+              )
+            }
+            break
 
-          return (
-            <div className="bg-blue-50 border-b border-blue-100 px-4 py-2.5 shrink-0 animate-in fade-in duration-300">
-              <p className="text-[11px] text-blue-800 font-medium">
-                ⏳ Vous avez signé le contrat. En attente de la signature de votre voisin pour activer la cagnotte sécurisée et valider la réservation.
-              </p>
-            </div>
-          )
-        })()
-      )}
-
-      {contract && contract.status === 'signed' && (
-        <div className="bg-emerald-50 border-b border-emerald-100 px-4 py-2.5 shrink-0 animate-in fade-in duration-300">
-          <p className="text-[11px] text-emerald-800 font-medium">
-            🔒 <strong>Contrat signé</strong> : La cagnotte sécurisée Hoodly est active. La prestation peut être réalisée comme prévu !
-          </p>
-        </div>
-      )}
-
-      {activeConv.creneau && activeConv.creneau.statut !== 'annule' && (
-        <div className="bg-[#f0f4fa]/60 border-b border-[#e4ecf5] p-3.5 shrink-0 flex items-center justify-between gap-3 font-sans">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4.5 w-4.5 text-[#2c308e]" />
-            <div className="text-[10px] text-gray-700">
-              🗓️ RDV proposé le <strong className="font-bold">{new Date(activeConv.creneau.date).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}</strong> de <strong className="font-bold bg-white text-indigo-900 border border-indigo-100 shadow-3xs px-1.5 py-0.5 rounded-md">{activeConv.creneau.debut} à {activeConv.creneau.fin}</strong>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            {activeConv.creneau.statut === 'en_attente' ? (
-              (() => {
-                const iProposed = activeConv.creneau?.proposeurId
-                  ? activeConv.creneau.proposeurId === currentUser?.id
-                  : false
-
-                if (!iProposed) {
-                  return (
-                    <>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          try {
-                            await refuserCreneau(activeConv._id)
-                            toast.success('Proposition déclinée.')
-                          } catch {
-                            toast.error('Erreur lors du refus.')
-                          }
-                        }}
-                        className="text-[9px] font-bold px-2.5 py-1.5 text-gray-500 hover:text-gray-800 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg cursor-pointer transition-colors shadow-3xs"
-                      >
-                        Refuser
-                      </button>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          try {
-                            await accepterCreneau(activeConv._id)
-                            toast.success('Rendez-vous planifié et confirmé dans votre agenda !')
-                          } catch {
-                            toast.error('Erreur lors de la confirmation.')
-                          }
-                        }}
-                        className="text-[9px] font-bold px-3 py-1.5 text-white bg-[#2c308e] hover:bg-[#2c308e]/95 rounded-lg cursor-pointer transition-colors shadow-3xs"
-                      >
-                        Accepter
-                      </button>
-                    </>
-                  )
-                }
-
-                return (
-                  <span className="text-[8px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-md border border-amber-100 uppercase tracking-wider animate-pulse">
-                    En attente de l'autre voisin
-                  </span>
+          case 2:
+            cardTitle = "Planification du rendez-vous"
+            cardIcon = <Calendar className="h-5 w-5 text-amber-500" />
+            if (activeConv.creneau?.statut === 'en_attente') {
+              const iProposed = activeConv.creneau.proposeurId === currentUser?.id
+              if (iProposed) {
+                cardDescription = `Rendez-vous proposé le ${rdvDateStr} ${rdvTimeStr}. En attente de confirmation de votre voisin.`
+              } else {
+                cardDescription = `Votre voisin propose un rendez-vous le ${rdvDateStr} ${rdvTimeStr}.`
+                primaryAction = (
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        await accepterCreneau(activeConv._id)
+                        queryClient.invalidateQueries({ queryKey: ['conversation', activeConv._id] })
+                        toast.success('Rendez-vous planifié et confirmé !')
+                      } catch {
+                        toast.error('Erreur lors de la confirmation.')
+                      }
+                    }}
+                    className="bg-[#2c308e] hover:bg-[#2c308e]/95 text-white font-bold text-xs rounded-xl"
+                  >
+                    Accepter
+                  </Button>
                 )
-              })()
-            ) : (
-              <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-100 uppercase tracking-wider shrink-0">
-                ✓ Confirmé
-              </span>
-            )}
+                secondaryAction = (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        await refuserCreneau(activeConv._id)
+                        queryClient.invalidateQueries({ queryKey: ['conversation', activeConv._id] })
+                        toast.success('Proposition déclinée.')
+                      } catch {
+                        toast.error('Erreur lors du refus.')
+                      }
+                    }}
+                    className="border-gray-200 text-gray-500 font-bold text-xs rounded-xl hover:bg-gray-50"
+                  >
+                    Refuser
+                  </Button>
+                )
+              }
+            } else {
+              cardDescription = "Proposez un créneau horaire dans l'agenda pour planifier la réalisation."
+              primaryAction = (
+                <Button
+                  size="sm"
+                  onClick={() => setShowScheduler(true)}
+                  className="bg-[#2c308e] hover:bg-[#2c308e]/95 text-white font-bold text-xs rounded-xl flex items-center gap-1.5"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Planifier
+                </Button>
+              )
+            }
+            break
+
+          case 3:
+            cardTitle = "Signature du contrat requise"
+            cardIcon = <FileText className="h-5 w-5 text-indigo-500" />
+            if (contract) {
+              const clientSigned = contract.clientSignature.signed
+              const providerSigned = contract.providerSignature.signed
+              const iHaveSigned = isClient ? clientSigned : isProvider ? providerSigned : true
+
+              cardDescription = `Rendez-vous confirmé. Veuillez signer le contrat pour sécuriser les ${service.points || 0} points dans la cagnotte.`
+              
+              if (!iHaveSigned) {
+                primaryAction = (
+                  <Button
+                    size="sm"
+                    onClick={() => navigate(`/contrats/${contract._id}?fromChat=${activeConv._id}`)}
+                    className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl animate-pulse"
+                  >
+                    Signer le contrat
+                  </Button>
+                )
+              }
+
+              secondaryAction = (
+                <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-500">
+                  <span className={`px-2 py-0.5 rounded-full border ${clientSigned ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                    Client : {clientSigned ? '✓ Signé' : '⏳ Attente'}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded-full border ${providerSigned ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                    Prestataire : {providerSigned ? '✓ Signé' : '⏳ Attente'}
+                  </span>
+                </div>
+              )
+            }
+            break
+
+          case 4:
+            cardTitle = isPaid ? "Cagnotte sécurisée active" : "Rendez-vous confirmé"
+            cardIcon = <ShieldCheck className="h-5 w-5 text-emerald-500" />
+            cardDescription = isPaid
+              ? `Points sécurisés (${service.points} pts). Service planifié le ${rdvDateStr} ${rdvTimeStr}.`
+              : `Entraide gratuite planifiée le ${rdvDateStr} ${rdvTimeStr}.`
+            
+            if (isProvider) {
+              primaryAction = (
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      if (activeConv.prestationStatut === 'valide') {
+                        await demarrerService({ id: service._id, body: { conversationId: activeConv._id } })
+                      }
+                      await terminerService({ id: service._id, body: { conversationId: activeConv._id } })
+                      queryClient.invalidateQueries({ queryKey: ['conversation', activeConv._id] })
+                      toast.success('Réalisation déclarée terminée !')
+                    } catch (err: any) {
+                      toast.error(err?.response?.data?.message || "Erreur lors de la validation de fin.")
+                    }
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl"
+                >
+                  Déclarer terminé
+                </Button>
+              )
+            } else {
+              cardDescription += " Votre voisin réalisera le service à l'heure convenue."
+            }
+            break
+
+          case 5:
+            cardTitle = "Validation de la réalisation"
+            cardIcon = <Clock className="h-5 w-5 text-amber-500" />
+            cardDescription = isClient
+              ? `Le prestataire a déclaré le service terminé. Validez pour libérer les points et clore la transaction.`
+              : "Le service a été déclaré terminé. En attente de validation par votre voisin."
+
+            if (isClient) {
+              primaryAction = (
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      await validerService({ id: service._id, body: { conversationId: activeConv._id } })
+                      queryClient.invalidateQueries({ queryKey: ['conversation', activeConv._id] })
+                      if (isPaid && contract) {
+                        queryClient.invalidateQueries({ queryKey: ['contract-detail', contract._id] })
+                      }
+                      toast.success(isPaid ? 'Réalisation validée et points transférés !' : 'Service validé avec succès !')
+                    } catch (err: any) {
+                      toast.error(err?.response?.data?.message || "Erreur lors de la validation.")
+                    }
+                  }}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl"
+                >
+                  {isPaid ? `Valider & Payer ${service.points} pts` : 'Valider la réalisation'}
+                </Button>
+              )
+            }
+            break
+
+          case 6:
+            cardTitle = "Service finalisé et clos"
+            cardIcon = <CheckCircle className="h-5 w-5 text-emerald-600" />
+            cardDescription = isPaid
+              ? `Le service est terminé. Les ${service.points} points ont été transférés.`
+              : "Le service d'entraide gratuit a été clôturé avec succès."
+
+            if (isPaid && contract) {
+              primaryAction = (
+                <Button
+                  size="sm"
+                  onClick={handleDownloadContract}
+                  disabled={downloading}
+                  className="bg-[#0c3383] hover:bg-[#0c3383]/95 text-white font-bold text-[10px] h-8 px-3 rounded-lg flex items-center gap-1.5"
+                >
+                  {downloading ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : <Download className="h-3.5 w-3.5" />}
+                  Télécharger le contrat signé
+                </Button>
+              )
+            }
+            break
+
+          case 7:
+            cardTitle = "Annulé ou refusé"
+            cardIcon = <XCircle className="h-5 w-5 text-rose-500" />
+            cardDescription = "Cette entraide a été annulée."
+            break
+        }
+
+        return (
+          <div className="bg-white border-b border-gray-100 p-4 shrink-0 shadow-2xs font-sans">
+            <div className="max-w-4xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-slate-50 border border-slate-100 rounded-xl shrink-0">
+                  {cardIcon}
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider shrink-0 border ${
+                      service.type === 'offre' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100'
+                    }`}>
+                      {service.type === 'offre' ? 'Offre' : 'Demande'}
+                    </span>
+                    <h4 className="text-xs font-bold text-gray-900 leading-tight">
+                      {service.titre}
+                    </h4>
+                    {isPaid ? (
+                      <Badge className="bg-indigo-50 border border-indigo-100 text-indigo-700 text-[9px] font-bold px-2 py-0">
+                        {service.points} pts
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-[9px] font-bold px-2 py-0">
+                        Gratuit
+                      </Badge>
+                    )}
+                  </div>
+                  <h5 className="text-[11px] font-bold text-slate-800 tracking-tight leading-none mt-1">
+                    {cardTitle}
+                  </h5>
+                  <p className="text-[10px] text-gray-400 leading-relaxed font-light">
+                    {cardDescription}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0">
+                {secondaryAction}
+                {primaryAction}
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {isLoadingMessages ? (

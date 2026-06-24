@@ -646,6 +646,10 @@ export class ContractsService {
     }).exec();
   }
 
+  async findById(contractId: string): Promise<ContractDocument | null> {
+    return this.contractModel.findById(contractId).exec();
+  }
+
   async findAllForUser(userId: string): Promise<ContractDocument[]> {
     const userObjectId = new Types.ObjectId(userId);
     return this.contractModel

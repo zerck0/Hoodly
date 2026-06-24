@@ -28,14 +28,12 @@ import { incidentsApi } from '../../services/api/incidents';
 import type { IIncidentResponse } from '../../types/incident.types';
 import { toast } from 'sonner';
 
-// Nuancier de criticité HSL
 const CRITICITY_STYLES = {
   elevee: { label: 'Élevée', bg: 'bg-rose-950/40', text: 'text-rose-400', border: 'border-rose-900/50' },
   moyenne: { label: 'Moyenne', bg: 'bg-amber-950/40', text: 'text-amber-400', border: 'border-amber-900/50' },
   faible: { label: 'Faible', bg: 'bg-indigo-950/40', text: 'text-indigo-400', border: 'border-indigo-900/50' },
 };
 
-// Nuancier de statut
 const STATUS_STYLES = {
   ouvert: { label: 'Ouvert', bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' },
   en_cours: { label: 'En cours', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' },
@@ -50,13 +48,11 @@ export default function IncidentsPage() {
   const [selectedIncident, setSelectedIncident] = useState<IIncidentResponse | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  // 1. Fetch de tous les incidents via TanStack Query
   const { data: incidents, isLoading, refetch } = useQuery({
     queryKey: ['incidents', 'list'],
     queryFn: () => incidentsApi.getAll(),
   });
 
-  // 2. Mutation pour modifier le statut
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, statut }: { id: string; statut: 'ouvert' | 'en_cours' | 'resolu' }) =>
       incidentsApi.updateStatut(id, { statut }),
@@ -70,7 +66,6 @@ export default function IncidentsPage() {
     },
   });
 
-  // 3. Filtrage local réactif
   const filteredIncidents = useMemo(() => {
     if (!incidents) return [];
     return incidents.filter((incident) => {
@@ -102,7 +97,6 @@ export default function IncidentsPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* En-tête de page */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-2">
@@ -124,7 +118,6 @@ export default function IncidentsPage() {
           </Button>
         </div>
 
-        {/* Barre de filtres et recherche */}
         <Card className="bg-gray-900 border-gray-800 shadow-lg">
           <CardContent className="p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="relative w-full md:max-w-xs">
@@ -168,7 +161,6 @@ export default function IncidentsPage() {
           </CardContent>
         </Card>
 
-        {/* Table des incidents */}
         <Card className="bg-gray-900 border-gray-800 shadow-xl overflow-hidden">
           <CardContent className="p-0">
             {isLoading ? (
@@ -250,7 +242,6 @@ export default function IncidentsPage() {
         </Card>
       </div>
 
-      {/* Boîte de dialogue d'inspection et de modération */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
         <DialogContent className="bg-gray-950 border-gray-800 text-white max-w-lg">
           <DialogHeader>
@@ -286,7 +277,6 @@ export default function IncidentsPage() {
                 </div>
               </div>
 
-              {/* Actions de modération du statut */}
               <div className="border-t border-gray-850 pt-4 space-y-2">
                 <p className="text-xs text-gray-400 font-bold">Changer le statut administratif :</p>
                 <div className="grid grid-cols-3 gap-2">
@@ -343,5 +333,4 @@ export default function IncidentsPage() {
   );
 }
 
-// Helper local pour le hook useMemo
 import { useMemo } from 'react';

@@ -103,7 +103,6 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5 overflow-y-auto max-h-[80vh]">
-          {/* Étape 1 : Signature Pad */}
           <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               1. Dessinez votre signature

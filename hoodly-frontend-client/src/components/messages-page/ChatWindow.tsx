@@ -276,34 +276,33 @@ export function ChatWindow({
         const isProvider = service.type === 'demande' ? !isCreator : isCreator
         const isClient = service.type === 'demande' ? isCreator : !isCreator
 
-        // Calculer l'étape actuelle du workflow
-        let currentStep = 1 // 1: Proposition, 2: Planification, 3: Signature, 4: Réalisation, 5: Validation, 6: Clôturé, 7: Refusé
+        let currentStep = 1
         if (activeConv.prestationStatut === 'aucun' || !activeConv.prestationStatut) {
           if (isPaid && contract) {
-            currentStep = 3 // Signature
+            currentStep = 3
           } else {
-            currentStep = 1 // Proposition d'aide
+            currentStep = 1
           }
         } else if (activeConv.prestationStatut === 'valide') {
           if (!activeConv.creneau || activeConv.creneau.statut !== 'confirme') {
-            currentStep = 2 // Planification
+            currentStep = 2
           } else if (isPaid && contract && contract.status === 'pending') {
-            currentStep = 3 // Signature
+            currentStep = 3
           } else {
-            currentStep = 4 // Réalisation
+            currentStep = 4
           }
         } else if (activeConv.prestationStatut === 'en_cours') {
-          currentStep = 4 // Réalisation
+          currentStep = 4
         } else if (activeConv.prestationStatut === 'termine') {
           if (isPaid && contract && contract.status === 'completed') {
-            currentStep = 6 // Clôturé
+            currentStep = 6
           } else if (!isPaid && activeConv.realisationValidee) {
-            currentStep = 6 // Clôturé
+            currentStep = 6
           } else {
-            currentStep = 5 // Validation
+            currentStep = 5
           }
         } else if (activeConv.prestationStatut === 'refuse') {
-          currentStep = 7 // Refusé
+          currentStep = 7
         }
 
         if (contract && contract.status === 'completed') {
@@ -505,7 +504,7 @@ export function ChatWindow({
                   }}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl"
                 >
-                  {isPaid ? `Valider & Payer ${service.points} pts` : 'Valider la réalisation'}
+                  {isPaid && contract ? 'Valider la réalisation' : isPaid ? `Valider & Payer ${service.points} pts` : 'Valider la réalisation'}
                 </Button>
               )
             }

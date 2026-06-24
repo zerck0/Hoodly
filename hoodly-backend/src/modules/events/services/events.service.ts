@@ -9,7 +9,11 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import * as crypto from 'crypto';
 import { Event, EventDocument, EventStatus } from '../schemas/event.schema';
-import { Contract, ContractDocument, ContractStatus } from '../../contracts/schemas/contract.schema';
+import {
+  Contract,
+  ContractDocument,
+  ContractStatus,
+} from '../../contracts/schemas/contract.schema';
 import { CreateEventDto } from '../dto/create-event.dto';
 import { UpdateEventDto } from '../dto/update-event.dto';
 import { EventResponseDto } from '../dto/event-response.dto';
@@ -41,7 +45,7 @@ export class EventsService {
         createurId,
         saved.titre,
       );
-      saved.conversationId = conv._id as Types.ObjectId;
+      saved.conversationId = conv._id;
       await saved.save();
 
       return this.toDto(saved);
@@ -97,9 +101,7 @@ export class EventsService {
     if (!event) throw new NotFoundException('Événement introuvable');
 
     const userObjId = new Types.ObjectId(userId);
-    const alreadyInterested = event.interesses.some((i) =>
-      i.equals(userObjId),
-    );
+    const alreadyInterested = event.interesses.some((i) => i.equals(userObjId));
 
     if (alreadyInterested) {
       await this.eventModel.findByIdAndUpdate(id, {
@@ -125,18 +127,20 @@ export class EventsService {
 
     if (event.createurId.equals(userObjId)) {
       throw new BadRequestException(
-        "Vous ne pouvez pas vous inscrire à votre propre événement",
+        'Vous ne pouvez pas vous inscrire à votre propre événement',
       );
     }
 
     const isRegistered = event.participants.some((p) => p.equals(userObjId));
 
     if (isRegistered) {
-      // Se désinscrire
       if (event.payant) {
-        // Annuler le contrat associé actif
         await this.contractModel.findOneAndUpdate(
-          { eventId: event._id, clientId: userObjId, status: { $ne: ContractStatus.CANCELLED } },
+          {
+            eventId: event._id,
+            clientId: userObjId,
+            status: { $ne: ContractStatus.CANCELLED },
+          },
           { $set: { status: ContractStatus.CANCELLED } },
         );
 
@@ -150,7 +154,7 @@ export class EventsService {
               id,
             );
           } catch {
-            // Solde insuffisant du créateur : on désinscrit quand même
+            // Solde insuffisant
           }
         }
       }
@@ -166,13 +170,14 @@ export class EventsService {
       throw new BadRequestException('Cet événement est complet');
     }
 
-    // Gestion du paiement et du contrat pour les événements payants
     if (event.payant && event.pointsCout && event.pointsCout > 0) {
-      const contract = await this.contractModel.findOne({
-        eventId: event._id,
-        clientId: userObjId,
-        status: { $ne: ContractStatus.CANCELLED },
-      }).exec();
+      const contract = await this.contractModel
+        .findOne({
+          eventId: event._id,
+          clientId: userObjId,
+          status: { $ne: ContractStatus.CANCELLED },
+        })
+        .exec();
 
       if (!contract) {
         if (!event.templateDocumentId) {
@@ -181,7 +186,6 @@ export class EventsService {
           );
         }
 
-        // Créer automatiquement le contrat de participation
         const newContract = new this.contractModel({
           clientId: userObjId,
           providerId: event.createurId,
@@ -191,7 +195,14 @@ export class EventsService {
           pricePoints: event.pointsCout,
           templateDocumentId: event.templateDocumentId,
           signatureZones: [
-            { page: 1, x: 380, y: 720, width: 150, height: 50, assignee: 'client' },
+            {
+              page: 1,
+              x: 380,
+              y: 720,
+              width: 150,
+              height: 50,
+              assignee: 'client',
+            },
           ],
           status: ContractStatus.PENDING,
           clientSignature: { signed: false },
@@ -200,8 +211,12 @@ export class EventsService {
             signedAt: new Date(),
             ipAddress: '127.0.0.1',
             signatureMetadata: 'System Auto-Sign (Waiver template)',
-            hash: crypto.createHash('sha256').update(`event-${event._id}-creator-${event.createurId}`).digest('hex'),
-            signatureImage: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', // clean 1x1 generic transparent png
+            hash: crypto
+              .createHash('sha256')
+              .update(`event-${event._id}-creator-${event.createurId}`)
+              .digest('hex'),
+            signatureImage:
+              'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
           },
         });
         await newContract.save();
@@ -220,8 +235,7 @@ export class EventsService {
           contractId: contract._id.toString(),
         });
       }
-      
-      // Si le contrat est SIGNED ou COMPLETED, on autorise l'inscription sans prélever les points à nouveau
+
     }
 
     await this.eventModel.findByIdAndUpdate(id, {
@@ -255,12 +269,10 @@ export class EventsService {
       );
     }
 
-    // Filtrer les presentIds pour ne garder que les vrais participants
     const validPresentIds = presentIds.filter((pid) =>
       event.participants.some((p) => p.toString() === pid),
     );
 
-    // Récompense créateur
     await this.transactionsService.awardPoints(
       createurId,
       event.pointsCreateur,
@@ -268,7 +280,6 @@ export class EventsService {
       id,
     );
 
-    // Récompense participants présents
     for (const pid of validPresentIds) {
       await this.transactionsService.awardPoints(
         pid,
@@ -292,10 +303,12 @@ export class EventsService {
     );
 
     const presentCount = validPresentIds.length;
-    await this.conversationsService.sendSystemMessage(
-      event.conversationId?.toString() ?? '',
-      `🎉 Événement validé par l'organisateur ! ${presentCount} participant${presentCount > 1 ? 's' : ''} présent${presentCount > 1 ? 's' : ''}. Les points ont été distribués.`,
-    ).catch(() => undefined);
+    await this.conversationsService
+      .sendSystemMessage(
+        event.conversationId?.toString() ?? '',
+        `🎉 Événement validé par l'organisateur ! ${presentCount} participant${presentCount > 1 ? 's' : ''} présent${presentCount > 1 ? 's' : ''}. Les points ont été distribués.`,
+      )
+      .catch(() => undefined);
 
     return this.toDto(updated!);
   }
@@ -364,7 +377,8 @@ export class EventsService {
       participants: rawParticipants.map((p: any) =>
         typeof p === 'object' && p._id ? p._id.toString() : p.toString(),
       ),
-      participantsFull: participantsFull.length > 0 ? participantsFull : undefined,
+      participantsFull:
+        participantsFull.length > 0 ? participantsFull : undefined,
       payant: event.payant ?? false,
       pointsCout: event.pointsCout,
       pointsCreateur: event.pointsCreateur ?? 10,

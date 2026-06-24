@@ -18,27 +18,23 @@ import {
 } from 'lucide-react';
 import { votesApi } from '../../services/api/votes';
 import { zonesApi } from '../../services/api/zones';
-import type { IVoteResponse } from '../../types/vote.types';
 import { toast } from 'sonner';
 
 export default function VotesPage() {
   const queryClient = useQueryClient();
   const [selectedZoneId, setSelectedZoneId] = useState<string>('all');
 
-  // 1. Fetch de toutes les zones actives pour alimenter le sélecteur
   const { data: zonesData } = useQuery({
     queryKey: ['zones', 'all-for-votes'],
     queryFn: () => zonesApi.getAll({ limit: 100 }),
   });
 
-  // 2. Fetch des votes de la zone sélectionnée (ou chargement conditionnel)
   const { data: votes, isLoading: loadingVotes, refetch } = useQuery({
     queryKey: ['votes', 'zone', selectedZoneId],
     queryFn: () => votesApi.getAllByZone(selectedZoneId),
     enabled: selectedZoneId !== 'all' && selectedZoneId !== '',
   });
 
-  // 3. Mutation pour clore un scrutin
   const closeMutation = useMutation({
     mutationFn: (id: string) => votesApi.close(id),
     onSuccess: () => {
@@ -50,7 +46,6 @@ export default function VotesPage() {
     },
   });
 
-  // 4. Mutation pour supprimer un vote
   const deleteMutation = useMutation({
     mutationFn: (id: string) => votesApi.delete(id),
     onSuccess: () => {
@@ -74,13 +69,11 @@ export default function VotesPage() {
     }
   };
 
-  // Liste des zones du sélecteur
   const zonesList = zonesData?.zones || [];
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* En-tête */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-2">
@@ -104,7 +97,6 @@ export default function VotesPage() {
           )}
         </div>
 
-        {/* Sélecteur de quartier (obligatoire pour charger les scrutins locaux) */}
         <Card className="bg-gray-900 border-gray-800 shadow-lg">
           <CardContent className="p-5 flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div className="space-y-1">
@@ -127,7 +119,6 @@ export default function VotesPage() {
           </CardContent>
         </Card>
 
-        {/* Liste des scrutins */}
         {selectedZoneId === 'all' ? (
           <Card className="bg-gray-900/40 border-dashed border-gray-800 py-16 text-center text-gray-500">
             <Inbox size={40} className="mx-auto text-gray-700 mb-3" />
@@ -192,7 +183,6 @@ export default function VotesPage() {
                   </div>
 
                   <CardContent className="p-6 space-y-5">
-                    {/* Participation */}
                     <div className="flex items-center gap-4 text-xs text-gray-400 bg-gray-950/20 p-3 rounded-lg border border-gray-850/60 max-w-sm">
                       <div className="flex items-center gap-1.5 font-semibold text-gray-200">
                         <Users size={13} className="text-indigo-400" />
@@ -205,7 +195,6 @@ export default function VotesPage() {
                       </div>
                     </div>
 
-                    {/* Options et barres de progression */}
                     <div className="space-y-4 max-w-xl">
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                         <TrendingUp size={12} className="text-indigo-400" /> Résultats partiels

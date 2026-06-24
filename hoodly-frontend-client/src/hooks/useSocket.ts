@@ -21,7 +21,7 @@ export function useSocket() {
     }
 
     if (!socketInstance) {
-      let backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+      let backendUrl = import.meta.env.VITE_API_URL
       if (backendUrl.endsWith('/api')) {
         backendUrl = backendUrl.substring(0, backendUrl.length - 4)
       } else if (backendUrl.endsWith('/api/')) {

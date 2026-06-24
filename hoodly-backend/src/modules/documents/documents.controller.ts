@@ -52,10 +52,9 @@ export class DocumentsController {
     @Body() createDocumentDto: CreateDocumentDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    // Un utilisateur classique ne peut créer un document que pour lui-même, sauf s'il est admin
     if (createDocumentDto.ownerId !== user.userId && user.role !== 'admin') {
       throw new ForbiddenException(
-        "Vous ne pouvez pas créer un document pour un autre utilisateur",
+        'Vous ne pouvez pas créer un document pour un autre utilisateur',
       );
     }
     return this.documentsService.create(createDocumentDto);
@@ -63,7 +62,10 @@ export class DocumentsController {
 
   @Get('me')
   @ApiOperation({ summary: 'Récupérer mes documents' })
-  @ApiResponse({ status: 200, description: 'Liste des documents de l’utilisateur' })
+  @ApiResponse({
+    status: 200,
+    description: 'Liste des documents de l’utilisateur',
+  })
   async findMyDocuments(@CurrentUser() user: AuthenticatedUser) {
     return this.documentsService.findByOwner(user.userId);
   }
@@ -92,10 +94,7 @@ export class DocumentsController {
 
   @Get(':id/pdf')
   @ApiOperation({ summary: 'Télécharger le contenu PDF brut d’un document' })
-  async getPdfContent(
-    @Param('id') id: string,
-    @Res() res: express.Response,
-  ) {
+  async getPdfContent(@Param('id') id: string, @Res() res: express.Response) {
     const doc = await this.documentsService.findById(id);
     if (!doc) {
       throw new NotFoundException('Document introuvable');
@@ -104,16 +103,23 @@ export class DocumentsController {
     try {
       const buffer = await this.uploadsService.downloadFile(doc.fileUrl);
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="${doc.title}.pdf"`);
+      res.setHeader(
+        'Content-Disposition',
+        `inline; filename="${doc.title}.pdf"`,
+      );
       res.send(buffer);
     } catch (err: any) {
-      throw new NotFoundException(`Fichier PDF introuvable sur le stockage distant : ${err.message}`);
+      throw new NotFoundException(
+        `Fichier PDF introuvable sur le stockage distant : ${err.message}`,
+      );
     }
   }
 
   @Patch(':id/status')
   @Roles('admin' as any)
-  @ApiOperation({ summary: 'Mettre à jour le statut d’un document (Admin uniquement)' })
+  @ApiOperation({
+    summary: 'Mettre à jour le statut d’un document (Admin uniquement)',
+  })
   @ApiResponse({ status: 200, description: 'Statut mis à jour avec succès' })
   @ApiResponse({ status: 404, description: 'Document introuvable' })
   async updateStatus(

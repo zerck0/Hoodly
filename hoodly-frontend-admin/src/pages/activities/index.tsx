@@ -24,7 +24,6 @@ import { eventsApi } from '../../services/api/events';
 import { servicesApi } from '../../services/api/services';
 import { toast } from 'sonner';
 
-// Catégories d'événements
 const EVENT_CATEGORY_LABELS: Record<string, string> = {
   fete: 'Fête de quartier',
   entraide: 'Solidarité & Entraide',
@@ -33,14 +32,12 @@ const EVENT_CATEGORY_LABELS: Record<string, string> = {
   autre: 'Autre rassemblement',
 };
 
-// Statuts d'événements
 const EVENT_STATUS_STYLES = {
   planifie: { label: 'Planifié', bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
   termine: { label: 'Terminé', bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' },
   annule: { label: 'Annulé', bg: 'bg-rose-500/10', text: 'text-rose-400', border: 'border-rose-500/20' },
 };
 
-// Statuts des services
 const SERVICE_STATUS_STYLES: Record<string, { label: string; bg: string; text: string; border: string }> = {
   ouvert: { label: 'Ouvert', bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
   en_attente: { label: 'Candidat choisi', bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
@@ -53,17 +50,14 @@ export default function ActivitiesPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'events' | 'services'>('events');
 
-  // États pour les filtres des événements
   const [eventSearch, setEventSearch] = useState('');
   const [eventStatusFilter, setEventStatusFilter] = useState('all');
   const [eventPage, setEventPage] = useState(1);
 
-  // États pour les filtres des services
   const [serviceSearch, setServiceSearch] = useState('');
   const [serviceTypeFilter, setServiceTypeFilter] = useState('all');
   const [servicePage, setServicePage] = useState(1);
 
-  // 1. Fetch des Événements
   const { data: eventsData, isLoading: loadingEvents, refetch: refetchEvents } = useQuery({
     queryKey: ['events', 'list', eventPage, eventSearch, eventStatusFilter],
     queryFn: () =>
@@ -76,7 +70,6 @@ export default function ActivitiesPage() {
     enabled: activeTab === 'events',
   });
 
-  // 2. Fetch des Services d'Entraide
   const { data: servicesData, isLoading: loadingServices, refetch: refetchServices } = useQuery({
     queryKey: ['services', 'list', servicePage, serviceSearch, serviceTypeFilter],
     queryFn: () =>
@@ -89,7 +82,6 @@ export default function ActivitiesPage() {
     enabled: activeTab === 'services',
   });
 
-  // 3. Mutation pour supprimer un événement
   const deleteEventMutation = useMutation({
     mutationFn: (id: string) => eventsApi.delete(id),
     onSuccess: () => {
@@ -101,7 +93,6 @@ export default function ActivitiesPage() {
     },
   });
 
-  // 4. Mutation pour supprimer un service
   const deleteServiceMutation = useMutation({
     mutationFn: (id: string) => servicesApi.delete(id),
     onSuccess: () => {
@@ -128,7 +119,6 @@ export default function ActivitiesPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* En-tête principal */}
         <div className="flex items-center justify-between border-b border-gray-900 pb-5">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-2.5">
@@ -149,7 +139,6 @@ export default function ActivitiesPage() {
           </Button>
         </div>
 
-        {/* Sélecteur d'Onglets Premium (Tabs) */}
         <div className="flex gap-2 border-b border-gray-800 pb-px">
           <button
             onClick={() => setActiveTab('events')}
@@ -175,10 +164,8 @@ export default function ActivitiesPage() {
           </button>
         </div>
 
-        {/* -------------------- SECTION 1 : ÉVÉNEMENTS -------------------- */}
         {activeTab === 'events' && (
           <div className="space-y-6">
-            {/* Barre de Recherche Événements */}
             <Card className="bg-gray-900 border-gray-800 shadow-lg">
               <CardContent className="p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
                 <div className="relative w-full md:max-w-xs">
@@ -217,7 +204,6 @@ export default function ActivitiesPage() {
               </CardContent>
             </Card>
 
-            {/* Table des événements */}
             <Card className="bg-gray-900 border-gray-800 shadow-xl overflow-hidden">
               <CardContent className="p-0">
                 {loadingEvents ? (
@@ -306,7 +292,6 @@ export default function ActivitiesPage() {
                       </table>
                     </div>
 
-                    {/* Pagination */}
                     {eventsData.totalPages > 1 && (
                       <div className="flex items-center justify-between border-t border-gray-800 px-6 py-4 bg-gray-950/20">
                         <p className="text-xs text-gray-500">
@@ -341,10 +326,8 @@ export default function ActivitiesPage() {
           </div>
         )}
 
-        {/* -------------------- SECTION 2 : SERVICES -------------------- */}
         {activeTab === 'services' && (
           <div className="space-y-6">
-            {/* Barre de Recherche Services */}
             <Card className="bg-gray-900 border-gray-800 shadow-lg">
               <CardContent className="p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
                 <div className="relative w-full md:max-w-xs">
@@ -382,7 +365,6 @@ export default function ActivitiesPage() {
               </CardContent>
             </Card>
 
-            {/* Table des Services */}
             <Card className="bg-gray-900 border-gray-800 shadow-xl overflow-hidden">
               <CardContent className="p-0">
                 {loadingServices ? (
@@ -458,7 +440,6 @@ export default function ActivitiesPage() {
                       </table>
                     </div>
 
-                    {/* Pagination */}
                     {servicesData.totalPages > 1 && (
                       <div className="flex items-center justify-between border-t border-gray-800 px-6 py-4 bg-gray-950/20">
                         <p className="text-xs text-gray-500">

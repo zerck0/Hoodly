@@ -56,5 +56,4 @@ export class ZoneRequest {
 
 export const ZoneRequestSchema = SchemaFactory.createForClass(ZoneRequest);
 
-// Index géospatial pour le champ location
 ZoneRequestSchema.index({ location: '2dsphere' });

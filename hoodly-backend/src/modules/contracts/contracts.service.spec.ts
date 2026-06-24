@@ -17,11 +17,9 @@ describe('ContractsService', () => {
   let usersService: UsersService;
   let transactionsService: TransactionsService;
 
-  // Mock document instances
   let mockContractDoc: any;
   let mockServiceDoc: any;
 
-  // Mock Models
   let mockContractModel: any;
   let mockServiceModel: any;
 
@@ -34,7 +32,6 @@ describe('ContractsService', () => {
   };
 
   beforeEach(async () => {
-    // Reset mocks
     jest.clearAllMocks();
 
     mockContractDoc = {
@@ -62,7 +59,6 @@ describe('ContractsService', () => {
       }),
     };
 
-    // Constructor mock for new Contract Model instance
     mockContractModel = jest.fn().mockImplementation((dto) => {
       return {
         ...dto,
@@ -74,12 +70,10 @@ describe('ContractsService', () => {
       };
     });
 
-    // Mock Static Methods for ContractModel
     mockContractModel.findById = jest.fn().mockReturnValue({
       exec: jest.fn().mockResolvedValue(mockContractDoc),
       populate: jest.fn().mockReturnThis(),
     });
-    // Set up chainable populate/sort methods for findOne and findAllForUser
     const queryChain = {
       populate: jest.fn().mockReturnThis(),
       sort: jest.fn().mockReturnThis(),
@@ -88,7 +82,6 @@ describe('ContractsService', () => {
     mockContractModel.findById.mockReturnValue(queryChain);
     mockContractModel.find = jest.fn().mockReturnValue(queryChain);
 
-    // Mock Static Methods for ServiceModel
     mockServiceModel = {
       findById: jest.fn().mockResolvedValue(mockServiceDoc),
       findByIdAndUpdate: jest.fn().mockResolvedValue(mockServiceDoc),
@@ -506,7 +499,6 @@ describe('ContractsService', () => {
       mockContractDoc.clientId = { _id: clientObjectId };
       mockContractDoc.providerId = { _id: new Types.ObjectId() };
 
-      // Mock populating chain ending with resolving to mockContractDoc
       const finalDoc = {
         ...mockContractDoc,
         clientId: { _id: clientObjectId },

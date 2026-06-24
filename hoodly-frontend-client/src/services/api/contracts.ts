@@ -23,8 +23,8 @@ export interface CreateContractDto {
 
 export interface SignContractDto {
   otp: string;
-  signatureImage: string; // base64
-  signatureMetadata: string; // User-Agent
+  signatureImage: string;
+  signatureMetadata: string;
   ipAddress?: string;
 }
 

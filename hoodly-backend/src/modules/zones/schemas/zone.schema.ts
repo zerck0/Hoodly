@@ -33,5 +33,4 @@ export class Zone {
 
 export const ZoneSchema = SchemaFactory.createForClass(Zone);
 
-// Index géospatial pour le champ polygone
 ZoneSchema.index({ polygone: '2dsphere' });

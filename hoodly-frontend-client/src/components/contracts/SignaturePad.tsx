@@ -15,13 +15,11 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, onClear }) =
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    // Configurer le style du trait
-    ctx.strokeStyle = '#0F172A' // Slate 900
+    ctx.strokeStyle = '#0F172A'
     ctx.lineWidth = 2.5
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
 
-    // Ajuster la résolution du canvas
     const rect = canvas.getBoundingClientRect()
     canvas.width = rect.width * 2
     canvas.height = rect.height * 2

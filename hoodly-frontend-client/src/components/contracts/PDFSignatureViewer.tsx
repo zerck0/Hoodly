@@ -44,7 +44,6 @@ export const PDFSignatureViewer: React.FC<PDFSignatureViewerProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null)
 
-  // Charger le PDF
   useEffect(() => {
     let active = true
     const loadPDF = async () => {
@@ -73,7 +72,6 @@ export const PDFSignatureViewer: React.FC<PDFSignatureViewerProps> = ({
     }
   }, [pdfUrl])
 
-  // Rendre la page
   useEffect(() => {
     if (!pdfDoc) return
     const renderPage = async () => {
@@ -108,7 +106,6 @@ export const PDFSignatureViewer: React.FC<PDFSignatureViewerProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 overflow-hidden w-full">
-      {/* Pagination */}
       <div className="flex items-center justify-between w-full max-w-[595px] bg-white px-4 py-2 rounded-xl border border-slate-200/50 shadow-sm text-sm">
         <button
           type="button"
@@ -131,7 +128,6 @@ export const PDFSignatureViewer: React.FC<PDFSignatureViewerProps> = ({
         </button>
       </div>
 
-      {/* Rendu PDF + Zones interactives */}
       <div
         className="relative bg-white shadow-md border border-slate-200 rounded-lg overflow-hidden"
         style={{ width: `${pageSize.width}px`, height: `${pageSize.height}px` }}
@@ -143,14 +139,12 @@ export const PDFSignatureViewer: React.FC<PDFSignatureViewerProps> = ({
         )}
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
 
-        {/* Zones interactives */}
         {zones.map((zone, index) => {
           if (zone.page !== currentPage) return null
           const isClient = zone.assignee === 'client'
           const isSigned = isClient ? clientSigned : providerSigned
           const signatureImg = isClient ? clientSignatureImage : providerSignatureImage
-          
-          // Est-ce que cette zone peut être signée par l'utilisateur connecté ?
+
           const canUserSign = userRole === zone.assignee && !isSigned
 
           return (

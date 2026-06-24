@@ -57,8 +57,16 @@ export class ServicesController {
   })
   @ApiQuery({ name: 'categorie', required: false, description: 'Catégorie' })
   @ApiQuery({ name: 'zoneId', required: false, description: 'ID de la zone' })
-  @ApiQuery({ name: 'createurId', required: false, description: 'ID du créateur' })
-  @ApiQuery({ name: 'responderId', required: false, description: 'ID de l\'intervenant' })
+  @ApiQuery({
+    name: 'createurId',
+    required: false,
+    description: 'ID du créateur',
+  })
+  @ApiQuery({
+    name: 'responderId',
+    required: false,
+    description: "ID de l'intervenant",
+  })
   @ApiResponse({ status: 200, description: 'Liste des services' })
   @ApiResponse({ status: 401, description: 'Non authentifié' })
   async findAll(
@@ -151,22 +159,6 @@ export class ServicesController {
   ) {
     return this.servicesService.refuser(id, body.responderId);
   }
-
-  // ============================================================
-  // 🧪 DEV ONLY — Supprimer cet endpoint avant la mise en prod
-  // ============================================================
-  @Patch(':id/dev-demarrer')
-  @ApiOperation({ summary: '[DEV] Démarrer un service sans vérification horaire' })
-  async devDemarrer(
-    @Param('id', MongoIdValidationPipe) id: string,
-    @Body() body: { conversationId?: string },
-    @CurrentUser() user: { userId: string },
-  ) {
-    return this.servicesService.devDemarrer(id, user.userId, body?.conversationId);
-  }
-  // ============================================================
-  // Fin bloc DEV ONLY
-  // ============================================================
 
   @Patch(':id/demarrer')
   @ApiOperation({ summary: "Démarrer la réalisation d'un service" })

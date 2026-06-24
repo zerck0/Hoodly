@@ -63,10 +63,7 @@ export class ConversationsService {
     return conv;
   }
 
-  async addParticipantToEvent(
-    eventId: string,
-    userId: string,
-  ): Promise<void> {
+  async addParticipantToEvent(eventId: string, userId: string): Promise<void> {
     const conv = await this.conversationModel.findOneAndUpdate(
       { eventId: new Types.ObjectId(eventId) },
       { $addToSet: { participants: new Types.ObjectId(userId) } },
@@ -351,7 +348,9 @@ export class ConversationsService {
     }
   }
 
-  async findByServiceId(serviceId: string): Promise<ConversationDocument | null> {
+  async findByServiceId(
+    serviceId: string,
+  ): Promise<ConversationDocument | null> {
     return this.conversationModel.findOne({
       serviceId: new Types.ObjectId(serviceId),
     });
@@ -489,12 +488,12 @@ export class ConversationsService {
 
     if (conversation.creneau.proposeurId?.toString() === userId) {
       throw new ForbiddenException(
-        "Vous ne pouvez pas accepter votre propre proposition de créneau",
+        'Vous ne pouvez pas accepter votre propre proposition de créneau',
       );
     }
 
     conversation.creneau.statut = 'confirme';
-    
+
     let isPaid = false;
     if (conversation.serviceId) {
       const service = conversation.serviceId as any;
@@ -517,14 +516,18 @@ export class ConversationsService {
         (p) => p._id.toString() !== service.createurId.toString(),
       );
 
-      // Create contract automatically if service is paid!
       if (!service.gratuit && service.points && service.points > 0) {
         try {
-          const existingContract = await this.contractsService.findActiveContractForService(serviceId);
+          const existingContract =
+            await this.contractsService.findActiveContractForService(serviceId);
           if (!existingContract && visitorId) {
             const isDemande = service.type === 'demande';
-            const clientId = isDemande ? service.createurId.toString() : visitorId._id.toString();
-            const providerId = isDemande ? visitorId._id.toString() : service.createurId.toString();
+            const clientId = isDemande
+              ? service.createurId.toString()
+              : visitorId._id.toString();
+            const providerId = isDemande
+              ? visitorId._id.toString()
+              : service.createurId.toString();
 
             const [clientUser, providerUser] = await Promise.all([
               this.userModel.findById(clientId),
@@ -532,8 +535,11 @@ export class ConversationsService {
             ]);
 
             if (clientUser && providerUser) {
-              const dateStr = new Date(conversation.creneau.date).toLocaleDateString('fr-FR');
-              const terms = `CONTRAT D'ENTRAIDE DE QUARTIER\n\n` +
+              const dateStr = new Date(
+                conversation.creneau.date,
+              ).toLocaleDateString('fr-FR');
+              const terms =
+                `CONTRAT D'ENTRAIDE DE QUARTIER\n\n` +
                 `Le présent contrat est conclu entre :\n` +
                 `- Client / Bénéficiaire : ${clientUser.name} (${clientUser.email})\n` +
                 `- Prestataire / Intervenant : ${providerUser.name} (${providerUser.email})\n\n` +
@@ -549,11 +555,12 @@ export class ConversationsService {
                 `SIGNATURES :\n` +
                 `En signant ce contrat, les deux parties valident la planification et les termes ci-dessus décrits.`;
 
-              // Generate PDF template dynamically
               const pdfDoc = await PDFDocument.create();
               const page = pdfDoc.addPage([595, 842]);
               const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-              const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+              const fontBold = await pdfDoc.embedFont(
+                StandardFonts.HelveticaBold,
+              );
 
               page.drawText(`CONTRAT D'ENTRAIDE - HOODLY`, {
                 x: 50,
@@ -573,7 +580,8 @@ export class ConversationsService {
               const lines = terms.split('\n');
               let yPos = 720;
               for (const line of lines) {
-                const isHeader = line.endsWith(':') || line.startsWith('CONTRAT');
+                const isHeader =
+                  line.endsWith(':') || line.startsWith('CONTRAT');
                 page.drawText(line, {
                   x: 50,
                   y: yPos,
@@ -584,17 +592,39 @@ export class ConversationsService {
                 yPos -= 15;
               }
 
-              // Draw signature placeholders
-              page.drawText(`Prestataire (Signez ci-dessous)`, { x: 80, y: 145, size: 9, font: fontBold });
-              page.drawRectangle({ x: 80, y: 70, width: 160, height: 60, borderColor: rgb(0.8, 0.8, 0.8), borderWidth: 1 });
+              page.drawText(`Prestataire (Signez ci-dessous)`, {
+                x: 80,
+                y: 145,
+                size: 9,
+                font: fontBold,
+              });
+              page.drawRectangle({
+                x: 80,
+                y: 70,
+                width: 160,
+                height: 60,
+                borderColor: rgb(0.8, 0.8, 0.8),
+                borderWidth: 1,
+              });
 
-              page.drawText(`Client (Signez ci-dessous)`, { x: 355, y: 145, size: 9, font: fontBold });
-              page.drawRectangle({ x: 355, y: 70, width: 160, height: 60, borderColor: rgb(0.8, 0.8, 0.8), borderWidth: 1 });
+              page.drawText(`Client (Signez ci-dessous)`, {
+                x: 355,
+                y: 145,
+                size: 9,
+                font: fontBold,
+              });
+              page.drawRectangle({
+                x: 355,
+                y: 70,
+                width: 160,
+                height: 60,
+                borderColor: rgb(0.8, 0.8, 0.8),
+                borderWidth: 1,
+              });
 
               const pdfBytes = await pdfDoc.save();
               const pdfBuffer = Buffer.from(pdfBytes);
 
-              // Upload to Cloudinary
               const fileUrl = await this.uploadsService.uploadFile({
                 fieldname: 'file',
                 originalname: `contrat_service_${serviceId}.pdf`,
@@ -604,9 +634,11 @@ export class ConversationsService {
                 buffer: pdfBuffer,
               });
 
-              const pdfHash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+              const pdfHash = crypto
+                .createHash('sha256')
+                .update(pdfBuffer)
+                .digest('hex');
 
-              // Create Document
               const doc = await this.documentsService.create({
                 ownerId: clientId,
                 title: `Modèle Contrat - ${service.titre}`,
@@ -615,7 +647,6 @@ export class ConversationsService {
                 type: DocumentType.CONTRACT_TEMPLATE,
               });
 
-              // Create Contract
               await this.contractsService.create({
                 clientId,
                 providerId,
@@ -625,8 +656,22 @@ export class ConversationsService {
                 pricePoints: service.points,
                 templateDocumentId: doc._id.toString(),
                 signatureZones: [
-                  { page: 1, x: 80, y: 712, width: 160, height: 60, assignee: 'provider' },
-                  { page: 1, x: 355, y: 712, width: 160, height: 60, assignee: 'client' },
+                  {
+                    page: 1,
+                    x: 80,
+                    y: 712,
+                    width: 160,
+                    height: 60,
+                    assignee: 'provider',
+                  },
+                  {
+                    page: 1,
+                    x: 355,
+                    y: 712,
+                    width: 160,
+                    height: 60,
+                    assignee: 'client',
+                  },
                 ],
               });
 
@@ -637,7 +682,10 @@ export class ConversationsService {
             }
           }
         } catch (err) {
-          console.error('[ConversationsService] Erreur lors de la création du contrat pour service payant:', err);
+          console.error(
+            '[ConversationsService] Erreur lors de la création du contrat pour service payant:',
+            err,
+          );
         }
       }
 

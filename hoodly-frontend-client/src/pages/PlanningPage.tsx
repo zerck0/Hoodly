@@ -46,7 +46,7 @@ export default function PlanningPage() {
   const { user } = useUser()
   const navigate = useNavigate()
   const { conversations } = useConversations()
-  const { demarrerService, terminerService, validerService, devDemarrerService } = useServices()
+  const { demarrerService, terminerService, validerService } = useServices()
   const { events } = useEvents()
 
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -54,7 +54,6 @@ export default function PlanningPage() {
 
   const userId = user?.id ?? ''
 
-  // Services : rendez-vous confirmés
   const confirmedBookings = conversations.filter(
     (c) => c.serviceId && c.creneau && c.creneau.statut === 'confirme' && (c.serviceId.gratuit || c.prestationStatut !== 'aucun')
   )
@@ -62,7 +61,6 @@ export default function PlanningPage() {
     (b) => b.prestationStatut !== 'termine' && !b.realisationValidee
   )
 
-  // Événements : créateur ou participant
   const myEvents = events.filter(
     (e) => e.createurId === userId || e.participants.includes(userId)
   )
@@ -154,7 +152,6 @@ export default function PlanningPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Calendrier */}
         <Card className="lg:col-span-2 bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-gray-900 capitalize leading-none">{monthName}</h3>
@@ -221,7 +218,6 @@ export default function PlanningPage() {
             })}
           </div>
 
-          {/* Légende */}
           <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-100">
             <div className="flex items-center gap-1.5">
               <div className="h-2.5 w-2.5 rounded-sm bg-emerald-400" />
@@ -234,7 +230,6 @@ export default function PlanningPage() {
           </div>
         </Card>
 
-        {/* Sidebar */}
         <div className="space-y-6">
           <h3 className="text-lg font-bold text-gray-900 leading-none">À venir</h3>
 
@@ -249,7 +244,6 @@ export default function PlanningPage() {
               </div>
             ) : (
               <>
-                {/* Services */}
                 {upcomingBookings.map((booking) => {
                   const other = getOtherParticipant(booking)
                   const dateStr = new Date(booking.creneau!.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
@@ -276,7 +270,6 @@ export default function PlanningPage() {
                   )
                 })}
 
-                {/* Événements */}
                 {upcomingEvents.map((event) => {
                   const eventDate = new Date(event.date)
                   const dateStr = eventDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
@@ -313,7 +306,6 @@ export default function PlanningPage() {
         </div>
       </div>
 
-      {/* Modal service */}
       {selectedItem?.type === 'service' && (() => {
         const ev = selectedItem.data
         const service = ev.serviceId!
@@ -384,29 +376,6 @@ export default function PlanningPage() {
                     </Button>
                   )}
 
-                  {/* ============================================================ */}
-                  {/* 🧪 DEV ONLY — Supprimer ce bloc avant la mise en prod        */}
-                  {/* ============================================================ */}
-                  {import.meta.env.DEV && (
-                    <button
-                      onClick={async () => {
-                        if (!ev.serviceId) return
-                        try {
-                          await devDemarrerService({ id: ev.serviceId._id, body: { conversationId: ev._id } })
-                          toast.success('[TEST] Prestation démarrée sans vérification horaire !')
-                          setSelectedItem(null)
-                        } catch (err: any) {
-                          toast.error(err?.response?.data?.message || '[TEST] Erreur')
-                        }
-                      }}
-                      className="w-full border border-dashed border-amber-400 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl py-3 text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
-                    >
-                      🧪 [TEST] Démarrer maintenant (bypass heure)
-                    </button>
-                  )}
-                  {/* ============================================================ */}
-                  {/* Fin bloc DEV ONLY                                             */}
-                  {/* ============================================================ */}
 
                   <div className="flex gap-2">
                     <Button variant="outline" onClick={() => { setSelectedItem(null); navigate(`/messages?id=${ev._id}`) }} className="flex-1 rounded-xl py-5 text-xs font-semibold flex items-center justify-center gap-2">
@@ -421,7 +390,6 @@ export default function PlanningPage() {
         )
       })()}
 
-      {/* Modal événement */}
       {selectedItem?.type === 'event' && (() => {
         const event = selectedItem.data
         const isOrganizer = event.createurId === userId

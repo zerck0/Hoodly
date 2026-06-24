@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from 'react'
 import * as pdfjsLib from 'pdfjs-dist'
 import { Plus, User, FileText, Trash } from 'lucide-react'
 
-// Configurer le worker CDN pour pdfjs
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs` // Fallback version standard
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker
 
 export interface SignatureZone {
   page: number
@@ -28,17 +29,15 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
   const [numPages, setNumPages] = useState<number>(0)
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [loading, setLoading] = useState<boolean>(true)
-  const [pageSize, setPageSize] = useState<{ width: number; height: number }>({ width: 595, height: 842 }) // A4 par défaut
-  
+  const [pageSize, setPageSize] = useState<{ width: number; height: number }>({ width: 595, height: 842 }) // A4
+
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null)
 
-  // Drag state
   const [activeDragIndex, setActiveDragIndex] = useState<number | null>(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
 
-  // Charger le document PDF
   useEffect(() => {
     let active = true
     const loadPDF = async () => {
@@ -61,7 +60,6 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
     }
   }, [pdfUrl])
 
-  // Rendre la page courante
   useEffect(() => {
     if (!pdfDoc) return
     const renderPage = async () => {
@@ -72,7 +70,6 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
         const context = canvas.getContext('2d')
         if (!context) return
 
-        // Rendre à une échelle fixe pour correspondre à A4 standard (595 points de large)
         const desiredWidth = 595
         const viewportOriginal = page.getViewport({ scale: 1 })
         const scale = desiredWidth / viewportOriginal.width
@@ -95,7 +92,6 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
     renderPage()
   }, [pdfDoc, currentPage])
 
-  // Ajouter une nouvelle zone
   const addZone = (assignee: 'client' | 'provider') => {
     const newZone: SignatureZone = {
       page: currentPage,
@@ -113,7 +109,6 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
     onChange(filtered)
   }
 
-  // Gestion du Drag-and-Drop manuel
   const handleMouseDown = (e: React.MouseEvent, index: number) => {
     e.preventDefault()
     setActiveDragIndex(index)
@@ -122,7 +117,6 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
     const rect = containerRef.current?.getBoundingClientRect()
     if (!rect) return
 
-    // Position relative de la souris dans le conteneur
     const mouseX = e.clientX - rect.left
     const mouseY = e.clientY - rect.top
 
@@ -143,7 +137,6 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
     let newX = mouseX - dragOffset.x
     let newY = mouseY - dragOffset.y
 
-    // Contraintes pour rester dans la page
     const zone = zones[activeDragIndex]
     newX = Math.max(0, Math.min(newX, pageSize.width - zone.width))
     newY = Math.max(0, Math.min(newY, pageSize.height - zone.height))
@@ -166,7 +159,6 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
 
   return (
     <div className="flex flex-col md:flex-row gap-6 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-      {/* Barre d'outils latérale */}
       <div className="md:w-64 flex flex-col gap-4">
         <h3 className="font-semibold text-slate-800 flex items-center gap-2">
           <FileText size={18} className="text-emerald-600" />
@@ -232,9 +224,7 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
         </div>
       </div>
 
-      {/* Visualiseur PDF & Canvas interactif */}
       <div className="flex-1 flex flex-col items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 overflow-hidden">
-        {/* Pagination du PDF */}
         <div className="flex items-center justify-between w-full max-w-[595px] bg-white px-4 py-2 rounded-xl border border-slate-200/50 shadow-sm text-sm">
           <button
             type="button"
@@ -257,7 +247,6 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
           </button>
         </div>
 
-        {/* Zone de rendu de la page */}
         <div
           ref={containerRef}
           onMouseMove={handleMouseMove}
@@ -272,7 +261,6 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
           )}
           <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
 
-          {/* Superposition des zones de signature */}
           {zones.map((zone, index) => {
             if (zone.page !== currentPage) return null
             const isClient = zone.assignee === 'client'
@@ -299,7 +287,7 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
                 </div>
                 <button
                   type="button"
-                  onMouseDown={(e) => e.stopPropagation()} // Éviter de drag en cliquant
+                  onMouseDown={(e) => e.stopPropagation()}
                   onClick={() => deleteZone(index)}
                   className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600"
                 >

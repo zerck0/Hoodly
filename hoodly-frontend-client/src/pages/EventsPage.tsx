@@ -164,7 +164,6 @@ export default function EventsPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto pb-24 space-y-6 animate-in fade-in duration-300">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-[#1e224e]" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -184,7 +183,6 @@ export default function EventsPage() {
         </button>
       </div>
 
-      {/* Tabs */}
       <div className="flex flex-wrap gap-1 bg-gray-100 p-0.5 rounded-xl border border-gray-200/50 w-fit">
         {tabs.map(({ key, label, count }) => (
           <button
@@ -205,7 +203,6 @@ export default function EventsPage() {
         ))}
       </div>
 
-      {/* ── DÉCOUVRIR ─────────────────────────────── */}
       {tab === 'decouvrir' && (
         <div className="flex flex-col items-center pt-4">
           {isLoading ? (
@@ -253,7 +250,6 @@ export default function EventsPage() {
         </div>
       )}
 
-      {/* ── MES INTÉRÊTS ──────────────────────────── */}
       {tab === 'interets' && (
         <EventList
           events={mesInterets}
@@ -266,7 +262,6 @@ export default function EventsPage() {
         />
       )}
 
-      {/* ── MES PARTICIPATIONS ────────────────────── */}
       {tab === 'participations' && (
         <EventList
           events={mesParticipations}
@@ -279,7 +274,6 @@ export default function EventsPage() {
         />
       )}
 
-      {/* ── MES CRÉATIONS ─────────────────────────── */}
       {tab === 'mesCreations' && (
         <MyCreations
           events={mesCreations}
@@ -303,7 +297,6 @@ export default function EventsPage() {
         />
       )}
 
-      {/* ── MODAL CRÉATION ────────────────────────── */}
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 backdrop-blur-sm overflow-y-auto py-8 px-4">
           <div className="w-full max-w-xl bg-white rounded-3xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -321,7 +314,6 @@ export default function EventsPage() {
             </div>
 
             <form onSubmit={handleCreate} className="p-6 space-y-5">
-              {/* Photo */}
               <div>
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                 {photoPreview ? (
@@ -429,7 +421,6 @@ export default function EventsPage() {
                 />
               </div>
 
-              {/* Système de points */}
               <div className="rounded-2xl border border-[#2c308e]/10 bg-[#fafafe] p-4 space-y-4">
                 <p className="text-xs font-bold text-[#1e224e] flex items-center gap-2">
                   <Award className="h-4 w-4 text-[#2c308e]" />
@@ -524,7 +515,6 @@ export default function EventsPage() {
   )
 }
 
-/* ─── Mes Créations ──────────────────────────────────────────── */
 
 function MyCreations({
   events, isLoading,
@@ -766,8 +756,6 @@ function CreationCard({
     </div>
   )
 }
-
-/* ─── EventList ──────────────────────────────────────────────── */
 
 function EventList({
   events, isLoading, userId, emptyLabel, emptyHint, onParticiperToggle, onVoirDiscussion,

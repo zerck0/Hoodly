@@ -13,10 +13,10 @@ export enum ContractStatus {
 @Schema()
 export class SignatureZone {
   @Prop({ type: Number, required: true })
-  page!: number; // 1-indexed
+  page!: number;
 
   @Prop({ type: Number, required: true })
-  x!: number; // position en points ou %
+  x!: number;
 
   @Prop({ type: Number, required: true })
   y!: number;
@@ -45,19 +45,19 @@ export class SignatureDetail {
   ipAddress?: string;
 
   @Prop()
-  signatureMetadata?: string; // User-Agent
+  signatureMetadata?: string;
 
   @Prop()
-  hash?: string; // Hash cryptographique certifié
+  hash?: string;
 
   @Prop()
-  signatureImage?: string; // Base64 ou URL de l'image de la signature
+  signatureImage?: string;
 
   @Prop({ select: false })
-  otpHash?: string; // Hash de l'OTP de signature
+  otpHash?: string;
 
   @Prop({ select: false })
-  otpExpiresAt?: Date; // Expiration de l'OTP
+  otpExpiresAt?: Date;
 }
 
 const SignatureDetailSchema = SchemaFactory.createForClass(SignatureDetail);
@@ -88,7 +88,6 @@ export class Contract {
   @Prop({ type: String, enum: ContractStatus, default: ContractStatus.PENDING })
   status!: ContractStatus;
 
-  // Références aux Documents PDF
   @Prop({ type: Types.ObjectId, ref: 'Document', required: true })
   templateDocumentId!: Types.ObjectId;
 
@@ -112,4 +111,3 @@ export class Contract {
 }
 
 export const ContractSchema = SchemaFactory.createForClass(Contract);
-

@@ -108,7 +108,6 @@ export function SwipeCard({ event, onSwipeLeft, onSwipeRight }: SwipeCardProps) 
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
-        {/* Header */}
         {event.photoUrl ? (
           <div className="relative h-48 w-full overflow-hidden">
             <img src={event.photoUrl} alt={event.titre} className="w-full h-full object-cover" />
@@ -126,7 +125,6 @@ export function SwipeCard({ event, onSwipeLeft, onSwipeRight }: SwipeCardProps) 
           </div>
         )}
 
-        {/* Contenu */}
         <div className="p-6 space-y-4">
           <h2 className="text-xl font-bold text-[#1e224e] leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
             {event.titre}
@@ -159,7 +157,6 @@ export function SwipeCard({ event, onSwipeLeft, onSwipeRight }: SwipeCardProps) 
           </div>
         </div>
 
-        {/* Overlays */}
         {showInterested && (
           <div className="absolute inset-0 flex items-center justify-center bg-green-500/10 pointer-events-none">
             <div className="border-4 border-green-500 rounded-xl px-6 py-2 -rotate-12">
@@ -176,7 +173,6 @@ export function SwipeCard({ event, onSwipeLeft, onSwipeRight }: SwipeCardProps) 
         )}
       </div>
 
-      {/* Boutons */}
       <div className="flex items-center gap-8 mt-8">
         <button
           onClick={() => triggerSwipe('left')}

@@ -46,7 +46,6 @@ export default function ContractsPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto pb-24 space-y-8 animate-in fade-in duration-300">
-      {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-4xl font-extrabold text-[#1e224e] tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -58,7 +57,6 @@ export default function ContractsPage() {
         </div>
       </div>
 
-      {/* Filtres */}
       <div className="flex flex-wrap gap-2 bg-slate-100/50 p-1.5 rounded-2xl w-fit border border-slate-200/50">
         {(['all', 'pending', 'signed', 'completed', 'cancelled'] as const).map((tab) => (
           <button
@@ -79,7 +77,6 @@ export default function ContractsPage() {
         ))}
       </div>
 
-      {/* Liste des contrats */}
       {isLoading ? (
         <div className="flex justify-center p-24 bg-white rounded-3xl border border-gray-100 shadow-xs">
           <Loader2 className="animate-spin text-[#0c3383]" size={32} />
@@ -157,7 +154,6 @@ export default function ContractsPage() {
         </div>
       )}
 
-      {/* Rappel RGPD */}
       <div className="bg-emerald-50/40 border border-emerald-100 rounded-3xl p-5 flex items-start gap-3 max-w-2xl text-xs text-emerald-800 leading-relaxed font-light">
         <ShieldCheck className="text-emerald-600 shrink-0 mt-0.5" size={18} />
         <div>

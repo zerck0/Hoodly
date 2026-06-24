@@ -68,19 +68,6 @@ export function useServices(params: GetServicesParams = {}) {
     },
   })
 
-  // 🧪 DEV ONLY — Supprimer avant la mise en prod
-  const devDemarrerMutation = useMutation({
-    mutationFn: async ({ id, body }: { id: string; body?: { conversationId?: string } }) => {
-      const { data } = await servicesApi.devDemarrer(id, body)
-      return data
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['services'] })
-      queryClient.invalidateQueries({ queryKey: ['conversations'] })
-    },
-  })
-  // Fin DEV ONLY
-
   const validerMutation = useMutation({
     mutationFn: async ({ id, body }: { id: string; body?: { conversationId?: string } }) => {
       const { data } = await servicesApi.valider(id, body)
@@ -115,9 +102,6 @@ export function useServices(params: GetServicesParams = {}) {
     isRefusing: refuseMutation.isPending,
     demarrerService: demarrerMutation.mutateAsync,
     isStarting: demarrerMutation.isPending,
-    // 🧪 DEV ONLY — Supprimer avant la mise en prod
-    devDemarrerService: devDemarrerMutation.mutateAsync,
-    // Fin DEV ONLY
     validerService: validerMutation.mutateAsync,
     isValidating: validerMutation.isPending,
   }

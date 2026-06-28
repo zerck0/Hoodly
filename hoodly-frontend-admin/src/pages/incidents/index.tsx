@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -47,6 +47,7 @@ export default function IncidentsPage() {
   const [criticiteFilter, setCriticiteFilter] = useState<string>('all');
   const [selectedIncident, setSelectedIncident] = useState<IIncidentResponse | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [page, setPage] = useState(1);
 
   const { data: incidents, isLoading, refetch } = useQuery({
     queryKey: ['incidents', 'list'],
@@ -80,6 +81,16 @@ export default function IncidentsPage() {
       return matchesSearch && matchesStatus && matchesCriticite;
     });
   }, [incidents, search, statusFilter, criticiteFilter]);
+
+  const totalPages = Math.ceil(filteredIncidents.length / 10);
+
+  const paginatedIncidents = useMemo(() => {
+    return filteredIncidents.slice((page - 1) * 10, page * 10);
+  }, [filteredIncidents, page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter, criticiteFilter]);
 
   const handleOpenDetail = (incident: IIncidentResponse) => {
     setSelectedIncident(incident);
@@ -187,7 +198,7 @@ export default function IncidentsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-800/60">
-                    {filteredIncidents.map((incident) => {
+                    {paginatedIncidents.map((incident) => {
                       const id = incident.id || incident._id;
                       const crit = CRITICITY_STYLES[incident.criticite] || CRITICITY_STYLES.faible;
                       const stat = STATUS_STYLES[incident.statut] || STATUS_STYLES.ouvert;
@@ -236,6 +247,33 @@ export default function IncidentsPage() {
                     })}
                   </tbody>
                 </table>
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between p-4 border-t border-gray-800 bg-gray-950/20">
+                    <p className="text-xs text-gray-400">
+                      Page {page} sur {totalPages} ({filteredIncidents.length} signalements)
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(page - 1)}
+                        disabled={page === 1}
+                        className="border-gray-800 bg-gray-900 text-gray-300 hover:text-white h-8 text-xs font-semibold px-3"
+                      >
+                        Précédent
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage(page + 1)}
+                        disabled={page === totalPages}
+                        className="border-gray-800 bg-gray-900 text-gray-300 hover:text-white h-8 text-xs font-semibold px-3"
+                      >
+                        Suivant
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
@@ -332,5 +370,3 @@ export default function IncidentsPage() {
     </DashboardLayout>
   );
 }
-
-import { useMemo } from 'react';

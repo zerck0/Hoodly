@@ -37,17 +37,17 @@ export class VotesService {
       throw new NotFoundException('Créateur introuvable');
     }
 
-    if (!creator.zoneId || creator.zoneId.toString() !== createVoteDto.zoneId) {
+    const isModeratorOrAdmin =
+      creator.role === 'moderator' || creator.role === 'admin';
+
+    if (!isModeratorOrAdmin && (!creator.zoneId || creator.zoneId.toString() !== createVoteDto.zoneId)) {
       throw new ForbiddenException(
         'Vous devez appartenir à cette zone pour y créer un vote',
       );
     }
-
-    const isModeratorOrAdmin =
-      creator.role === 'moderator' || creator.role === 'admin';
     const status = isModeratorOrAdmin ? VoteStatus.ACTIVE : VoteStatus.PENDING;
 
-    // Default expiration date is 7 days from now
+    // 7 jours
     const expirationDate = createVoteDto.expirationDate
       ? new Date(createVoteDto.expirationDate)
       : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -73,7 +73,6 @@ export class VotesService {
 
     const savedVote = await vote.save();
 
-    // If it was created directly as active (by mod/admin), publish to feed
     if (status === VoteStatus.ACTIVE) {
       try {
         const postContent = `🗳️ Consultation : ${savedVote.title}\n\n${savedVote.description || ''}\n\nLa consultation est ouverte pour une durée d'une semaine. Donnez votre avis dans l'onglet Consultations de l'application !`;

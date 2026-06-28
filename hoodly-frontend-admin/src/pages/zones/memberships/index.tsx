@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Users, Check, X, Eye, ShieldAlert, Clock, ExternalLink } from 'lucide-react';
+import { Check, X, ShieldAlert, Clock, ExternalLink } from 'lucide-react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -72,6 +71,8 @@ export default function MembershipsPage() {
     if (user.nom || user.prenom) return `${user.nom || ''} ${user.prenom || ''}`.trim();
     return user.name || 'Anonyme';
   };
+
+  const isPdf = (url?: string) => url?.toLowerCase().endsWith('.pdf');
 
   return (
     <DashboardLayout>
@@ -165,7 +166,11 @@ export default function MembershipsPage() {
               <div className="relative aspect-[4/3] bg-gray-900 rounded-xl overflow-hidden border border-gray-800 flex items-center justify-center group">
                 {selectedMembership?.justificatifUrl ? (
                   <>
-                    <img src={selectedMembership.justificatifUrl} className="max-h-full max-w-full object-contain" alt="Justificatif" />
+                    {isPdf(selectedMembership.justificatifUrl) ? (
+                      <iframe src={selectedMembership.justificatifUrl} className="w-full h-full border-0 rounded-xl" title="Justificatif PDF" />
+                    ) : (
+                      <img src={selectedMembership.justificatifUrl} className="max-h-full max-w-full object-contain" alt="Justificatif" />
+                    )}
                     <a href={selectedMembership.justificatifUrl} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all duration-200">
                       <ExternalLink className="h-6 w-6 mb-2" />
                       <span className="text-xs font-medium">Ouvrir l'original</span>
@@ -179,7 +184,11 @@ export default function MembershipsPage() {
               <div className="relative aspect-[4/3] bg-gray-900 rounded-xl overflow-hidden border border-gray-800 flex items-center justify-center group">
                 {selectedMembership?.pieceIdentiteUrl ? (
                   <>
-                    <img src={selectedMembership.pieceIdentiteUrl} className="max-h-full max-w-full object-contain" alt="Identité" />
+                    {isPdf(selectedMembership.pieceIdentiteUrl) ? (
+                      <iframe src={selectedMembership.pieceIdentiteUrl} className="w-full h-full border-0 rounded-xl" title="Identité PDF" />
+                    ) : (
+                      <img src={selectedMembership.pieceIdentiteUrl} className="max-h-full max-w-full object-contain" alt="Identité" />
+                    )}
                     <a href={selectedMembership.pieceIdentiteUrl} target="_blank" rel="noreferrer" className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all duration-200">
                       <ExternalLink className="h-6 w-6 mb-2" />
                       <span className="text-xs font-medium">Ouvrir l'original</span>

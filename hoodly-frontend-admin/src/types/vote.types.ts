@@ -9,7 +9,7 @@ export interface IVoteResponse {
   titre: string;
   description: string;
   options: IVoteOption[];
-  dateFin: string;
+  expirationDate: string;
   zoneId: string;
   createurId: string;
   statut: 'actif' | 'clos';

@@ -7,6 +7,18 @@ export const votesApi = {
     return data;
   },
 
+  create: async (body: {
+    zoneId: string;
+    title: string;
+    description?: string;
+    options: string[];
+    expirationDate?: string;
+    isAnonymous?: boolean;
+  }) => {
+    const { data } = await apiClient.post<IVoteResponse>('/votes', body);
+    return data;
+  },
+
   close: async (id: string) => {
     const { data } = await apiClient.patch<IVoteResponse>(`/votes/${id}/close`, {});
     return data;

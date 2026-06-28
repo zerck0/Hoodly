@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -12,6 +13,20 @@ import { useUsersStore } from '@/stores/users.store';
 
 export function UsersFilters() {
   const { filters, setFilters, resetFilters } = useUsersStore();
+  const [localSearch, setLocalSearch] = useState(filters.search);
+
+  useEffect(() => {
+    setLocalSearch(filters.search);
+  }, [filters.search]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (localSearch !== filters.search) {
+        setFilters({ search: localSearch });
+      }
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [localSearch, setFilters, filters.search]);
 
   return (
     <div className="flex gap-4 items-center">
@@ -19,8 +34,8 @@ export function UsersFilters() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
           placeholder="Rechercher par nom ou email..."
-          value={filters.search}
-          onChange={(e) => setFilters({ search: e.target.value })}
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
           className="pl-9 bg-gray-800 border-gray-700 text-white placeholder:text-gray-500"
         />
       </div>

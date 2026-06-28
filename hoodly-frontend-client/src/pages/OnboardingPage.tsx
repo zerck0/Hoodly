@@ -74,14 +74,16 @@ function OnboardingPage() {
       <OnboardingStepper currentStep={currentStep} totalSteps={3} />
 
       <div className="mx-auto max-w-2xl px-4 py-6">
-        {user?.refusalReason && user?.refusalType === 'zone' && (
+        {user?.refusalReason && (user.refusalType === 'zone' || user.refusalType === 'membership') && (
           <div className="mb-8 rounded-2xl border border-red-200 bg-red-50 p-6 shadow-sm">
             <div className="flex items-start gap-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
                 <span className="text-xl font-bold">!</span>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-red-900">Demande de quartier refusée</h3>
+                <h3 className="text-lg font-bold text-red-900">
+                  {user.refusalType === 'zone' ? 'Demande de création de quartier refusée' : 'Adhésion au quartier refusée'}
+                </h3>
                 <p className="mt-1 text-sm text-red-700">
                   Votre précédente demande n'a pas pu être acceptée pour le motif suivant :
                 </p>

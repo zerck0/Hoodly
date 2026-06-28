@@ -28,6 +28,30 @@ function StepPersonalInfo({ onNext }: StepPersonalInfoProps) {
 
     const fullName = `${firstName.trim()} ${lastName.trim()}`.trim()
 
+    if (phone.trim()) {
+      const phoneRegex = /^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/
+      if (!phoneRegex.test(phone.trim())) {
+        setError('Le format du numéro de téléphone est incorrect (ex: 0612345678)')
+        setLoading(false)
+        return
+      }
+    }
+
+    if (birthDate) {
+      const today = new Date()
+      const birth = new Date(birthDate)
+      let age = today.getFullYear() - birth.getFullYear()
+      const m = today.getMonth() - birth.getMonth()
+      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+        age--
+      }
+      if (age < 10) {
+        setError('Vous devez avoir au moins 10 ans pour vous inscrire')
+        setLoading(false)
+        return
+      }
+    }
+
     try {
       const response = await usersApi.updateProfile({
         name: fullName,

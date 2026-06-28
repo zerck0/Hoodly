@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MapPin, Search, FileText } from 'lucide-react';
 import { DashboardLayout } from '@/components/DashboardLayout';
@@ -9,31 +9,52 @@ import { Badge } from '@/components/ui/badge';
 import { zonesApi } from '@/services/api/zones';
 import type { IZoneResponse } from '@/types/zone.types';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 export default function ZonesPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [search]);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['zones', page, search],
+    queryKey: ['zones', page, debouncedSearch],
     queryFn: () =>
       zonesApi.getAll({
         page,
         limit: 10,
-        search: search || undefined,
+        search: debouncedSearch || undefined,
       }),
   });
 
   const deactivateMutation = useMutation({
     mutationFn: (id: string) => zonesApi.deactivate(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['zones'] }),
+    onSuccess: () => {
+      toast.success('Le quartier a été désactivé avec succès !');
+      queryClient.invalidateQueries({ queryKey: ['zones'] });
+    },
+    onError: () => {
+      toast.error('Erreur lors de la désactivation du quartier');
+    }
   });
 
   const activateMutation = useMutation({
     mutationFn: (id: string) => zonesApi.activate(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['zones'] }),
+    onSuccess: () => {
+      toast.success('Le quartier a été activé avec succès !');
+      queryClient.invalidateQueries({ queryKey: ['zones'] });
+    },
+    onError: () => {
+      toast.error('Erreur lors de l\'activation du quartier');
+    }
   });
 
   const handleToggleStatus = (zone: IZoneResponse) => {

@@ -1,10 +1,20 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardLayout } from '../../components/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from '../../components/ui/dialog';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
 import {
   Vote,
   Users,
@@ -15,18 +25,68 @@ import {
   TrendingUp,
   Inbox,
   Lock,
+  Plus,
+  Loader2,
 } from 'lucide-react';
 import { votesApi } from '../../services/api/votes';
 import { zonesApi } from '../../services/api/zones';
 import { toast } from 'sonner';
 
+const formatDateTimeLocal = (date: Date) => {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const y = date.getFullYear();
+  const m = pad(date.getMonth() + 1);
+  const d = pad(date.getDate());
+  const h = pad(date.getHours());
+  const min = pad(date.getMinutes());
+  return `${y}-${m}-${d}T${h}:${min}`;
+};
+
 export default function VotesPage() {
   const queryClient = useQueryClient();
   const [selectedZoneId, setSelectedZoneId] = useState<string>('all');
 
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [newOptions, setNewOptions] = useState<string[]>(['', '']);
+  const [newIsAnonymous, setNewIsAnonymous] = useState(true);
+  const [newExpirationDate, setNewExpirationDate] = useState(() => {
+    const defaultDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    return formatDateTimeLocal(defaultDate);
+  });
+
   const { data: zonesData } = useQuery({
     queryKey: ['zones', 'all-for-votes'],
     queryFn: () => zonesApi.getAll({ limit: 100 }),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (body: {
+      zoneId: string;
+      title: string;
+      description?: string;
+      options: string[];
+      expirationDate?: string;
+      isAnonymous?: boolean;
+    }) => votesApi.create(body),
+    onSuccess: () => {
+      toast.success('Le scrutin a été créé et publié avec succès !');
+      queryClient.invalidateQueries({ queryKey: ['votes'] });
+      setIsCreateOpen(false);
+      setNewTitle('');
+      setNewDescription('');
+      setNewOptions(['', '']);
+      setNewIsAnonymous(true);
+      setNewExpirationDate(() => {
+        const defaultDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        return formatDateTimeLocal(defaultDate);
+      });
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || 'Erreur lors de la création du scrutin';
+      toast.error(msg);
+    },
   });
 
   const { data: votes, isLoading: loadingVotes, refetch } = useQuery({
@@ -71,6 +131,48 @@ export default function VotesPage() {
 
   const zonesList = zonesData?.zones || [];
 
+  const handleAddOption = () => {
+    setNewOptions([...newOptions, '']);
+  };
+
+  const handleRemoveOption = (index: number) => {
+    if (newOptions.length <= 2) {
+      toast.error('Un scrutin nécessite au moins 2 options');
+      return;
+    }
+    setNewOptions(newOptions.filter((_, i) => i !== index));
+  };
+
+  const handleOptionChange = (index: number, value: string) => {
+    const opts = [...newOptions];
+    opts[index] = value;
+    setNewOptions(opts);
+  };
+
+  const handleCreateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim()) {
+      toast.error('Le titre est requis');
+      return;
+    }
+    const filteredOptions = newOptions.map((opt) => opt.trim()).filter(Boolean);
+    if (filteredOptions.length < 2) {
+      toast.error('Veuillez fournir au moins 2 options valides');
+      return;
+    }
+
+    const expirationDate = new Date(newExpirationDate).toISOString();
+
+    createMutation.mutate({
+      zoneId: selectedZoneId,
+      title: newTitle.trim(),
+      description: newDescription.trim() || undefined,
+      options: filteredOptions,
+      expirationDate,
+      isAnonymous: newIsAnonymous,
+    });
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -85,15 +187,25 @@ export default function VotesPage() {
             </p>
           </div>
           {selectedZoneId !== 'all' && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              className="border-gray-800 bg-gray-900 text-gray-300 hover:text-white"
-            >
-              <RefreshCw size={14} className="mr-2" />
-              Rafraîchir
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => setIsCreateOpen(true)}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-9 text-xs px-4"
+              >
+                <Plus size={14} className="mr-1.5" />
+                Lancer un scrutin
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                className="border-gray-800 bg-gray-900 text-gray-300 hover:text-white h-9 text-xs px-4"
+              >
+                <RefreshCw size={14} className="mr-1.5" />
+                Rafraîchir
+              </Button>
+            </div>
           )}
         </div>
 
@@ -191,7 +303,13 @@ export default function VotesPage() {
                       <span className="text-gray-700">|</span>
                       <div className="flex items-center gap-1.5 font-semibold text-gray-300">
                         <Clock size={13} className="text-amber-400" />
-                        <span>Fermeture le {new Date(vote.dateFin).toLocaleDateString()}</span>
+                        <span>Fermeture le {new Date(vote.expirationDate).toLocaleString('fr-FR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}</span>
                       </div>
                     </div>
 
@@ -226,6 +344,138 @@ export default function VotesPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="max-w-lg bg-gray-950 border-gray-800 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              <Vote className="text-indigo-400" size={20} />
+              Lancer une consultation locale
+            </DialogTitle>
+            <DialogDescription className="text-gray-500 text-xs">
+              Les résidents de ce quartier verront cette consultation immédiatement sur leur fil d'actualités et pourront voter.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleCreateSubmit} className="space-y-4 py-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="vote-title" className="text-xs text-gray-400 font-bold uppercase">Question ou titre</Label>
+              <Input
+                id="vote-title"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="ex: Souhaitez-vous installer des panneaux solaires ?"
+                className="bg-gray-900 border-gray-800 focus:ring-indigo-500 text-white"
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="vote-desc" className="text-xs text-gray-400 font-bold uppercase">Description / Contexte</Label>
+              <textarea
+                id="vote-desc"
+                value={newDescription}
+                onChange={(e) => setNewDescription(e.target.value)}
+                placeholder="Ajoutez des détails pour aider vos voisins à faire leur choix..."
+                className="w-full min-h-[80px] rounded-xl border border-gray-800 bg-gray-900 px-3 py-2 text-xs font-light text-gray-200 focus:border-indigo-500 focus:outline-none transition-all"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="vote-exp" className="text-xs text-gray-400 font-bold uppercase">Date & Heure de clôture du scrutin</Label>
+              <Input
+                id="vote-exp"
+                type="datetime-local"
+                value={newExpirationDate}
+                onChange={(e) => setNewExpirationDate(e.target.value)}
+                className="bg-gray-900 border-gray-800 focus:ring-indigo-500 text-white"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-400 font-bold uppercase block">Options de réponse</Label>
+              <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                {newOptions.map((option, idx) => (
+                  <div key={idx} className="flex gap-2 items-center">
+                    <Input
+                      value={option}
+                      onChange={(e) => handleOptionChange(idx, e.target.value)}
+                      placeholder={`Option ${idx + 1}`}
+                      className="bg-gray-900 border-gray-800 focus:ring-indigo-500 text-white flex-1 h-9 text-xs"
+                      required
+                    />
+                    {newOptions.length > 2 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveOption(idx)}
+                        className="text-red-400 hover:text-red-500 hover:bg-red-500/10 h-9 w-9 shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleAddOption}
+                className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-bold p-0 h-auto bg-transparent hover:bg-transparent"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Ajouter une option</span>
+              </Button>
+            </div>
+
+            <div className="flex items-start gap-3 p-3 bg-gray-900/60 rounded-xl border border-gray-850">
+              <input
+                type="checkbox"
+                id="vote-is-anon"
+                checked={newIsAnonymous}
+                onChange={(e) => setNewIsAnonymous(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-800 text-indigo-600 focus:ring-indigo-500 mt-0.5 cursor-pointer bg-gray-950"
+              />
+              <div className="flex-1">
+                <Label htmlFor="vote-is-anon" className="block text-xs font-bold text-gray-200 cursor-pointer select-none">
+                  Scrutin Anonyme
+                </Label>
+                <p className="text-[10px] text-gray-400 mt-0.5">
+                  Les votes de chaque citoyen resteront confidentiels.
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter className="border-t border-gray-850 pt-4 mt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setIsCreateOpen(false)}
+                className="text-gray-500 hover:text-white text-xs h-10 px-4"
+              >
+                Annuler
+              </Button>
+              <Button
+                type="submit"
+                disabled={createMutation.isPending}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-10 px-6 text-xs"
+              >
+                {createMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                    Création...
+                  </>
+                ) : (
+                  'Lancer le scrutin'
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

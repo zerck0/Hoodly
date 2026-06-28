@@ -9,6 +9,8 @@ import { TooltipProvider } from './components/ui/tooltip'
 import { Toaster } from './components/ui/sonner'
 import './index.css'
 
+import { ThemeProvider } from 'next-themes'
+
 const queryClient = new QueryClient()
 
 const domain = import.meta.env.VITE_AUTH0_DOMAIN
@@ -42,9 +44,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Auth0TokenConnector />
         <Toaster position="top-right" richColors />
         <TooltipProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </ThemeProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </Auth0Provider>

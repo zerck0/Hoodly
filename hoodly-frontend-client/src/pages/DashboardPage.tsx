@@ -14,7 +14,7 @@ function DashboardPage() {
   const isVerified = user?.zoneStatut === ZoneMembershipStatus.ACTIVE;
 
   return (
-    <div className="font-sans flex flex-col h-full bg-slate-50 min-h-screen pb-12">
+    <div className="font-sans flex flex-col h-full bg-slate-50 dark:bg-gray-950 min-h-screen pb-12">
       <StatusBanner
         user={user ?? null}
         isRefreshing={isRefreshing}
@@ -24,11 +24,11 @@ function DashboardPage() {
 
       <main className="flex-1 max-w-3xl w-full mx-auto p-4 md:p-6 lg:p-8">
         {!hasZone ? (
-          <div className="rounded-2xl bg-white p-12 text-center shadow-sm border border-gray-100">
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+          <div className="rounded-2xl bg-white dark:bg-gray-900 p-12 text-center shadow-sm border border-gray-100 dark:border-gray-800">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
               Bienvenue sur Hoodly !
             </h1>
-            <p className="mt-4 text-muted-foreground text-lg">
+            <p className="mt-4 text-muted-foreground dark:text-gray-400 text-lg">
               Rejoignez un quartier pour commencer à interagir avec vos voisins.
             </p>
           </div>

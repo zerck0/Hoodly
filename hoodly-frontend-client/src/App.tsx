@@ -15,6 +15,8 @@ import EventsPage from './pages/EventsPage'
 import ContractsPage from './pages/ContractsPage'
 import ContractDetailPage from './pages/ContractDetailPage'
 import VotesPage from './pages/VotesPage'
+import SettingsPage from './pages/SettingsPage'
+import HelpPage from './pages/HelpPage'
 import AppLayout from './components/shared/AppLayout'
 import ProtectedRoute from './components/shared/ProtectedRoute'
 import OnboardingGuard from './components/shared/OnboardingGuard'
@@ -71,6 +73,8 @@ function App() {
           <Route path="/evenements" element={<EventsPage />} />
           <Route path="/votes" element={<VotesPage />} />
           <Route path="/profil" element={<ProfilePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/aide" element={<HelpPage />} />
           <Route path="/contrats" element={<ContractsPage />} />
           <Route path="/contrats/:id" element={<ContractDetailPage />} />
         </Route>

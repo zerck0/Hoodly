@@ -86,13 +86,13 @@ export default function ServicesPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto pb-24 space-y-6 animate-in fade-in duration-300">
+    <div className="p-6 max-w-7xl mx-auto pb-24 space-y-6 animate-in fade-in duration-300 dark:text-gray-100">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-[#1e224e]" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <h1 className="text-3xl font-bold text-[#1e224e] dark:text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
             {filterParam === 'mine' ? 'Mes annonces d\'entraide' : 'Entraide du quartier'}
           </h1>
-          <p className="text-gray-500 mt-1 text-sm font-light leading-relaxed">
+          <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm font-light leading-relaxed">
             {filterParam === 'mine'
               ? 'Gérez vos offres de services déposées et vos demandes d\'aide en cours.'
               : 'Découvrez les services proposés par vos voisins ou publiez un besoin d\'entraide.'}
@@ -100,12 +100,12 @@ export default function ServicesPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex bg-gray-100 p-0.5 rounded-lg border border-gray-200/50 text-[10px] font-bold uppercase tracking-wider">
+          <div className="flex bg-gray-100 dark:bg-gray-800 p-0.5 rounded-lg border border-gray-200/50 dark:border-gray-700 text-[10px] font-bold uppercase tracking-wider">
             <button
               type="button"
               onClick={() => setSearchParamsRoute({ filter: 'local' })}
               className={`py-1.5 px-3 rounded-md transition-all cursor-pointer ${
-                filterParam === 'local' ? 'bg-white text-[#2c308e] shadow-3xs' : 'text-gray-500 hover:text-gray-900'
+                filterParam === 'local' ? 'bg-white dark:bg-gray-900 text-[#2c308e] dark:text-indigo-400 shadow-3xs' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               Services locaux
@@ -114,7 +114,7 @@ export default function ServicesPage() {
               type="button"
               onClick={() => setSearchParamsRoute({ filter: 'mine' })}
               className={`py-1.5 px-3 rounded-md transition-all cursor-pointer ${
-                filterParam === 'mine' ? 'bg-white text-[#2c308e] shadow-3xs' : 'text-gray-500 hover:text-gray-900'
+                filterParam === 'mine' ? 'bg-white dark:bg-gray-900 text-[#2c308e] dark:text-indigo-400 shadow-3xs' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               Mes services
@@ -144,15 +144,15 @@ export default function ServicesPage() {
 
       {isLoading ? (
         <div className="flex justify-center items-center py-24 flex-col text-gray-400 gap-3">
-          <Loader2 className="h-8 w-8 text-[#2c308e] animate-spin" />
+          <Loader2 className="h-8 w-8 text-[#2c308e] dark:text-indigo-400 animate-spin" />
           <p className="text-xs font-bold">Chargement des services...</p>
         </div>
       ) : filteredServices.length === 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 flex flex-col items-center justify-center p-12 text-center text-gray-400 bg-white rounded-[2rem] border border-dashed border-gray-200">
-            <HeartHandshake className="h-12 w-12 mb-3 text-gray-300" />
-            <p className="text-sm font-bold text-gray-800">Aucun service trouvé pour l'instant</p>
-            <p className="text-xs text-gray-400 mt-1 max-w-sm leading-relaxed font-light">
+          <div className="md:col-span-2 flex flex-col items-center justify-center p-12 text-center text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-900 rounded-[2rem] border border-dashed border-gray-200 dark:border-gray-800">
+            <HeartHandshake className="h-12 w-12 mb-3 text-gray-300 dark:text-gray-700" />
+            <p className="text-sm font-bold text-gray-800 dark:text-gray-250">Aucun service trouvé pour l'instant</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-sm leading-relaxed font-light">
               Soyez le premier à proposer un service d'entraide ou à formuler une demande de bon voisinage dans votre quartier !
             </p>
           </div>

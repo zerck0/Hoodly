@@ -1,7 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Document, DocumentDocument, DocumentStatus } from './schemas/document.schema';
+import {
+  Document,
+  DocumentDocument,
+  DocumentStatus,
+} from './schemas/document.schema';
 import { CreateDocumentDto } from './dto/create-document.dto';
 
 @Injectable()
@@ -11,7 +15,9 @@ export class DocumentsService {
     private readonly documentModel: Model<DocumentDocument>,
   ) {}
 
-  async create(createDocumentDto: CreateDocumentDto): Promise<DocumentDocument> {
+  async create(
+    createDocumentDto: CreateDocumentDto,
+  ): Promise<DocumentDocument> {
     const created = new this.documentModel({
       ...createDocumentDto,
       ownerId: new Types.ObjectId(createDocumentDto.ownerId),
@@ -28,10 +34,15 @@ export class DocumentsService {
   }
 
   async findByOwner(ownerId: string): Promise<DocumentDocument[]> {
-    return this.documentModel.find({ ownerId: new Types.ObjectId(ownerId) }).exec();
+    return this.documentModel
+      .find({ ownerId: new Types.ObjectId(ownerId) })
+      .exec();
   }
 
-  async updateStatus(id: string, status: DocumentStatus): Promise<DocumentDocument> {
+  async updateStatus(
+    id: string,
+    status: DocumentStatus,
+  ): Promise<DocumentDocument> {
     const doc = await this.documentModel.findById(id);
     if (!doc) {
       throw new NotFoundException('Document introuvable');
@@ -45,5 +56,19 @@ export class DocumentsService {
     if (!res) {
       throw new NotFoundException('Document introuvable');
     }
+  }
+
+  async findWithFilter(
+    filter: Record<string, any>,
+  ): Promise<DocumentDocument[]> {
+    const queryFilter = { ...filter };
+    if (queryFilter.ownerId && typeof queryFilter.ownerId === 'string') {
+      try {
+        queryFilter.ownerId = new Types.ObjectId(queryFilter.ownerId);
+      } catch (ignored) {
+        /* ignored */
+      }
+    }
+    return this.documentModel.find(queryFilter).exec();
   }
 }

@@ -20,12 +20,14 @@ import {
 } from '@nestjs/swagger';
 import { DocumentsService } from './documents.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
+import { QueryDocumentDto } from './dto/query-document.dto';
 import { DocumentStatus } from './schemas/document.schema';
 import { JwtGuard } from '../../core/auth/guards/jwt.guard';
 import { RolesGuard } from '../../core/auth/guards/roles.guard';
 import { Roles } from '../../core/auth/decorators/roles.decorator';
 import { CurrentUser } from '../../core/auth/decorators/current-user.decorator';
 import { UploadsService } from '../uploads/services/uploads.service';
+import { QueryParserService } from './parser/query-parser.service';
 
 interface AuthenticatedUser {
   userId: string;
@@ -42,7 +44,26 @@ export class DocumentsController {
   constructor(
     private readonly documentsService: DocumentsService,
     private readonly uploadsService: UploadsService,
+    private readonly queryParserService: QueryParserService,
   ) {}
+
+  @Post('query')
+  @ApiOperation({
+    summary: 'Requêter les documents via le langage maison (Lex/Yacc)',
+  })
+  @ApiResponse({ status: 200, description: 'Résultats filtrés' })
+  async query(
+    @Body() body: QueryDocumentDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const filter = this.queryParserService.parse(body.query);
+
+    if (user.role !== 'admin') {
+      filter.ownerId = user.userId;
+    }
+
+    return this.documentsService.findWithFilter(filter);
+  }
 
   @Post()
   @ApiOperation({ summary: 'Enregistrer les métadonnées d’un document' })

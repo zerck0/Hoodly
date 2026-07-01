@@ -29,7 +29,6 @@ describe('PostsService', () => {
     uploadFile: jest.fn(),
   };
 
-  // Helper valid IDs to prevent BSONError
   const validPostId = new Types.ObjectId();
   const validCommentId = new Types.ObjectId();
   const validUserId = new Types.ObjectId();
@@ -72,7 +71,6 @@ describe('PostsService', () => {
       }),
     };
 
-    // Constructors
     mockPostModel = jest.fn().mockImplementation((dto) => {
       return {
         ...dto,
@@ -93,7 +91,6 @@ describe('PostsService', () => {
       };
     });
 
-    // Static Methods - Post
     mockPostModel.findById = jest.fn().mockResolvedValue(mockPostDoc);
     mockPostModel.findByIdAndUpdate = jest.fn().mockReturnValue({
       lean: jest.fn().mockResolvedValue(mockPostDoc),
@@ -108,7 +105,6 @@ describe('PostsService', () => {
     };
     mockPostModel.find = jest.fn().mockReturnValue(postFindChain);
 
-    // Static Methods - Comment
     mockCommentModel.findByIdAndUpdate = jest
       .fn()
       .mockResolvedValue(mockCommentDoc);
@@ -201,7 +197,7 @@ describe('PostsService', () => {
 
   describe('toggleLike', () => {
     it('should add like if user has not liked the post', async () => {
-      mockPostDoc.likes = []; // empty
+      mockPostDoc.likes = [];
       const userId = new Types.ObjectId();
 
       const result = await service.toggleLike(
@@ -219,7 +215,7 @@ describe('PostsService', () => {
 
     it('should remove like if user has already liked the post', async () => {
       const userId = new Types.ObjectId();
-      mockPostDoc.likes = [userId]; // liked
+      mockPostDoc.likes = [userId];
 
       const result = await service.toggleLike(
         mockPostDoc._id.toString(),

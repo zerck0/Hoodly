@@ -41,7 +41,6 @@ export class Neo4jService implements OnApplicationShutdown {
     }
   }
 
-  // Sync : un user marque un événement comme intéressant
   syncInteret(userId: string, eventId: string, eventCategorie: string) {
     this.run(
       `MERGE (u:User {id: $userId})
@@ -52,7 +51,6 @@ export class Neo4jService implements OnApplicationShutdown {
     ).catch((err) => this.logger.warn('Neo4j syncInteret failed', err));
   }
 
-  // Sync : un user retire son intérêt
   removeInteret(userId: string, eventId: string) {
     this.run(
       `MATCH (u:User {id: $userId})-[r:INTERESSE]->(e:Event {id: $eventId})
@@ -61,7 +59,6 @@ export class Neo4jService implements OnApplicationShutdown {
     ).catch((err) => this.logger.warn('Neo4j removeInteret failed', err));
   }
 
-  // Sync : un user s'inscrit à un événement
   syncParticipation(userId: string, eventId: string, eventCategorie: string) {
     this.run(
       `MERGE (u:User {id: $userId})
@@ -72,7 +69,6 @@ export class Neo4jService implements OnApplicationShutdown {
     ).catch((err) => this.logger.warn('Neo4j syncParticipation failed', err));
   }
 
-  // Sync : un user se désinscrit
   removeParticipation(userId: string, eventId: string) {
     this.run(
       `MATCH (u:User {id: $userId})-[r:PARTICIPE]->(e:Event {id: $eventId})
@@ -81,7 +77,6 @@ export class Neo4jService implements OnApplicationShutdown {
     ).catch((err) => this.logger.warn('Neo4j removeParticipation failed', err));
   }
 
-  // Recommandations : events que des users similaires apprécient
   async getEventRecommendations(userId: string): Promise<string[]> {
     const result = await this.run(
       `MATCH (me:User {id: $userId})-[:INTERESSE|PARTICIPE]->(e:Event)<-[:INTERESSE|PARTICIPE]-(other:User)

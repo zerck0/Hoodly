@@ -56,7 +56,6 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
 
     setSubmitting(true)
     try {
-      // Calculate 7 days from now
       const oneWeekFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
 
       await votesApi.create({
@@ -85,15 +84,13 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div 
+      <div
         className="absolute inset-0 bg-[#1e224e]/40 backdrop-blur-sm transition-opacity duration-300"
         onClick={onClose}
       />
-      
-      {/* Modal Container */}
+
       <div className="relative w-full max-w-lg bg-[#fefefa] rounded-[2rem] border border-gray-100 shadow-2xl p-6 overflow-y-auto max-h-[90vh] z-10 animate-in fade-in zoom-in-95 duration-200">
-        <button 
+        <button
           onClick={onClose}
           className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors"
           disabled={submitting}
@@ -111,7 +108,6 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Title */}
           <div>
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
               Question ou titre du vote
@@ -127,7 +123,6 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
             />
           </div>
 
-          {/* Description */}
           <div>
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
               Description (contexte)
@@ -141,7 +136,6 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
             />
           </div>
 
-          {/* Options */}
           <div>
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
               Options de réponse
@@ -183,7 +177,6 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
             </button>
           </div>
 
-          {/* Anonymity Checkbox */}
           <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
             <input
               type="checkbox"
@@ -205,7 +198,6 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
             </div>
           </div>
 
-          {/* Submit */}
           <div className="pt-3 border-t border-gray-100 flex gap-3">
             <Button
               type="button"

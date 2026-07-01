@@ -24,7 +24,7 @@ const FAQ_ITEMS = [
   },
   {
     question: "Comment fonctionne le système de points ?",
-    answer: "Sur Hoodly, l'entraide peut être gratuite ou basée sur des points (10 points = 1 €). Lorsque vous rendez service (bricolage, jardinage, cours, etc.), vous gagnez des points. Vous pouvez ensuite utiliser ces points pour demander de l'aide à votre tour. Vous commencez avec un solde de bienvenue gratuit de 100 points !",
+    answer: "Sur Hoodly, l'entraide peut être gratuite ou basée sur des points communautaires. Lorsque vous rendez service (bricolage, jardinage, cours, etc.), vous gagnez des points. Vous pouvez ensuite utiliser ces points pour demander de l'aide à votre tour. Vous commencez avec un solde de bienvenue gratuit de 100 points !",
     icon: Coins
   },
   {

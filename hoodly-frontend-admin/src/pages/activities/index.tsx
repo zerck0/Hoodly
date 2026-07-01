@@ -234,36 +234,37 @@ export default function ActivitiesPage() {
                           {eventsData.events.map((event) => {
                             const id = event.id || event._id;
                             const stat = EVENT_STATUS_STYLES[event.statut] || EVENT_STATUS_STYLES.planifie;
-                            const dateText = new Date(event.dateDebut).toLocaleDateString('fr-FR', {
-                              day: '2-digit',
-                              month: 'short',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            });
-
-                            return (
-                              <tr key={id} className="hover:bg-gray-800/20 transition-colors">
-                                <td className="px-6 py-4 max-w-sm">
-                                  <div className="font-semibold text-white">{event.titre}</div>
-                                  <div className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">
-                                    {event.description}
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <Badge variant="outline" className="border-gray-800 text-gray-300 bg-gray-950/20 capitalize">
-                                    {EVENT_CATEGORY_LABELS[event.categorie] || event.categorie}
-                                  </Badge>
-                                </td>
-                                <td className="px-6 py-4 text-xs space-y-1">
-                                  <div className="flex items-center gap-1.5 text-gray-300 font-medium">
-                                    <MapPin size={12} className="text-indigo-400 shrink-0" />
-                                    <span className="truncate max-w-[150px]">{event.adresse}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1.5 text-gray-500">
-                                    <Clock size={12} className="shrink-0" />
-                                    <span>Le {dateText}</span>
-                                  </div>
-                                </td>
+                             const eventDate = event.date || event.dateDebut;
+                             const dateText = eventDate ? new Date(eventDate).toLocaleDateString('fr-FR', {
+                               day: '2-digit',
+                               month: 'short',
+                               hour: '2-digit',
+                               minute: '2-digit',
+                             }) : 'Non planifié';
+ 
+                             return (
+                               <tr key={id} className="hover:bg-gray-800/20 transition-colors">
+                                 <td className="px-6 py-4 max-w-sm">
+                                   <div className="font-semibold text-white">{event.titre}</div>
+                                   <div className="text-xs text-gray-400 mt-1 line-clamp-2 leading-relaxed">
+                                     {event.description}
+                                   </div>
+                                 </td>
+                                 <td className="px-6 py-4">
+                                   <Badge variant="outline" className="border-gray-800 text-gray-300 bg-gray-950/20 capitalize">
+                                     {EVENT_CATEGORY_LABELS[event.categorie] || event.categorie}
+                                   </Badge>
+                                 </td>
+                                 <td className="px-6 py-4 text-xs space-y-1">
+                                   <div className="flex items-center gap-1.5 text-gray-300 font-medium">
+                                     <MapPin size={12} className="text-indigo-400 shrink-0" />
+                                     <span className="truncate max-w-[150px]">{event.adresse || event.lieu?.adresse || 'Lieu non renseigné'}</span>
+                                   </div>
+                                   <div className="flex items-center gap-1.5 text-gray-500">
+                                     <Clock size={12} className="shrink-0" />
+                                     <span>Le {dateText}</span>
+                                   </div>
+                                 </td>
                                 <td className="px-6 py-4">
                                   <Badge className={`${stat.bg} ${stat.text} ${stat.border} border text-[10px] px-2 py-0.5 rounded-md`}>
                                     {stat.label}

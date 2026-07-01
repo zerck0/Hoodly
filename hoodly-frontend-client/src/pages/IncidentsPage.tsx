@@ -413,7 +413,7 @@ export default function IncidentsPage() {
                     >
                       <option value="">-- Choisir un service --</option>
                       {myServices.map((s: any) => (
-                        <option key={s._id} value={s._id}>
+                        <option key={s._id || s.id} value={s._id || s.id}>
                           {s.titre} ({s.type === 'offre' ? 'Offre' : 'Demande'})
                         </option>
                       ))}
@@ -439,7 +439,7 @@ export default function IncidentsPage() {
                     >
                       <option value="">-- Choisir un événement --</option>
                       {myEvents.map((e: any) => (
-                        <option key={e._id} value={e._id}>
+                        <option key={e._id || e.id} value={e._id || e.id}>
                           {e.titre} - {new Date(e.date).toLocaleDateString('fr-FR')}
                         </option>
                       ))}

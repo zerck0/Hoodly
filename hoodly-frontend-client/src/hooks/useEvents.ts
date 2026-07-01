@@ -55,6 +55,14 @@ export function useEvents() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] }),
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await eventsApi.delete(id)
+      return data
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] }),
+  })
+
   return {
     events: eventsQuery.data?.events ?? [],
     recommendations: recommendationsQuery.data ?? [],
@@ -68,5 +76,7 @@ export function useEvents() {
     isParticipating: participerMutation.isPending,
     validerEvenement: validerMutation.mutateAsync,
     isValidating: validerMutation.isPending,
+    deleteEvent: deleteMutation.mutateAsync,
+    isDeleting: deleteMutation.isPending,
   }
 }

@@ -10,6 +10,7 @@ import UsersPage from './pages/users';
 import IncidentsPage from './pages/incidents';
 import ActivitiesPage from './pages/activities';
 import VotesPage from './pages/votes';
+import CandidaturesPage from './pages/candidatures';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import ZonesPage from './pages/zones';
@@ -137,6 +138,16 @@ export default function App() {
               <ProtectedRoute>
                 <AdminRoute>
                   <VotesPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/candidatures"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <CandidaturesPage />
                 </AdminRoute>
               </ProtectedRoute>
             }

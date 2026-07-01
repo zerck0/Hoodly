@@ -34,4 +34,14 @@ export const usersApi = {
     const { data } = await apiClient.delete(`/users/${id}`);
     return data;
   },
+
+  getAllModeratorApplications: async () => {
+    const { data } = await apiClient.get<any[]>('/users/admin/moderator-applications');
+    return data;
+  },
+
+  decideModeratorApplication: async (id: string, approved: boolean) => {
+    const { data } = await apiClient.post(`/users/admin/moderator-applications/${id}/decide`, { approved });
+    return data;
+  },
 };

@@ -31,4 +31,7 @@ export const conversationsApi = {
 
   refuserCreneau: (id: string) =>
     api.patch<Conversation>(`/conversations/${id}/creneau/refuser`),
+
+  annulerPrestation: (id: string) =>
+    api.patch<Conversation>(`/conversations/${id}/annuler`),
 }

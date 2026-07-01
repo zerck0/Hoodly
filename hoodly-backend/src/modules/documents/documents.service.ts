@@ -5,8 +5,10 @@ import {
   Document,
   DocumentDocument,
   DocumentStatus,
+  DocumentType,
 } from './schemas/document.schema';
 import { CreateDocumentDto } from './dto/create-document.dto';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class DocumentsService {
@@ -14,6 +16,28 @@ export class DocumentsService {
     @InjectModel(Document.name)
     private readonly documentModel: Model<DocumentDocument>,
   ) {}
+
+  async findOrCreateTemplate(ownerId: string): Promise<DocumentDocument> {
+    let doc = await this.documentModel
+      .findOne({ type: DocumentType.CONTRACT_TEMPLATE })
+      .exec();
+    if (!doc) {
+      const genericDoc = new this.documentModel({
+        ownerId: new Types.ObjectId(ownerId),
+        title: `Template Charte de participation`,
+        fileUrl:
+          'https://hoodly.s3.amazonaws.com/templates/default_participation_waiver.pdf',
+        pdfHash: crypto
+          .createHash('sha256')
+          .update('generic-template')
+          .digest('hex'),
+        type: DocumentType.CONTRACT_TEMPLATE,
+        status: DocumentStatus.APPROVED,
+      });
+      doc = await genericDoc.save();
+    }
+    return doc;
+  }
 
   async create(
     createDocumentDto: CreateDocumentDto,

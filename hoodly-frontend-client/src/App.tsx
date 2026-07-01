@@ -19,6 +19,7 @@ import SettingsPage from './pages/SettingsPage'
 import HelpPage from './pages/HelpPage'
 import IncidentsPage from './pages/IncidentsPage'
 import AppLayout from './components/shared/AppLayout'
+import AdminCandidaturesPage from './pages/AdminCandidaturesPage'
 import ProtectedRoute from './components/shared/ProtectedRoute'
 import OnboardingGuard from './components/shared/OnboardingGuard'
 import DashboardGuard from './components/shared/DashboardGuard'
@@ -79,6 +80,7 @@ function App() {
           <Route path="/aide" element={<HelpPage />} />
           <Route path="/contrats" element={<ContractsPage />} />
           <Route path="/contrats/:id" element={<ContractDetailPage />} />
+          <Route path="/admin/candidatures" element={<AdminCandidaturesPage />} />
         </Route>
       </Route>
     </Routes>

@@ -28,6 +28,14 @@ const CATEGORY_CARDS = [
   { name: 'Courses', icon: ShoppingBag }
 ]
 
+const SUGGESTED_RATES_BY_CATEGORY: Record<string, string> = {
+  Bricolage: '30 - 50 pts / h',
+  Cours: '30 - 50 pts / h',
+  Jardinage: '30 - 50 pts / h',
+  Animaux: '10 pts / promenade',
+  Courses: '20 pts / trajet'
+}
+
 const AVAILABLE_DISPOS = [
   { key: 'semaine_matin', label: 'Matinée (Semaine)' },
   { key: 'semaine_aprem', label: 'Après-midi (Semaine)' },
@@ -53,17 +61,34 @@ export default function NewServicePage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
-  const [recurrente, setRecurrente] = useState(true)
-  const [disponibilites, setDisponibilites] = useState<string[]>([])
+  const [weeklyAvail, setWeeklyAvail] = useState<Record<string, string[]>>({
+    Lundi: [], Mardi: [], Mercredi: [], Jeudi: [], Vendredi: [], Samedi: [], Dimanche: []
+  })
+  const [dispoRemarks, setDispoRemarks] = useState('')
   const [tarifType, setTarifType] = useState<'horaire' | 'fixe'>('horaire')
-  const [planifType, setPlanifType] = useState<'asap' | 'date'>('asap')
-  const [datePlanifVal, setDatePlanifVal] = useState('')
+  const [planifChoice, setPlanifChoice] = useState<'asap' | 'date_unique' | 'plage_dates' | 'regulier'>('asap')
+  const [singleDate, setSingleDate] = useState('')
+  const [singleStartHour, setSingleStartHour] = useState('08:00')
+  const [singleEndHour, setSingleEndHour] = useState('12:00')
+  const [rangeStartDate, setRangeStartDate] = useState('')
+  const [rangeEndDate, setRangeEndDate] = useState('')
+  const [rangeAllDay, setRangeAllDay] = useState(true)
+  const [rangeStartHour, setRangeStartHour] = useState('08:00')
+  const [rangeEndHour, setRangeEndHour] = useState('18:00')
+  const [regularDays, setRegularDays] = useState<string[]>([])
+  const [regularPeriods, setRegularPeriods] = useState<string[]>([])
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { createService } = useServices()
 
   const handlePhotoClick = () => {
     fileInputRef.current?.click()
+  }
+
+  const formatDateFr = (dateStr: string) => {
+    if (!dateStr) return ''
+    const [y, m, d] = dateStr.split('-')
+    return `${d}/${m}/${y}`
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,9 +112,23 @@ export default function NewServicePage() {
     }
   }
 
-  const toggleDispo = (key: string) => {
-    setDisponibilites(prev =>
-      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+  const toggleWeeklyAvail = (day: string, period: string) => {
+    setWeeklyAvail(prev => {
+      const current = prev[day] || []
+      const next = current.includes(period) ? current.filter(p => p !== period) : [...current, period]
+      return { ...prev, [day]: next }
+    })
+  }
+
+  const toggleRegularDay = (day: string) => {
+    setRegularDays(prev =>
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+    )
+  }
+
+  const toggleRegularPeriod = (period: string) => {
+    setRegularPeriods(prev =>
+      prev.includes(period) ? prev.filter(p => p !== period) : [...prev, period]
     )
   }
 
@@ -112,9 +151,20 @@ export default function NewServicePage() {
       toast.error('Le nombre de points doit être supérieur à 0 pour un service payant')
       return
     }
-    if (type === 'demande' && planifType === 'date' && !datePlanifVal) {
-      toast.error('Veuillez indiquer une date de planification')
-      return
+
+    if (type === 'demande') {
+      if (planifChoice === 'date_unique' && !singleDate) {
+        toast.error('Veuillez indiquer le jour requis')
+        return
+      }
+      if (planifChoice === 'plage_dates' && (!rangeStartDate || !rangeEndDate)) {
+        toast.error('Veuillez indiquer les dates de début et de fin')
+        return
+      }
+      if (planifChoice === 'regulier' && (regularDays.length === 0 || regularPeriods.length === 0)) {
+        toast.error('Veuillez sélectionner au moins un jour et une période')
+        return
+      }
     }
 
     setSubmitting(true)
@@ -130,20 +180,56 @@ export default function NewServicePage() {
         }
       }
 
+      let datePlanification: string | undefined = undefined
+      if (type === 'demande') {
+        if (planifChoice === 'asap') {
+          datePlanification = 'Dès que possible (urgent)'
+        } else if (planifChoice === 'date_unique') {
+          datePlanification = `Le ${formatDateFr(singleDate)} de ${singleStartHour} à ${singleEndHour}`
+        } else if (planifChoice === 'plage_dates') {
+          if (rangeAllDay) {
+            datePlanification = `Du ${formatDateFr(rangeStartDate)} au ${formatDateFr(rangeEndDate)} (toute la journée)`
+          } else {
+            datePlanification = `Du ${formatDateFr(rangeStartDate)} au ${formatDateFr(rangeEndDate)} de ${rangeStartHour} à ${rangeEndHour}`
+          }
+        } else if (planifChoice === 'regulier') {
+          datePlanification = `Régulier : ${regularDays.join(', ')} (${regularPeriods.join(', ')})`
+        }
+      }
+
+      let computedDispos: string[] | undefined = undefined
+      if (type === 'offre') {
+        computedDispos = []
+        const weekdays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi']
+        const hasMatin = weekdays.some(day => weeklyAvail[day]?.includes('Matin'))
+        const hasAprem = weekdays.some(day => weeklyAvail[day]?.includes('Après-midi'))
+        const hasSoir = weekdays.some(day => weeklyAvail[day]?.includes('Soirée'))
+
+        if (hasMatin) computedDispos.push('semaine_matin')
+        if (hasAprem) computedDispos.push('semaine_aprem')
+        if (hasSoir) computedDispos.push('semaine_soir')
+
+        if (weeklyAvail['Samedi'] && weeklyAvail['Samedi'].length > 0) computedDispos.push('samedi')
+        if (weeklyAvail['Dimanche'] && weeklyAvail['Dimanche'].length > 0) computedDispos.push('dimanche')
+      }
+
+      let finalDescription = description.trim()
+      if (type === 'offre' && dispoRemarks.trim()) {
+        finalDescription += `\n\nDisponibilités détaillées : ${dispoRemarks.trim()}`
+      }
+
       await createService({
         titre,
-        description,
+        description: finalDescription,
         type,
         categorie,
         gratuit,
         points: gratuit ? undefined : points,
         zoneId: user?.zoneId,
         photoUrl: uploadedPhotoUrl || undefined,
-        recurrente: type === 'offre' ? recurrente : undefined,
-        disponibilites: type === 'offre' ? disponibilites : undefined,
-        datePlanification: type === 'demande'
-          ? (planifType === 'asap' ? 'Dès que possible (urgent)' : datePlanifVal)
-          : undefined
+        recurrente: type === 'offre' ? true : undefined,
+        disponibilites: type === 'offre' ? computedDispos : undefined,
+        datePlanification
       })
 
       toast.success(
@@ -263,62 +349,65 @@ export default function NewServicePage() {
 
           {type === 'offre' && (
             <div className="space-y-6 animate-in fade-in duration-300">
-             <div>
+              <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  FRÉQUENCE DU SERVICE
+                  MES DISPONIBILITÉS HEBDOMADAIRES
                 </label>
-                <div className="flex bg-gray-50 rounded-xl p-1 w-fit">
-                  <button
-                    type="button"
-                    onClick={() => setRecurrente(true)}
-                    disabled={submitting}
-                    className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
-                      recurrente
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-400 hover:text-gray-600'
-                    }`}
-                  >
-                    Récurrent / Régulier
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRecurrente(false)}
-                    disabled={submitting}
-                    className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
-                      !recurrente
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-400 hover:text-gray-600'
-                    }`}
-                  >
-                    Prestation ponctuelle
-                  </button>
+                <p className="text-xs text-gray-400 mb-4 font-light">
+                  Cochez les moments où vous êtes généralement disponible pour rendre ce service.
+                </p>
+
+                <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-gray-50/30">
+                  <table className="w-full text-left border-collapse min-w-[500px]">
+                    <thead>
+                      <tr className="border-b border-gray-100">
+                        <th className="p-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider w-1/4">Jour</th>
+                        {['Matin', 'Après-midi', 'Soirée'].map((p) => (
+                          <th key={p} className="p-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">{p}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'].map((day) => (
+                        <tr key={day} className="border-b border-gray-100/60 last:border-0 hover:bg-gray-50/50">
+                          <td className="p-3 text-xs font-bold text-gray-700">{day}</td>
+                          {['Matin', 'Après-midi', 'Soirée'].map((period) => {
+                            const isChecked = weeklyAvail[day]?.includes(period)
+                            return (
+                              <td key={period} className="p-3 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleWeeklyAvail(day, period)}
+                                  disabled={submitting}
+                                  className={`w-6 h-6 rounded-lg border transition-all cursor-pointer inline-flex items-center justify-center ${
+                                    isChecked
+                                      ? 'bg-[#2c308e] border-[#2c308e] text-white shadow-xs'
+                                      : 'bg-white border-gray-200 hover:border-gray-300 text-transparent'
+                                  }`}
+                                >
+                                  ✓
+                                </button>
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  DISPONIBILITÉS (QUAND POUVEZ-VOUS AIDER ?)
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                  PRÉCISIONS OU REMARQUES SUR VOS HORAIRES (OPTIONNEL)
                 </label>
-                <div className="flex flex-wrap gap-2">
-                  {AVAILABLE_DISPOS.map((dispo) => {
-                    const isSelected = disponibilites.includes(dispo.key)
-                    return (
-                      <button
-                        key={dispo.key}
-                        type="button"
-                        onClick={() => toggleDispo(dispo.key)}
-                        disabled={submitting}
-                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
-                          isSelected
-                            ? 'bg-[#2c308e] text-white border-[#2c308e] shadow-sm'
-                            : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
-                        }`}
-                      >
-                        {dispo.label}
-                      </button>
-                    )
-                  })}
-                </div>
+                <Textarea
+                  value={dispoRemarks}
+                  onChange={(e) => setDispoRemarks(e.target.value)}
+                  placeholder="Ex : Disponible principalement en fin de journée le week-end, ou flexible selon vos besoins..."
+                  className="min-h-[80px] rounded-2xl border-gray-200 focus:border-[#2c308e] focus:ring-1 focus:ring-[#2c308e]/10 text-sm p-3"
+                  disabled={submitting}
+                />
               </div>
             </div>
           )}
@@ -327,44 +416,177 @@ export default function NewServicePage() {
             <div className="space-y-6 animate-in fade-in duration-300">
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  PLANIFICATION (QUAND AVEZ-VOUS BESOIN D'AIDE ?)
+                  PLANIFICATION DU BESOIN
                 </label>
-                <div className="flex bg-gray-50 rounded-xl p-1 w-fit mb-4">
-                  <button
-                    type="button"
-                    onClick={() => setPlanifType('asap')}
-                    disabled={submitting}
-                    className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
-                      planifType === 'asap'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-400 hover:text-gray-600'
-                    }`}
-                  >
-                    ⚡ Dès que possible (urgent)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPlanifType('date')}
-                    disabled={submitting}
-                    className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
-                      planifType === 'date'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-400 hover:text-gray-600'
-                    }`}
-                  >
-                    📅 Date spécifique
-                  </button>
+                
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  {[
+                    { key: 'asap', label: '⚡ Urgent / Dès que possible' },
+                    { key: 'date_unique', label: '📅 Jour & Heures spécifiques' },
+                    { key: 'plage_dates', label: '🗓️ Plage de dates (ex: Week-end)' },
+                    { key: 'regulier', label: '🔄 Régulier / Récurrent' }
+                  ].map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setPlanifChoice(opt.key as any)}
+                      disabled={submitting}
+                      className={`px-4 py-3 rounded-2xl border text-xs font-semibold transition-all text-left ${
+                        planifChoice === opt.key
+                          ? 'bg-[#2c308e] border-[#2c308e] text-white shadow-xs'
+                          : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
 
-                {planifType === 'date' && (
-                  <div className="w-56 animate-in fade-in slide-in-from-top-1 duration-200">
-                    <Input
-                      type="date"
-                      value={datePlanifVal}
-                      onChange={(e) => setDatePlanifVal(e.target.value)}
-                      className="h-11 rounded-xl border-gray-200 focus:border-[#2c308e]"
-                      disabled={submitting}
-                    />
+                {planifChoice === 'date_unique' && (
+                  <div className="p-5 rounded-3xl border border-gray-100 bg-[#fafafe]/60 space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sélectionnez la date</span>
+                      <Input
+                        type="date"
+                        value={singleDate}
+                        onChange={(e) => setSingleDate(e.target.value)}
+                        className="h-11 rounded-xl border-gray-200 focus:border-[#2c308e] w-full bg-white"
+                        disabled={submitting}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">De (Heure)</span>
+                        <Input
+                          type="time"
+                          value={singleStartHour}
+                          onChange={(e) => setSingleStartHour(e.target.value)}
+                          className="h-11 rounded-xl border-gray-200 focus:border-[#2c308e] bg-white"
+                          disabled={submitting}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">À (Heure)</span>
+                        <Input
+                          type="time"
+                          value={singleEndHour}
+                          onChange={(e) => setSingleEndHour(e.target.value)}
+                          className="h-11 rounded-xl border-gray-200 focus:border-[#2c308e] bg-white"
+                          disabled={submitting}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {planifChoice === 'plage_dates' && (
+                  <div className="p-5 rounded-3xl border border-gray-100 bg-[#fafafe]/60 space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Date de début</span>
+                        <Input
+                          type="date"
+                          value={rangeStartDate}
+                          onChange={(e) => setRangeStartDate(e.target.value)}
+                          className="h-11 rounded-xl border-gray-200 focus:border-[#2c308e] bg-white"
+                          disabled={submitting}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Date de fin</span>
+                        <Input
+                          type="date"
+                          value={rangeEndDate}
+                          onChange={(e) => setRangeEndDate(e.target.value)}
+                          className="h-11 rounded-xl border-gray-200 focus:border-[#2c308e] bg-white"
+                          disabled={submitting}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setRangeAllDay(!rangeAllDay)}
+                        className={`w-5 h-5 rounded-md border transition-all cursor-pointer flex items-center justify-center text-xs ${
+                          rangeAllDay ? 'bg-[#2c308e] border-[#2c308e] text-white' : 'bg-white border-gray-200 text-transparent'
+                        }`}
+                      >
+                        ✓
+                      </button>
+                      <span className="text-xs font-semibold text-gray-600">Toute la journée / Horaires libres</span>
+                    </div>
+
+                    {!rangeAllDay && (
+                      <div className="grid grid-cols-2 gap-3 animate-in fade-in duration-200">
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">De (Heure)</span>
+                          <Input
+                            type="time"
+                            value={rangeStartHour}
+                            onChange={(e) => setRangeStartHour(e.target.value)}
+                            className="h-11 rounded-xl border-gray-200 focus:border-[#2c308e] bg-white"
+                            disabled={submitting}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">À (Heure)</span>
+                          <Input
+                            type="time"
+                            value={rangeEndHour}
+                            onChange={(e) => setRangeEndHour(e.target.value)}
+                            className="h-11 rounded-xl border-gray-200 focus:border-[#2c308e] bg-white"
+                            disabled={submitting}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {planifChoice === 'regulier' && (
+                  <div className="p-5 rounded-3xl border border-gray-100 bg-[#fafafe]/60 space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div>
+                      <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Jours concernés</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'].map((day) => {
+                          const isSel = regularDays.includes(day)
+                          return (
+                            <button
+                              key={day}
+                              type="button"
+                              onClick={() => toggleRegularDay(day)}
+                              className={`px-3 py-1.5 rounded-xl border text-[10px] font-bold transition-all cursor-pointer ${
+                                isSel ? 'bg-[#2c308e] border-[#2c308e] text-white shadow-2xs' : 'bg-white border-gray-200 text-gray-500'
+                              }`}
+                            >
+                              {day.slice(0, 3)}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Période de la journée</span>
+                      <div className="flex gap-2">
+                        {['Matinée', 'Après-midi', 'Soirée'].map((p) => {
+                          const isSel = regularPeriods.includes(p)
+                          return (
+                            <button
+                              key={p}
+                              type="button"
+                              onClick={() => toggleRegularPeriod(p)}
+                              className={`flex-1 py-2 rounded-xl border text-[10px] font-bold transition-all cursor-pointer text-center ${
+                                isSel ? 'bg-[#2c308e] border-[#2c308e] text-white shadow-2xs' : 'bg-white border-gray-200 text-gray-500'
+                              }`}
+                            >
+                              {p}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -441,9 +663,14 @@ export default function NewServicePage() {
                         disabled={submitting}
                       />
                     </div>
-                    <span className="text-xs font-bold text-[#1f224e] uppercase tracking-wider">
-                      POINTS {tarifType === 'horaire' ? '/ HEURE' : '/ PRESTATION'}
-                    </span>
+                    <div>
+                      <span className="text-xs font-bold text-[#1f224e] uppercase tracking-wider block">
+                        POINTS {tarifType === 'horaire' ? '/ HEURE' : '/ PRESTATION'}
+                      </span>
+                      <span className="text-[10px] text-gray-400 font-light block mt-0.5">
+                        Recommandé : {SUGGESTED_RATES_BY_CATEGORY[categorie] || '10 - 50 pts'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -492,7 +719,12 @@ export default function NewServicePage() {
                       disabled={submitting}
                     />
                   </div>
-                  <span className="text-xs font-bold text-[#1f224e] uppercase tracking-wider">POINTS POUR LA TÂCHE</span>
+                  <div>
+                    <span className="text-xs font-bold text-[#1f224e] uppercase tracking-wider block">POINTS POUR LA TÂCHE</span>
+                    <span className="text-[10px] text-gray-400 font-light block mt-0.5">
+                      Recommandé : {SUGGESTED_RATES_BY_CATEGORY[categorie] || '10 - 50 pts'}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

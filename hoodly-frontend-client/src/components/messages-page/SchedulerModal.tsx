@@ -120,12 +120,18 @@ export function SchedulerModal({
 
     const propDateStr = `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`
 
-    const providerId = activeConversation.participants.find((p: any) => p.email !== activeConversation.serviceId?.createurId?.email)?._id
+    const creatorId = typeof activeConversation.serviceId?.createurId === 'object'
+      ? activeConversation.serviceId?.createurId?._id || activeConversation.serviceId?.createurId?.id
+      : activeConversation.serviceId?.createurId
+
+    const provider = activeConversation.participants?.find((p: any) => (p._id || p.id) !== creatorId)
+    const providerId = provider?._id || provider?.id
 
     if (!providerId) return null
 
-    const providerConvs = conversations.filter(c => {
-      const isProv = c.participants.some((p: any) => p._id === providerId)
+    const safeConvs = conversations || []
+    const providerConvs = safeConvs.filter(c => {
+      const isProv = c.participants?.some((p: any) => (p._id || p.id) === providerId)
       return isProv && c._id !== activeConversation._id && c.creneau && c.creneau.statut === 'confirme'
     })
 
@@ -145,7 +151,7 @@ export function SchedulerModal({
 
         const overlap = Math.max(s1, s2) < Math.min(e1, e2)
         if (overlap) {
-          const otherNeighbor = pc.participants.find((p: any) => p._id !== providerId)
+          const otherNeighbor = pc.participants?.find((p: any) => (p._id || p.id) !== providerId)
           return { neighborName: otherNeighbor?.name || 'Un autre voisin', debut: pc.creneau.debut, fin: pc.creneau.fin }
         }
       }
@@ -219,6 +225,7 @@ export function SchedulerModal({
 
   const timeSlots = getAvailableTimeSlots(slotDate)
   const isDateAvail = getIsDateAvailable(slotDate)
+  const clashing = getClashingBooking(slotDate, slotStart, slotEnd)
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
@@ -263,46 +270,71 @@ export function SchedulerModal({
             </div>
           ) : (
             <>
-              <div className="space-y-2">
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                  Créneaux horaires disponibles
-                </label>
-                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
-                  {timeSlots.map((ts) => {
-                    const isValid = getIsTimeSlotValid(slotDate, ts.start)
-                    const clashing = getClashingBooking(slotDate, ts.start, getEndTime(ts.start))
-                    const isSelected = slotStart === ts.start
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    Heure de début
+                  </label>
+                  <select
+                    value={slotStart}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setSlotStart(val)
+                      const nextEnd = getEndTime(val)
+                      setSlotEnd(nextEnd)
+                    }}
+                    className="h-11 w-full rounded-2xl bg-gray-50 border border-gray-200 px-3 text-xs outline-none focus:bg-white focus:border-[#2c308e] font-semibold cursor-pointer"
+                  >
+                    <option value="">Choisir...</option>
+                    {[
+                      '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+                      '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+                      '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
+                      '20:00', '20:30', '21:00', '21:30', '22:00'
+                    ].map((h) => {
+                      const isValid = getIsTimeSlotValid(slotDate, h)
+                      return (
+                        <option key={h} value={h} disabled={!isValid}>
+                          {h}
+                        </option>
+                      )
+                    })}
+                  </select>
+                </div>
 
-                    return (
-                      <button
-                        key={ts.start}
-                        type="button"
-                        disabled={!isValid || !!clashing}
-                        onClick={() => {
-                          setSlotStart(ts.start)
-                          setSlotEnd(getEndTime(ts.start))
-                        }}
-                        className={`p-2.5 rounded-xl border text-[10px] font-semibold text-center transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-[#2c308e] border-[#2c308e] text-white shadow-xs'
-                            : !isValid
-                            ? 'bg-gray-50 border-gray-100 text-gray-300 cursor-not-allowed line-through'
-                            : clashing
-                            ? 'bg-amber-50/50 border-amber-100 text-amber-500 hover:bg-amber-50'
-                            : 'bg-white border-gray-200/80 text-gray-700 hover:border-[#2c308e] hover:text-[#2c308e]'
-                        }`}
-                        title={clashing ? `Conflit avec un rendez-vous déjà planifié` : ''}
-                      >
-                        {ts.label}
-                        {clashing && <span className="block text-[7px] text-amber-600 font-bold mt-0.5">⚠️ Occupé</span>}
-                      </button>
-                    )
-                  })}
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    Heure de fin
+                  </label>
+                  <select
+                    value={slotEnd}
+                    onChange={(e) => setSlotEnd(e.target.value)}
+                    className="h-11 w-full rounded-2xl bg-gray-50 border border-gray-200 px-3 text-xs outline-none focus:bg-white focus:border-[#2c308e] font-semibold cursor-pointer"
+                    disabled={!slotStart}
+                  >
+                    <option value="">Choisir...</option>
+                    {[
+                      '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00',
+                      '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00',
+                      '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00',
+                      '20:30', '21:00', '21:30', '22:00', '22:30', '23:00'
+                    ].filter(h => h > slotStart).map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
-              {slotStart && (
-                <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-100 text-[10px] text-emerald-800 leading-relaxed font-semibold">
+              {clashing && (
+                <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-100 text-[10px] text-amber-700 leading-relaxed font-semibold">
+                  ⚠️ Conflit : vous avez un rendez-vous confirmé avec {clashing.neighborName} de {clashing.debut} à {clashing.fin}.
+                </div>
+              )}
+
+              {slotStart && slotEnd && !clashing && (
+                <div className="p-3.5 rounded-2xl bg-emerald-50/40 border border-emerald-100 text-[10px] text-emerald-800 leading-relaxed font-semibold">
                   <div className="flex items-center gap-1.5">
                     <span>⏰ Horaire sélectionné :</span>
                     <strong className="font-bold bg-white text-emerald-800 px-2 py-0.5 rounded-lg border border-emerald-100 shadow-2xs">

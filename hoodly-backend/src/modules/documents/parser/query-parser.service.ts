@@ -76,7 +76,9 @@ export class QueryParserService {
       throw new Error("Le parseur syntaxique n'a pas été initialisé.");
     }
     if (!queryText || typeof queryText !== 'string') {
-      throw new BadRequestException("Le paramètre 'query' est requis et doit être une chaîne de caractères non vide.");
+      throw new BadRequestException(
+        "Le paramètre 'query' est requis et doit être une chaîne de caractères non vide.",
+      );
     }
     try {
       const normalized = queryText.trim();

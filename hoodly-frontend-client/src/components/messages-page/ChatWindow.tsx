@@ -28,6 +28,45 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { contractsApi } from '../../services/api/contracts'
 import { documentsApi } from '../../services/api/documents'
 import { SchedulerModal } from './SchedulerModal'
+
+const parsePlanificationToCreneau = (planif: string | undefined) => {
+  if (!planif) return null
+
+  const singleDayRegex = /Le\s+(\d{2})\/(\d{2})\/(\d{4})\s+de\s+(\d{2}:\d{2})\s+à\s+(\d{2}:\d{2})/i
+  const matchSingle = planif.match(singleDayRegex)
+  if (matchSingle) {
+    const [_, day, month, year, debut, fin] = matchSingle
+    return {
+      date: `${year}-${month}-${day}`,
+      debut,
+      fin
+    }
+  }
+
+  const rangeRegex = /Du\s+(\d{2})\/(\d{2})\/(\d{4})\s+au\s+\d{2}\/\d{2}\/\d{4}\s+de\s+(\d{2}:\d{2})\s+à\s+(\d{2}:\d{2})/i
+  const matchRange = planif.match(rangeRegex)
+  if (matchRange) {
+    const [_, day, month, year, debut, fin] = matchRange
+    return {
+      date: `${year}-${month}-${day}`,
+      debut,
+      fin
+    }
+  }
+
+  const rangeAllDayRegex = /Du\s+(\d{2})\/(\d{2})\/(\d{4})\s+au\s+(\d{2})\/(\d{2})\/(\d{4})\s+\(toute la journée\)/i
+  const matchRangeAllDay = planif.match(rangeAllDayRegex)
+  if (matchRangeAllDay) {
+    const [_, day, month, year] = matchRangeAllDay
+    return {
+      date: `${year}-${month}-${day}`,
+      debut: '09:00',
+      fin: '18:00'
+    }
+  }
+
+  return null
+}
 import { Badge } from '../ui/badge'
 
 interface ChatWindowProps {
@@ -57,6 +96,8 @@ export function ChatWindow({
     isProposing,
     accepterCreneau,
     refuserCreneau,
+    annulerPrestation,
+    isCancelling,
     editMessage,
     deleteMessage
   } = useConversations(activeId as string)
@@ -309,6 +350,10 @@ export function ChatWindow({
           currentStep = 6
         }
 
+        if (contract && contract.status === 'cancelled') {
+          currentStep = 7
+        }
+
         let cardTitle = ''
         let cardDescription = ''
         let cardIcon = null
@@ -324,28 +369,39 @@ export function ChatWindow({
 
         switch (currentStep) {
           case 1:
-            cardTitle = "Proposition d'aide"
-            cardDescription = isProvider
-              ? "Proposez votre aide pour ce service pour ouvrir l'agenda et planifier les détails."
-              : "En attente qu'un voisin se propose pour vous aider."
+            if (service.type === 'offre') {
+              cardTitle = "Demande d'entraide"
+              cardDescription = !isCreator
+                ? "Sollicitez cette offre d'aide pour ouvrir l'agenda et planifier les détails."
+                : "En attente qu'un voisin sollicite votre offre d'aide."
+            } else {
+              cardTitle = "Proposition d'aide"
+              cardDescription = !isCreator
+                ? "Proposez votre aide pour ce service pour ouvrir l'agenda et planifier les détails."
+                : "En attente qu'un voisin se propose pour vous aider."
+            }
             cardIcon = <HeartHandshake className="h-5 w-5 text-[#2c308e]" />
-            if (isProvider) {
+            if (!isCreator) {
               primaryAction = (
                 <Button
                   size="sm"
                   onClick={async () => {
                     try {
-                      const responderId = isCreator ? otherId : (currentUser?.id || currentUser?._id || '')
+                      const responderId = currentUser?.id || currentUser?._id || ''
                       await accepterService({ id: service._id, body: { responderId } })
                       queryClient.invalidateQueries({ queryKey: ['conversation', activeConv._id] })
-                      toast.success("Vous avez proposé votre aide ! L'agenda est ouvert.")
+                      toast.success(
+                        service.type === 'offre'
+                          ? "Vous avez sollicité cette offre d'aide ! L'agenda est ouvert."
+                          : "Vous avez proposé votre aide ! L'agenda est ouvert."
+                      )
                     } catch (err: any) {
-                      toast.error(err?.response?.data?.message || "Erreur lors de la proposition d'aide.")
+                      toast.error(err?.response?.data?.message || "Erreur de validation.")
                     }
                   }}
                   className="bg-[#2c308e] hover:bg-[#2c308e]/95 text-white font-bold text-xs rounded-xl"
                 >
-                  Se proposer pour ce service
+                  {service.type === 'offre' ? 'Accepter cette offre d’aide' : 'Se proposer pour ce service'}
                 </Button>
               )
             }
@@ -397,17 +453,46 @@ export function ChatWindow({
                 )
               }
             } else {
-              cardDescription = "Proposez un créneau horaire dans l'agenda pour planifier la réalisation."
-              primaryAction = (
-                <Button
-                  size="sm"
-                  onClick={() => setShowScheduler(true)}
-                  className="bg-[#2c308e] hover:bg-[#2c308e]/95 text-white font-bold text-xs rounded-xl flex items-center gap-1.5"
-                >
-                  <Calendar className="h-4 w-4" />
-                  Planifier
-                </Button>
-              )
+              const parsedCreneau = parsePlanificationToCreneau(service.datePlanification)
+              if (service.type === 'demande' && parsedCreneau) {
+                cardDescription = `L'auteur de la demande a fixé le rendez-vous pour le : ${service.datePlanification}.`
+                primaryAction = (
+                  <Button
+                    size="sm"
+                    disabled={isProposing}
+                    onClick={async () => {
+                      try {
+                        await proposerCreneau({
+                          id: activeConv._id,
+                          date: parsedCreneau.date,
+                          debut: parsedCreneau.debut,
+                          fin: parsedCreneau.fin
+                        })
+                        queryClient.invalidateQueries({ queryKey: ['conversation', activeConv._id] })
+                        toast.success("Horaire de la demande validé avec succès !")
+                      } catch {
+                        toast.error("Erreur lors de la validation de l'horaire.")
+                      }
+                    }}
+                    className="bg-[#2c308e] hover:bg-[#2c308e]/95 text-white font-bold text-xs rounded-xl flex items-center gap-1.5"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    Valider cet horaire
+                  </Button>
+                )
+              } else {
+                cardDescription = "Proposez un créneau horaire dans l'agenda pour planifier la réalisation."
+                primaryAction = (
+                  <Button
+                    size="sm"
+                    onClick={() => setShowScheduler(true)}
+                    className="bg-[#2c308e] hover:bg-[#2c308e]/95 text-white font-bold text-xs rounded-xl flex items-center gap-1.5"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Planifier
+                  </Button>
+                )
+              }
             }
             break
 
@@ -420,7 +505,7 @@ export function ChatWindow({
               const iHaveSigned = isClient ? clientSigned : isProvider ? providerSigned : true
 
               cardDescription = `Rendez-vous confirmé. Veuillez signer le contrat pour sécuriser les ${service.points || 0} points dans la cagnotte.`
-              
+
               if (!iHaveSigned) {
                 primaryAction = (
                   <Button
@@ -452,7 +537,7 @@ export function ChatWindow({
             cardDescription = isPaid
               ? `Points sécurisés (${service.points} pts). Service planifié le ${rdvDateStr} ${rdvTimeStr}.`
               : `Entraide gratuite planifiée le ${rdvDateStr} ${rdvTimeStr}.`
-            
+
             if (isProvider) {
               primaryAction = (
                 <Button
@@ -574,10 +659,30 @@ export function ChatWindow({
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0">
                 {secondaryAction}
                 {primaryAction}
+                {currentStep >= 2 && currentStep <= 5 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={isCancelling}
+                    onClick={async () => {
+                      if (window.confirm("Êtes-vous sûr de vouloir annuler cette prestation ?")) {
+                        try {
+                          await annulerPrestation(activeConv._id)
+                          toast.success("Prestation annulée avec succès.")
+                        } catch {
+                          toast.error("Erreur lors de l'annulation.")
+                        }
+                      }
+                    }}
+                    className="border-rose-200 text-rose-500 hover:bg-rose-50 hover:text-rose-600 font-bold text-xs rounded-xl h-9"
+                  >
+                    Annuler l'entraide
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -706,25 +811,7 @@ export function ChatWindow({
       </div>
 
       <form onSubmit={handleSend} className="p-4 border-t border-gray-200 bg-white shrink-0 flex gap-2 items-center">
-        {activeConv.serviceId && (() => {
-          const isCreator = activeConv.serviceId && (typeof activeConv.serviceId.createurId === 'object'
-            ? activeConv.serviceId.createurId.email === currentUser?.email
-            : activeConv.serviceId.createurId === currentUser?.id)
-          const isClient = activeConv.serviceId && (activeConv.serviceId.type === 'demande' ? isCreator : !isCreator)
 
-          if (!isClient) return null
-
-          return (
-            <button
-              type="button"
-              onClick={() => setShowScheduler(true)}
-              className="h-11 w-11 rounded-2xl bg-indigo-50 hover:bg-[#e9eaf6] text-[#2c308e] flex items-center justify-center transition-colors shrink-0 cursor-pointer shadow-3xs"
-              title="Planifier un rendez-vous"
-            >
-              <Calendar className="h-5 w-5" />
-            </button>
-          )
-        })()}
 
         <textarea
           ref={textareaRef}

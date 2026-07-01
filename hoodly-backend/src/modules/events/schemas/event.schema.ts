@@ -61,10 +61,10 @@ export class Event {
   @Prop({ type: Number })
   pointsCout?: number;
 
-  @Prop({ type: Number, default: 10 })
+  @Prop({ type: Number, default: 0 })
   pointsCreateur!: number;
 
-  @Prop({ type: Number, default: 5 })
+  @Prop({ type: Number, default: 0 })
   pointsParticipant!: number;
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'User' }], default: [] })

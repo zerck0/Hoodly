@@ -142,6 +142,19 @@ export function useConversations(conversationId?: string) {
     },
   })
 
+  const annulerMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await conversationsApi.annulerPrestation(id)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversation', conversationId] })
+      queryClient.invalidateQueries({ queryKey: ['conversations'] })
+      queryClient.invalidateQueries({ queryKey: ['contract-detail'] })
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] })
+    },
+  })
+
   const editMutation = useMutation({
     mutationFn: async ({ messageId, content }: { messageId: string; content: string }) => {
       if (!conversationId) throw new Error('Aucune conversation active')
@@ -187,6 +200,9 @@ export function useConversations(conversationId?: string) {
 
     refuserCreneau: refuserCreneauMutation.mutateAsync,
     isRefusingCreneau: refuserCreneauMutation.isPending,
+
+    annulerPrestation: annulerMutation.mutateAsync,
+    isCancelling: annulerMutation.isPending,
 
     editMessage: editMutation.mutateAsync,
     isEditingMessage: editMutation.isPending,

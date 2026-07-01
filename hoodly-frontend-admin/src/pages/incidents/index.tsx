@@ -34,10 +34,21 @@ const CRITICITY_STYLES = {
   faible: { label: 'Faible', bg: 'bg-indigo-950/40', text: 'text-indigo-400', border: 'border-indigo-900/50' },
 };
 
-const STATUS_STYLES = {
+const STATUS_STYLES: Record<string, { label: string; bg: string; text: string; border: string }> = {
+  signale: { label: 'Signalé', bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
   ouvert: { label: 'Ouvert', bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' },
   en_cours: { label: 'En cours', bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' },
   resolu: { label: 'Résolu', bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
+  ferme: { label: 'Clôturé', bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' },
+};
+
+const getCriticiteValue = (incident: any) => {
+  const prio = incident.priorite || incident.criticite;
+  if (!prio) return 'faible';
+  const norm = prio.toLowerCase();
+  if (norm === 'urgente' || norm === 'elevee') return 'elevee';
+  if (norm === 'haute' || norm === 'moyenne') return 'moyenne';
+  return 'faible';
 };
 
 export default function IncidentsPage() {
@@ -45,7 +56,7 @@ export default function IncidentsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [criticiteFilter, setCriticiteFilter] = useState<string>('all');
-  const [selectedIncident, setSelectedIncident] = useState<IIncidentResponse | null>(null);
+  const [selectedIncident, setSelectedIncident] = useState<any | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [page, setPage] = useState(1);
 
@@ -55,8 +66,8 @@ export default function IncidentsPage() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, statut }: { id: string; statut: 'ouvert' | 'en_cours' | 'resolu' }) =>
-      incidentsApi.updateStatut(id, { statut }),
+    mutationFn: ({ id, statut }: { id: string; statut: string }) =>
+      incidentsApi.updateStatut(id, { statut: statut as any }),
     onSuccess: () => {
       toast.success('Statut de l\'incident mis à jour avec succès !');
       queryClient.invalidateQueries({ queryKey: ['incidents'] });
@@ -69,14 +80,19 @@ export default function IncidentsPage() {
 
   const filteredIncidents = useMemo(() => {
     if (!incidents) return [];
-    return incidents.filter((incident) => {
-      const matchesSearch =
-        incident.titre.toLowerCase().includes(search.toLowerCase()) ||
-        incident.description.toLowerCase().includes(search.toLowerCase()) ||
-        incident.categorie.toLowerCase().includes(search.toLowerCase());
+    return incidents.filter((incident: any) => {
+      const title = incident.titre || incident.type || '';
+      const desc = incident.description || '';
+      const cat = incident.categorie || incident.contexte || '';
 
-      const matchesStatus = statusFilter === 'all' || incident.statut === statusFilter;
-      const matchesCriticite = criticiteFilter === 'all' || incident.criticite === criticiteFilter;
+      const matchesSearch =
+        title.toLowerCase().includes(search.toLowerCase()) ||
+        desc.toLowerCase().includes(search.toLowerCase()) ||
+        cat.toLowerCase().includes(search.toLowerCase());
+
+      const currentStatut = incident.statut === 'signale' ? 'ouvert' : incident.statut;
+      const matchesStatus = statusFilter === 'all' || currentStatut === statusFilter || incident.statut === statusFilter;
+      const matchesCriticite = criticiteFilter === 'all' || getCriticiteValue(incident) === criticiteFilter;
 
       return matchesSearch && matchesStatus && matchesCriticite;
     });
@@ -200,16 +216,16 @@ export default function IncidentsPage() {
                   <tbody className="divide-y divide-gray-800/60">
                     {paginatedIncidents.map((incident) => {
                       const id = incident.id || incident._id;
-                      const crit = CRITICITY_STYLES[incident.criticite] || CRITICITY_STYLES.faible;
+                      const crit = CRITICITY_STYLES[getCriticiteValue(incident) as keyof typeof CRITICITY_STYLES] || CRITICITY_STYLES.faible;
                       const stat = STATUS_STYLES[incident.statut] || STATUS_STYLES.ouvert;
-                      const zoneNom = typeof incident.zoneId === 'object' ? incident.zoneId?.nom : 'Quartier local';
+                      const zoneNom = typeof incident.zoneId === 'object' ? (incident.zoneId as any)?.nom : 'Quartier local';
 
                       return (
                         <tr key={id} className="hover:bg-gray-800/20 transition-colors">
                           <td className="px-6 py-4">
-                            <div className="font-semibold text-white">{incident.titre}</div>
+                            <div className="font-semibold text-white">{incident.titre || incident.type || 'Incident'}</div>
                             <div className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5 font-semibold">
-                              {incident.categorie}
+                              {incident.categorie || incident.contexte || 'Quartier'}
                             </div>
                           </td>
                           <td className="px-6 py-4 text-gray-400 font-medium">{zoneNom}</td>
@@ -296,14 +312,14 @@ export default function IncidentsPage() {
             <div className="space-y-4 py-3">
               <div className="bg-gray-900 border border-gray-850 p-4 rounded-xl space-y-2">
                 <p className="text-xs text-indigo-400 font-bold uppercase tracking-wider">Titre du signalement</p>
-                <p className="text-sm font-semibold text-white">{selectedIncident.titre}</p>
+                <p className="text-sm font-semibold text-white">{selectedIncident.titre || selectedIncident.type || 'Incident'}</p>
                 <p className="text-xs text-gray-400 mt-2 leading-relaxed">{selectedIncident.description}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-900/60 border border-gray-850 p-3 rounded-lg">
                   <p className="text-[10px] text-gray-500 font-bold uppercase">Catégorie</p>
-                  <p className="text-xs font-semibold text-gray-200 mt-1 capitalize">{selectedIncident.categorie}</p>
+                  <p className="text-xs font-semibold text-gray-200 mt-1 capitalize">{selectedIncident.categorie || selectedIncident.contexte || 'Quartier'}</p>
                 </div>
                 <div className="bg-gray-900/60 border border-gray-850 p-3 rounded-lg">
                   <p className="text-[10px] text-gray-500 font-bold uppercase">Signalé par</p>

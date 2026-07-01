@@ -13,11 +13,13 @@ import {
   LogOut,
   MapPin,
   FileText,
+  Shield,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { label: 'Tableau de bord', icon: LayoutDashboard, path: '/dashboard' },
   { label: 'Gestion des Utilisateurs', icon: Users, path: '/users' },
+  { label: 'Candidatures Modérateurs', icon: Shield, path: '/candidatures' },
   { label: 'Modération Incidents', icon: AlertTriangle, path: '/incidents' },
   { label: 'Liste des Quartiers', icon: MapPin, path: '/zones' },
   { label: 'Ouverture & Tracé', icon: FileText, path: '/zones/map' },

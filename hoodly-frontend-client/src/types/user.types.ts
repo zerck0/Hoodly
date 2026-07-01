@@ -25,4 +25,5 @@ export interface User {
   refusalType?: 'zone' | 'membership'
   points?: number
   bio?: string
+  claimedMissions?: string[]
 }

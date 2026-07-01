@@ -79,6 +79,10 @@ export class ConversationsService {
     }
   }
 
+  async deleteByEventId(eventId: string): Promise<void> {
+    await this.conversationModel.deleteOne({ eventId: new Types.ObjectId(eventId) });
+  }
+
   async removeParticipantFromEvent(
     eventId: string,
     userId: string,
@@ -740,5 +744,44 @@ export class ConversationsService {
     );
 
     return conversation;
+  }
+
+  async annulerPrestation(
+    id: string,
+    userId: string,
+  ): Promise<ConversationDocument> {
+    const conversation = await this.conversationModel
+      .findById(id)
+      .populate('serviceId');
+
+    if (!conversation) {
+      throw new NotFoundException('Discussion introuvable');
+    }
+
+    const service = conversation.serviceId as any;
+    if (service && service.contractId) {
+      await this.contractsService.cancel(service.contractId.toString(), userId);
+      return (await this.conversationModel.findById(id).populate('serviceId'))!;
+    }
+
+    const user = await this.userModel.findById(userId).lean();
+    const userName = (user as any)?.name || 'Un voisin';
+
+    if (service) {
+      await this.servicesService.refuser(service._id.toString(), userId);
+    } else {
+      conversation.prestationStatut = 'refuse';
+      if (conversation.creneau) {
+        conversation.creneau.statut = 'annule';
+      }
+      await conversation.save();
+    }
+
+    await this.sendSystemMessage(
+      conversation._id.toString(),
+      `❌ L'entraide a été annulée par ${userName}.`,
+    );
+
+    return (await this.conversationModel.findById(id).populate('serviceId'))!;
   }
 }

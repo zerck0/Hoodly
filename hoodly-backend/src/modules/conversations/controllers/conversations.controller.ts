@@ -155,4 +155,14 @@ export class ConversationsController {
   ) {
     return this.conversationsService.refuserCreneau(id, user.userId);
   }
+
+  @Patch(':id/annuler')
+  @ApiOperation({ summary: "Annuler la prestation / l'entraide" })
+  @ApiResponse({ status: 200, description: 'Prestation annulée avec succès' })
+  async annulerPrestation(
+    @Param('id', MongoIdValidationPipe) id: string,
+    @CurrentUser() user: { userId: string },
+  ) {
+    return this.conversationsService.annulerPrestation(id, user.userId);
+  }
 }

@@ -317,6 +317,11 @@ export class ContractsService {
           await this.eventModel.findByIdAndUpdate(event._id, {
             $addToSet: { participants: savedContract.clientId },
           });
+
+          await this.conversationsService.addParticipantToEvent(
+            event._id.toString(),
+            savedContract.clientId.toString(),
+          );
         }
       }
     }

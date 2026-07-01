@@ -6,6 +6,10 @@ import {
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User, UserRole } from '../schemas/user.schema';
+import { Conversation } from '../../conversations/schemas/conversation.schema';
+import { Post } from '../../posts/schemas/post.schema';
+import { Incident } from '../../incidents/schemas/incident.schema';
+import { Event } from '../../events/schemas/event.schema';
 
 import { TransactionsService } from '../../transactions/services/transactions.service';
 
@@ -23,6 +27,10 @@ describe('UsersService', () => {
     findByIdAndUpdate: jest.Mock;
     findByIdAndDelete: jest.Mock;
   };
+  let conversationModel: { countDocuments: jest.Mock };
+  let postModel: { countDocuments: jest.Mock };
+  let incidentModel: { countDocuments: jest.Mock };
+  let eventModel: { countDocuments: jest.Mock };
 
   const makeUser = (overrides: Record<string, unknown> = {}) => {
     const now = new Date('2026-01-01T10:00:00.000Z');
@@ -37,6 +45,7 @@ describe('UsersService', () => {
       isActive: true,
       createdAt: now,
       updatedAt: now,
+      claimedMissions: [],
       ...overrides,
     };
   };
@@ -57,6 +66,7 @@ describe('UsersService', () => {
     refusalReason: (user as any).refusalReason,
     refusalType: (user as any).refusalType,
     points: (user as any).points ?? 100,
+    claimedMissions: (user as any).claimedMissions || [],
   });
 
   beforeEach(async () => {
@@ -74,12 +84,33 @@ describe('UsersService', () => {
     userModel.findByIdAndUpdate = jest.fn();
     userModel.findByIdAndDelete = jest.fn();
 
+    conversationModel = { countDocuments: jest.fn() };
+    postModel = { countDocuments: jest.fn() };
+    incidentModel = { countDocuments: jest.fn() };
+    eventModel = { countDocuments: jest.fn() };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         {
           provide: getModelToken(User.name),
           useValue: userModel,
+        },
+        {
+          provide: getModelToken(Conversation.name),
+          useValue: conversationModel,
+        },
+        {
+          provide: getModelToken(Post.name),
+          useValue: postModel,
+        },
+        {
+          provide: getModelToken(Incident.name),
+          useValue: incidentModel,
+        },
+        {
+          provide: getModelToken(Event.name),
+          useValue: eventModel,
         },
         {
           provide: TransactionsService,
@@ -384,19 +415,14 @@ describe('UsersService', () => {
   });
 
   describe('updateProfile', () => {
-    it('should update profile and return DTO when points do not change', async () => {
-      const existingUser = makeUser({ points: 100 });
+    it('should update profile and return DTO', async () => {
       const updatedUser = makeUser({ name: 'Updated Name', points: 100 });
-      userModel.findOne.mockResolvedValue(existingUser);
       userModel.findOneAndUpdate.mockResolvedValue(updatedUser);
 
       const result = await service.updateProfile('auth0|abc123', {
         name: 'Updated Name',
       });
 
-      expect(userModel.findOne).toHaveBeenCalledWith({
-        auth0Id: 'auth0|abc123',
-      });
       expect(userModel.findOneAndUpdate).toHaveBeenCalledWith(
         { auth0Id: 'auth0|abc123' },
         { $set: { name: 'Updated Name' } },
@@ -405,114 +431,58 @@ describe('UsersService', () => {
       expect(result.name).toEqual('Updated Name');
     });
 
-    it('should update profile, record point transaction when points increase by 20', async () => {
-      const existingUser = makeUser({ points: 100 });
-      const updatedUser = makeUser({ points: 120 });
-      userModel.findOne.mockResolvedValue(existingUser);
-      userModel.findOneAndUpdate.mockResolvedValue(updatedUser);
-
-      await service.updateProfile('auth0|abc123', {
-        points: 120,
-      });
-
-      expect(transactionsService.create).toHaveBeenCalledWith(
-        null,
-        updatedUser._id,
-        20,
-        'admin_adjustment',
-        'Mission accomplie : Discussion active',
-      );
-    });
-
-    it('should update profile, record point transaction when points increase by 30', async () => {
-      const existingUser = makeUser({ points: 100 });
-      const updatedUser = makeUser({ points: 130 });
-      userModel.findOne.mockResolvedValue(existingUser);
-      userModel.findOneAndUpdate.mockResolvedValue(updatedUser);
-
-      await service.updateProfile('auth0|abc123', {
-        points: 130,
-      });
-
-      expect(transactionsService.create).toHaveBeenCalledWith(
-        null,
-        updatedUser._id,
-        30,
-        'admin_adjustment',
-        'Mission accomplie : Premier pas sur le feed',
-      );
-    });
-
-    it('should update profile, record point transaction when points increase by 50', async () => {
-      const existingUser = makeUser({ points: 100 });
-      const updatedUser = makeUser({ points: 150 });
-      userModel.findOne.mockResolvedValue(existingUser);
-      userModel.findOneAndUpdate.mockResolvedValue(updatedUser);
-
-      await service.updateProfile('auth0|abc123', {
-        points: 150,
-      });
-
-      expect(transactionsService.create).toHaveBeenCalledWith(
-        null,
-        updatedUser._id,
-        50,
-        'admin_adjustment',
-        'Mission accomplie : Présentation au quartier',
-      );
-    });
-
-    it('should update profile, record generic adjustment when points change by custom amount', async () => {
-      const existingUser = makeUser({ points: 100 });
-      const updatedUser = makeUser({ points: 200 });
-      userModel.findOne.mockResolvedValue(existingUser);
-      userModel.findOneAndUpdate.mockResolvedValue(updatedUser);
-
-      await service.updateProfile('auth0|abc123', {
-        points: 200,
-      });
-
-      expect(transactionsService.create).toHaveBeenCalledWith(
-        null,
-        updatedUser._id,
-        100,
-        'admin_adjustment',
-        'Ajustement de points',
-      );
-    });
-
-    it('should handle point transaction failure gracefully', async () => {
-      const existingUser = makeUser({ points: 100 });
-      const updatedUser = makeUser({ points: 120 });
-      userModel.findOne.mockResolvedValue(existingUser);
-      userModel.findOneAndUpdate.mockResolvedValue(updatedUser);
-      transactionsService.create.mockRejectedValue(
-        new Error('Transaction fail'),
-      );
-
-      const result = await service.updateProfile('auth0|abc123', {
-        points: 120,
-      });
-
-      expect(result).toBeDefined();
-    });
-
-    it('should throw NotFoundException when user not found on initial find', async () => {
-      userModel.findOne.mockResolvedValue(null);
-
-      await expect(
-        service.updateProfile('auth0|missing', { name: 'New' }),
-      ).rejects.toThrow(NotFoundException);
-    });
-
     it('should throw NotFoundException when user not found on update', async () => {
-      const existingUser = makeUser();
-      userModel.findOne.mockResolvedValue(existingUser);
       userModel.findOneAndUpdate.mockResolvedValue(null);
 
       await expect(
         service.updateProfile('auth0|abc123', { name: 'New' }),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('claimMission', () => {
+    it('should claim mission successfully when conditions are met', async () => {
+      const user = makeUser({ points: 100, claimedMissions: [] });
+      const savedUser = {
+        ...user,
+        points: 110,
+        claimedMissions: ['discussion'],
+        save: jest.fn().mockResolvedValue(true),
+      };
+      userModel.findOne.mockResolvedValue(savedUser);
+      conversationModel.countDocuments.mockResolvedValue(1);
+
+      const result = await service.claimMission('auth0|abc123', 'discussion');
+
+      expect(savedUser.save).toHaveBeenCalled();
+      expect(savedUser.points).toEqual(110);
+      expect(savedUser.claimedMissions).toContain('discussion');
+      expect(transactionsService.create).toHaveBeenCalled();
+      expect(result.points).toEqual(110);
+      expect(result.claimedMissions).toContain('discussion');
+    });
+
+    it('should throw BadRequestException if mission is already claimed', async () => {
+      const user = makeUser({ points: 100, claimedMissions: ['discussion'] });
+      userModel.findOne.mockResolvedValue(user);
+
+      await expect(
+        service.claimMission('auth0|abc123', 'discussion'),
+      ).rejects.toThrow(
+        'Vous avez déjà récupéré la récompense pour cette mission.',
+      );
+    });
+
+    it('should throw BadRequestException if mission criteria not met', async () => {
+      const user = makeUser({ points: 100, claimedMissions: [] });
+      userModel.findOne.mockResolvedValue(user);
+      conversationModel.countDocuments.mockResolvedValue(0);
+
+      await expect(
+        service.claimMission('auth0|abc123', 'discussion'),
+      ).rejects.toThrow(
+        "Vous n'avez pas encore accompli les conditions pour cette mission.",
+      );
     });
   });
 

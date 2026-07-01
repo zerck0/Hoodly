@@ -6,6 +6,7 @@ import {
   Req,
   Body,
   Patch,
+  Param,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -83,5 +84,20 @@ export class AuthController {
   ): Promise<UserResponseDto> {
     const payload = req.user as IAuth0JwtPayload;
     return await this.usersService.updateProfile(payload.sub, body);
+  }
+
+  @Post('me/missions/:missionId/claim')
+  @ApiOperation({ summary: 'Récupérer les points pour une mission accomplie' })
+  @ApiResponse({
+    status: 200,
+    description: 'Mission réclamée et points transférés',
+    type: UserResponseDto,
+  })
+  async claimMission(
+    @Req() req: Request,
+    @Param('missionId') missionId: string,
+  ): Promise<UserResponseDto> {
+    const payload = req.user as IAuth0JwtPayload;
+    return await this.usersService.claimMission(payload.sub, missionId);
   }
 }

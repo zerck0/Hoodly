@@ -7,6 +7,8 @@ import { zonesApi } from '../services/api/zone'
 import { usersApi } from '../services/api/user'
 import { conversationsApi } from '../services/api/conversations'
 import { postsApi } from '../services/api/posts'
+import { incidentsApi } from '../services/api/incidents'
+import { eventsApi } from '../services/api/events'
 import {
   Camera,
   Mail,
@@ -40,6 +42,7 @@ interface Mission {
   description: string
   points: number
   isCompleted: boolean
+  isClaimed: boolean
   progressText: string
 }
 
@@ -58,6 +61,39 @@ export default function ProfilePage() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { user, refreshProfile } = useUser()
+
+  const { data: modApplication, refetch: refetchModStatus } = useQuery({
+    queryKey: ['moderator-application-status'],
+    queryFn: async () => {
+      const { data } = await usersApi.getModeratorApplicationStatus()
+      return data
+    },
+    enabled: user?.role === 'user',
+  })
+
+  const [showApplyForm, setShowApplyForm] = useState(false)
+  const [motivationText, setMotivationText] = useState('')
+  const [submittingApply, setSubmittingApply] = useState(false)
+
+  const handleApplyModerator = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!motivationText.trim()) {
+      toast.error('Veuillez écrire votre motivation.')
+      return
+    }
+    setSubmittingApply(true)
+    try {
+      await usersApi.applyForModerator(motivationText)
+      toast.success('Votre candidature a été envoyée avec succès.')
+      setShowApplyForm(false)
+      setMotivationText('')
+      refetchModStatus()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Une erreur est survenue.')
+    } finally {
+      setSubmittingApply(false)
+    }
+  }
 
   const [name, setName] = useState('')
   const [firstName, setFirstName] = useState('')
@@ -136,10 +172,50 @@ export default function ProfilePage() {
     enabled: !!user?.zoneId
   })
 
+  const { data: userIncidents = [] } = useQuery({
+    queryKey: ['global-user-incidents', user?.id],
+    queryFn: async () => {
+      if (!user?.zoneId) return []
+      const { data } = await incidentsApi.getAll({ zoneId: user.zoneId })
+      return data.filter(inc => {
+        const userName = user?.name || ''
+        const userEmail = user?.email || ''
+        return inc.signaledPar === userName || inc.signaledPar === userEmail
+      })
+    },
+    enabled: !!user?.id
+  })
+
+  const { data: eventsData } = useQuery({
+    queryKey: ['global-user-events', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return { events: [] }
+      const { data } = await eventsApi.getAll({ limit: 100 })
+      return data
+    },
+    enabled: !!user?.id
+  })
+
   const hasMessages = conversations.length > 0
   const hasPosts = (feedData?.data || []).some(
     (post) => post.author === user?.id || post.author === user?.auth0Id
   )
+  const hasIncidents = userIncidents.length > 0
+
+  const myCreatedEvents = (eventsData?.events || []).filter((e: any) => {
+    const creatorIdStr = typeof e.createurId === 'object' ? e.createurId?._id || e.createurId?.id : e.createurId
+    return creatorIdStr === user?.id
+  })
+
+  const myParticipatedEvents = (eventsData?.events || []).filter((e: any) => {
+    return (e.participants || []).some((p: any) => {
+      const pid = typeof p === 'object' ? p._id || p.id : p
+      return pid === user?.id
+    })
+  })
+
+  const hasCreatedEvent = myCreatedEvents.length > 0
+  const hasParticipatedEvent = myParticipatedEvents.length > 0
 
   const createdServices = createdServicesData?.services || []
 
@@ -168,6 +244,22 @@ export default function ProfilePage() {
     },
     onError: () => {
       toast.error('Erreur lors de la mise à jour du profil')
+    }
+  })
+
+  const claimMissionMutation = useMutation({
+    mutationFn: async (missionId: string) => {
+      const response = await usersApi.claimMission(missionId)
+      return response.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-profile'] })
+      refreshProfile()
+      toast.success('🪙 Récompense récupérée avec succès !')
+    },
+    onError: (err: any) => {
+      const errMsg = err?.response?.data?.message || "Erreur lors de la récupération."
+      toast.error(errMsg)
     }
   })
 
@@ -303,22 +395,53 @@ export default function ProfilePage() {
       JSON.stringify(interests) !== JSON.stringify(user.interests ?? [])
     : false
 
+  const claimedMissions = user?.claimedMissions || []
+
   const missionsList: Mission[] = [
     {
       id: 'discussion',
       title: 'Discussion active',
       description: 'Lancer ou participer à une discussion en écrivant un message à un voisin.',
-      points: 20,
+      points: 10,
       isCompleted: hasMessages,
-      progressText: hasMessages ? '20 / 20 pts (Reçus)' : '0 / 20 pts'
+      isClaimed: claimedMissions.includes('discussion'),
+      progressText: hasMessages ? '10 / 10 pts' : '0 / 10 pts'
     },
     {
       id: 'first_post',
       title: 'Premier pas sur le feed',
-      description: 'Partagez votre première publication (discussion ou alerte) sur le fil d\'actualité de quartier.',
-      points: 30,
+      description: 'Partagez votre première publication sur le fil d\'actualité de quartier.',
+      points: 15,
       isCompleted: hasPosts,
-      progressText: hasPosts ? '30 / 30 pts (Reçus)' : '0 / 30 pts'
+      isClaimed: claimedMissions.includes('first_post'),
+      progressText: hasPosts ? '15 / 15 pts' : '0 / 15 pts'
+    },
+    {
+      id: 'first_incident',
+      title: 'Signalement civique',
+      description: 'Contribuez à la sécurité du quartier en signalant votre premier incident.',
+      points: 10,
+      isCompleted: hasIncidents,
+      isClaimed: claimedMissions.includes('first_incident'),
+      progressText: hasIncidents ? '10 / 10 pts' : '0 / 10 pts'
+    },
+    {
+      id: 'create_event',
+      title: 'Organisateur de quartier',
+      description: 'Prenez l\'initiative de créer votre premier événement de quartier.',
+      points: 20,
+      isCompleted: hasCreatedEvent,
+      isClaimed: claimedMissions.includes('create_event'),
+      progressText: hasCreatedEvent ? '20 / 20 pts' : '0 / 20 pts'
+    },
+    {
+      id: 'join_event',
+      title: 'Esprit d\'équipe',
+      description: 'Inscrivez-vous à votre premier événement pour rencontrer vos voisins.',
+      points: 10,
+      isCompleted: hasParticipatedEvent,
+      isClaimed: claimedMissions.includes('join_event'),
+      progressText: hasParticipatedEvent ? '10 / 10 pts' : '0 / 10 pts'
     }
   ]
 
@@ -376,9 +499,21 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-1">
-              <h2 className="text-4xl font-black tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                {name || 'Julien Bernard'}
-              </h2>
+              <div className="flex flex-wrap items-center gap-3 justify-center md:justify-start">
+                <h2 className="text-4xl font-black tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                  {name || 'Julien Bernard'}
+                </h2>
+                {user?.role === 'moderator' && (
+                  <Badge className="bg-[#e9eaf6] text-[#2c308e] font-bold text-[10px] rounded-full px-3 py-1 border border-white/20 shadow-sm flex items-center gap-1 shrink-0 select-none">
+                    🛡️ Modérateur
+                  </Badge>
+                )}
+                {user?.role === 'admin' && (
+                  <Badge className="bg-red-600 hover:bg-red-600 text-white font-bold text-[10px] rounded-full px-3 py-1 border border-white/20 shadow-sm flex items-center gap-1 shrink-0 select-none">
+                    👑 Administrateur
+                  </Badge>
+                )}
+              </div>
 
               <div className="flex flex-wrap items-center justify-center md:justify-start mt-2.5 text-sm font-light text-white/90">
                 <span className="flex items-center gap-1.5 bg-white/10 px-3.5 py-1.5 rounded-xl border border-white/10 backdrop-blur-xs select-none">
@@ -649,6 +784,104 @@ export default function ProfilePage() {
             </div>
           </Card>
 
+          {user?.role === 'user' && (
+            <Card className="bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-2xs space-y-6 mt-6">
+              <div className="space-y-2">
+                <h3 className="text-xl font-extrabold text-gray-900 tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
+                  Devenir Modérateur du Quartier
+                </h3>
+                <p className="text-xs text-gray-500 font-light leading-relaxed">
+                  Aidez à maintenir la convivialité et le respect dans votre quartier en modérant les publications, incidents et votes.
+                </p>
+              </div>
+
+              {modApplication ? (
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Statut de la demande</span>
+                    {modApplication.status === 'pending' && (
+                      <Badge className="bg-amber-50 border border-amber-200/50 text-amber-700 text-[10px] font-bold rounded-full px-3 py-1">
+                        En cours d'examen
+                      </Badge>
+                    )}
+                    {modApplication.status === 'rejected' && (
+                      <Badge className="bg-red-50 border border-red-200/50 text-red-700 text-[10px] font-bold rounded-full px-3 py-1">
+                        Refusée
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-600 font-light leading-relaxed">
+                    <p className="font-semibold text-gray-800 mb-1">Votre message de motivation :</p>
+                    <p className="italic bg-white border border-slate-100 rounded-xl p-3 text-gray-500 font-sans">
+                      "{modApplication.motivation}"
+                    </p>
+                  </div>
+                  {modApplication.status === 'rejected' && !showApplyForm && (
+                    <Button
+                      onClick={() => setShowApplyForm(true)}
+                      className="w-full bg-[#0c3383] hover:bg-[#0c3383]/95 text-white font-bold text-xs py-3 rounded-xl cursor-pointer"
+                    >
+                      Postuler à nouveau
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                !showApplyForm && (
+                  <Button
+                    onClick={() => setShowApplyForm(true)}
+                    className="w-full bg-[#0c3383] hover:bg-[#0c3383]/95 text-white font-bold text-xs py-3.5 rounded-xl transition-all hover:scale-102 cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    🛡️ Faire une demande
+                  </Button>
+                )
+              )}
+
+              {showApplyForm && (
+                <form onSubmit={handleApplyModerator} className="space-y-4 animate-in fade-in duration-200">
+                  <div className="space-y-1.5">
+                    <label htmlFor="motivation" className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
+                      Vos motivations
+                    </label>
+                    <Textarea
+                      id="motivation"
+                      value={motivationText}
+                      onChange={(e) => setMotivationText(e.target.value)}
+                      placeholder="Expliquez brièvement pourquoi vous souhaitez devenir modérateur et comment vous pouvez aider le quartier..."
+                      className="min-h-[100px] text-xs rounded-xl border-gray-200 focus:border-[#0c3383] focus:ring-[#0c3383]"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowApplyForm(false)
+                        setMotivationText('')
+                      }}
+                      className="flex-1 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-50 cursor-pointer py-2.5"
+                    >
+                      Annuler
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={submittingApply}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl cursor-pointer py-2.5 flex items-center justify-center gap-1.5"
+                    >
+                      {submittingApply ? (
+                        <>
+                          <Loader2 className="animate-spin h-3.5 w-3.5" />
+                          Envoi...
+                        </>
+                      ) : (
+                        'Envoyer ma demande'
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </Card>
+          )}
+
         </div>
 
         <div className="lg:col-span-2 space-y-6">
@@ -822,47 +1055,82 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-3.5">
-              {missionsList.map((mission) => (
-                <div
-                  key={mission.id}
-                  className={`flex items-start gap-3 p-3 rounded-2xl border transition-all ${
-                    mission.isCompleted
-                      ? 'bg-emerald-50/20 border-emerald-100/60'
-                      : 'bg-slate-50/50 border-slate-100'
-                  }`}
-                >
-                  <div className="shrink-0 mt-0.5">
-                    {mission.isCompleted ? (
-                      <CheckCircle2 className="h-5 w-5 text-emerald-600 fill-emerald-50" />
-                    ) : (
-                      <Circle className="h-5 w-5 text-slate-300 animate-pulse" />
-                    )}
-                  </div>
+              {missionsList.map((mission) => {
+                const isClaimingThis = claimMissionMutation.isPending && claimMissionMutation.variables === mission.id
+                return (
+                  <div
+                    key={mission.id}
+                    className={`flex flex-col gap-2 p-4 rounded-2xl border transition-all ${
+                      mission.isClaimed
+                        ? 'bg-emerald-50/20 border-emerald-100/60'
+                        : mission.isCompleted
+                        ? 'bg-blue-50/20 border-blue-100/60'
+                        : 'bg-slate-50/50 border-slate-100'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="shrink-0 mt-0.5">
+                        {mission.isClaimed ? (
+                          <CheckCircle2 className="h-5 w-5 text-emerald-600 fill-emerald-50" />
+                        ) : mission.isCompleted ? (
+                          <CheckCircle2 className="h-5 w-5 text-blue-600 fill-blue-50" />
+                        ) : (
+                          <Circle className="h-5 w-5 text-slate-300 animate-pulse" />
+                        )}
+                      </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className={`text-xs font-bold truncate ${mission.isCompleted ? 'text-gray-900 line-through opacity-60' : 'text-gray-900'}`}>
-                        {mission.title}
-                      </span>
-                      <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded border shrink-0 ${
-                        mission.isCompleted
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                          : 'bg-indigo-50 text-[#0c3383] border-indigo-100'
-                      }`}>
-                        {mission.isCompleted ? 'Réussie' : `+${mission.points} pts`}
-                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className={`text-xs font-bold truncate ${mission.isClaimed ? 'text-gray-900 line-through opacity-60' : 'text-gray-900'}`}>
+                            {mission.title}
+                          </span>
+                          <span className={`text-[9px] font-extrabold px-2 py-0.5 rounded border shrink-0 ${
+                            mission.isClaimed
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                              : 'bg-indigo-50 text-[#0c3383] border-indigo-100'
+                          }`}>
+                            {mission.isClaimed ? 'Récupérée' : `+${mission.points} pts`}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-gray-400 font-light mt-1 leading-snug">
+                          {mission.description}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-gray-400 font-light mt-1 leading-snug">
-                      {mission.description}
-                    </p>
 
-                    <div className="flex justify-between text-[8px] font-bold text-gray-400 mt-2.5 pt-2 border-t border-gray-100/30">
-                      <span>Progression</span>
-                      <span>{mission.progressText}</span>
+                    <div className="flex items-center justify-between text-[9px] font-bold text-gray-400 mt-2 pt-2 border-t border-gray-100/30">
+                      <span className="text-[8px]">Progression : {mission.progressText}</span>
+                      
+                      {mission.isCompleted && !mission.isClaimed && (
+                        <Button
+                          size="sm"
+                          disabled={claimMissionMutation.isPending}
+                          onClick={() => claimMissionMutation.mutate(mission.id)}
+                          className="h-6 px-3 bg-[#0c3383] hover:bg-[#0c3383]/90 text-white rounded-lg text-[9px] font-bold cursor-pointer transition-all"
+                        >
+                          {isClaimingThis ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            'Récupérer'
+                          )}
+                        </Button>
+                      )}
+
+                      {mission.isClaimed && (
+                        <span className="text-emerald-600 font-bold text-[9px] flex items-center gap-1">
+                          Récupérée ✓
+                        </span>
+                      )}
+
+                      {!mission.isCompleted && (
+                        <span className="text-gray-400 text-[9px] font-medium italic">
+                          En cours
+                        </span>
+                      )}
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </Card>
 

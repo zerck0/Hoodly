@@ -12,7 +12,6 @@ export default function PointsPage() {
   const { data: backendTransactions, isLoading: isLoadingInbox } = useTransactions()
 
   const points = user?.points ?? 100
-  const euros = (points / 10).toFixed(2)
 
   const realTransactions = useMemo(() => {
     if (!backendTransactions) return []
@@ -42,11 +41,11 @@ export default function PointsPage() {
   }, [backendTransactions, user])
 
   const suggestedRates = [
-    { name: 'Soutien scolaire', rate: '150 - 250 pts / h', eq: '15 - 25 €' },
-    { name: 'Bricolage & Jardin', rate: '120 - 200 pts / h', eq: '12 - 20 €' },
-    { name: 'Babysitting', rate: '100 - 150 pts / h', eq: '10 - 15 €' },
-    { name: 'Courses', rate: '100 - 150 pts / trajet', eq: '10 - 15 €' },
-    { name: 'Animaux', rate: '50 - 100 pts / promenade', eq: '5 - 10 €' }
+    { name: 'Soutien scolaire', rate: '30 - 50 pts / h' },
+    { name: 'Bricolage & Jardin', rate: '30 - 50 pts / h' },
+    { name: 'Babysitting', rate: '20 pts / h' },
+    { name: 'Courses', rate: '20 pts / trajet' },
+    { name: 'Animaux', rate: '10 pts / promenade' }
   ]
 
   return (
@@ -61,7 +60,7 @@ export default function PointsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <PointsBalanceCard points={points} euros={euros} />
+        <PointsBalanceCard points={points} />
         <PointsRulesCard />
       </div>
 

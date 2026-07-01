@@ -18,6 +18,18 @@ const CATEGORY_IMAGES: Record<string, string> = {
 
 const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1521791136368-1a8b27493fa9?auto=format&fit=crop&q=80&w=600'
 
+const formatPlanification = (planif: string | undefined) => {
+  if (!planif) return 'Date flexible'
+  if (/[a-zA-Z]/.test(planif) || planif.includes(' ')) {
+    return planif
+  }
+  const date = new Date(planif)
+  if (!isNaN(date.getTime())) {
+    return `Le ${date.toLocaleDateString()}`
+  }
+  return planif
+}
+
 interface ServiceDetailModalProps {
   service: Service | null
   isOpen: boolean
@@ -204,9 +216,10 @@ export function ServiceDetailModal({
                     Date prévue
                   </label>
                   <input
-                    type="date"
+                    type="text"
                     value={editDatePlanification}
                     onChange={(e) => setEditDatePlanification(e.target.value)}
+                    placeholder="Ex : Le 02/07/2026 de 17:00 à 20:00, ou Dès que possible..."
                     className="h-10 w-full rounded-xl bg-gray-50 border border-gray-200 px-3 text-xs outline-none focus:bg-white focus:border-[#2c308e] transition-all font-semibold"
                   />
                 </div>
@@ -271,7 +284,7 @@ export function ServiceDetailModal({
                 <div>
                   <span className="block text-[8px] text-gray-400 font-bold uppercase tracking-wider">Date planifiée</span>
                   <span>
-                    {service.recurrente ? 'Hebdomadaire (Récurrent)' : service.datePlanification ? new Date(service.datePlanification).toLocaleDateString() : 'Flexible'}
+                    {service.type === 'offre' && service.recurrente ? 'Hebdomadaire (Récurrent)' : formatPlanification(service.datePlanification)}
                   </span>
                 </div>
               </div>

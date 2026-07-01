@@ -4,6 +4,7 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Delete,
   Param,
@@ -162,5 +163,37 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'Utilisateur introuvable' })
   async remove(@Param('id', MongoIdValidationPipe) id: string) {
     return this.usersService.deleteUser(id);
+  }
+
+  @Post('apply-moderator')
+  @ApiOperation({ summary: 'Postuler pour devenir modérateur' })
+  async applyForModerator(
+    @CurrentUser() user: { userId: string },
+    @Body('motivation') motivation: string,
+  ) {
+    return this.usersService.applyForModerator(user.userId, motivation);
+  }
+
+  @Get('moderator-application/status')
+  @ApiOperation({ summary: 'Obtenir le statut de sa candidature modérateur' })
+  async getLatestModeratorApplication(@CurrentUser() user: { userId: string }) {
+    return this.usersService.getLatestModeratorApplication(user.userId);
+  }
+
+  @Get('admin/moderator-applications')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Lister toutes les candidatures modérateurs' })
+  async getAllModeratorApplications() {
+    return this.usersService.getAllModeratorApplications();
+  }
+
+  @Post('admin/moderator-applications/:id/decide')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Valider ou rejeter une candidature modérateur' })
+  async decideModeratorApplication(
+    @Param('id', MongoIdValidationPipe) id: string,
+    @Body('approved') approved: boolean,
+  ) {
+    return this.usersService.decideModeratorApplication(id, approved);
   }
 }

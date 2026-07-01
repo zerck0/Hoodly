@@ -87,6 +87,9 @@ export class User {
 
   @Prop({ type: String, enum: ['zone', 'membership'] })
   refusalType?: 'zone' | 'membership';
+
+  @Prop({ type: [String], default: [] })
+  claimedMissions!: string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

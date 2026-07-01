@@ -34,7 +34,12 @@ api.interceptors.response.use(
     if (error.response) {
       const status = error.response.status
       const message = error.response.data?.message
+      const code = error.response.data?.code
       const errorMessage = Array.isArray(message) ? message[0] : message
+
+      if (code === 'CONTRACT_SIGNATURE_REQUIRED') {
+        return Promise.reject(error)
+      }
 
       if (status >= 500) {
         toast.error('Erreur serveur. Réessayez plus tard.')

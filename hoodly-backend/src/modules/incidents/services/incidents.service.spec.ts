@@ -210,7 +210,6 @@ describe('IncidentsService', () => {
       const lean = jest.fn().mockReturnValue({ exec });
       incidentModel.findByIdAndUpdate.mockReturnValue({ lean });
 
-      // Test with non-empty string assignedTo
       await service.updateStatut(incidentId, {
         statut: IncidentStatus.IN_PROGRESS,
         assignedTo: assignedToId,
@@ -225,7 +224,6 @@ describe('IncidentsService', () => {
         { returnDocument: 'after' },
       );
 
-      // Test with empty string / null assignedTo
       await service.updateStatut(incidentId, {
         statut: IncidentStatus.IN_PROGRESS,
         assignedTo: '',

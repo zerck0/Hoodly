@@ -5,12 +5,27 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { User, UserDocument } from '../schemas/user.schema';
+import {
+  ModeratorApplication,
+  ModeratorApplicationDocument,
+  ApplicationStatus,
+} from '../schemas/moderator-application.schema';
 import { UserResponseDto } from '../dto/user-response.dto';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { TransactionsService } from '../../transactions/services/transactions.service';
 import { TransactionType } from '../../transactions/schemas/transaction.schema';
+import {
+  Conversation,
+  ConversationDocument,
+} from '../../conversations/schemas/conversation.schema';
+import { Post, PostDocument } from '../../posts/schemas/post.schema';
+import {
+  Incident,
+  IncidentDocument,
+} from '../../incidents/schemas/incident.schema';
+import { Event, EventDocument } from '../../events/schemas/event.schema';
 
 interface ISyncPayload {
   email: string;
@@ -22,6 +37,13 @@ interface ISyncPayload {
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(ModeratorApplication.name)
+    private moderatorApplicationModel: Model<ModeratorApplicationDocument>,
+    @InjectModel(Conversation.name)
+    private conversationModel: Model<ConversationDocument>,
+    @InjectModel(Post.name) private postModel: Model<PostDocument>,
+    @InjectModel(Incident.name) private incidentModel: Model<IncidentDocument>,
+    @InjectModel(Event.name) private eventModel: Model<EventDocument>,
     private transactionsService: TransactionsService,
   ) {}
 
@@ -160,40 +182,99 @@ export class UsersService {
     auth0Id: string,
     updates: UpdateProfileDto,
   ): Promise<UserResponseDto> {
-    const oldUser = await this.userModel.findOne({ auth0Id });
-    if (!oldUser) throw new NotFoundException('Utilisateur introuvable');
-    
-    const oldPoints = oldUser.points ?? 100;
-
     const user = await this.userModel.findOneAndUpdate(
       { auth0Id },
       { $set: updates },
       { returnDocument: 'after' },
     );
     if (!user) throw new NotFoundException('Utilisateur introuvable');
+    return this.toDto(user);
+  }
 
-    if (updates.points !== undefined && updates.points !== oldPoints) {
-      const diff = updates.points - oldPoints;
-      try {
-        let desc = 'Ajustement de points';
-        if (diff === 20) {
-          desc = 'Mission accomplie : Discussion active';
-        } else if (diff === 30) {
-          desc = 'Mission accomplie : Premier pas sur le feed';
-        } else if (diff === 50) {
-          desc = 'Mission accomplie : Présentation au quartier';
-        }
-        
-        await this.transactionsService.create(
-          null,
-          String(user._id),
-          Math.abs(diff),
-          TransactionType.ADMIN_ADJUSTMENT,
-          desc,
-        );
-      } catch (err) {
-        console.warn('Could not record transaction for points change:', err);
-      }
+  async claimMission(
+    auth0Id: string,
+    missionId: string,
+  ): Promise<UserResponseDto> {
+    const user = await this.userModel.findOne({ auth0Id });
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+
+    const claimed = user.claimedMissions || [];
+    if (claimed.includes(missionId)) {
+      throw new BadRequestException(
+        'Vous avez déjà récupéré la récompense pour cette mission.',
+      );
+    }
+
+    let isCompleted = false;
+    let pointsReward = 0;
+    let missionTitle = '';
+
+    const userIdStr = String(user._id);
+
+    if (missionId === 'discussion') {
+      pointsReward = 10;
+      missionTitle = 'Discussion active';
+      const convCount = await this.conversationModel.countDocuments({
+        participants: new Types.ObjectId(userIdStr),
+      });
+      isCompleted = convCount > 0;
+    } else if (missionId === 'first_post') {
+      pointsReward = 15;
+      missionTitle = 'Premier pas sur le feed';
+      const postCount = await this.postModel.countDocuments({
+        author: new Types.ObjectId(userIdStr),
+      });
+      isCompleted = postCount > 0;
+    } else if (missionId === 'first_incident') {
+      pointsReward = 10;
+      missionTitle = 'Signalement civique';
+      const incidentCount = await this.incidentModel.countDocuments({
+        $or: [{ signaledPar: user.name }, { signaledPar: user.email }].filter(
+          (cond) => cond.signaledPar,
+        ),
+      });
+      isCompleted = incidentCount > 0;
+    } else if (missionId === 'create_event') {
+      pointsReward = 20;
+      missionTitle = 'Organisateur de quartier';
+      const eventCount = await this.eventModel.countDocuments({
+        createurId: new Types.ObjectId(userIdStr),
+      });
+      isCompleted = eventCount > 0;
+    } else if (missionId === 'join_event') {
+      pointsReward = 10;
+      missionTitle = "Esprit d'équipe";
+      const participationCount = await this.eventModel.countDocuments({
+        participants: new Types.ObjectId(userIdStr),
+      });
+      isCompleted = participationCount > 0;
+    } else {
+      throw new BadRequestException('Mission inconnue.');
+    }
+
+    if (!isCompleted) {
+      throw new BadRequestException(
+        "Vous n'avez pas encore accompli les conditions pour cette mission.",
+      );
+    }
+
+    user.points = (user.points || 0) + pointsReward;
+    if (!user.claimedMissions) {
+      user.claimedMissions = [];
+    }
+    user.claimedMissions.push(missionId);
+    await user.save();
+
+    try {
+      await this.transactionsService.create(
+        null,
+        userIdStr,
+        pointsReward,
+        TransactionType.ADMIN_ADJUSTMENT,
+        `Mission accomplie : ${missionTitle}`,
+      );
+    } catch (err) {
+      console.warn('Could not record transaction for mission claim:', err);
     }
 
     return this.toDto(user);
@@ -206,12 +287,20 @@ export class UsersService {
     global = false,
   ) {
     const query: Record<string, any> = {
-      _id: { $ne: currentUserId },
+      _id: {
+        $ne: Types.ObjectId.isValid(currentUserId)
+          ? new Types.ObjectId(currentUserId)
+          : currentUserId,
+      },
       isActive: true,
     };
 
-    if (!global && currentUserZoneId) {
-      query.zoneId = currentUserZoneId;
+    if (
+      !global &&
+      currentUserZoneId &&
+      Types.ObjectId.isValid(currentUserZoneId)
+    ) {
+      query.zoneId = new Types.ObjectId(currentUserZoneId);
     }
 
     if (search) {
@@ -257,6 +346,7 @@ export class UsersService {
       refusalType: user.refusalType,
       points: user.points ?? 100,
       bio: user.bio,
+      claimedMissions: user.claimedMissions || [],
     };
   }
 
@@ -277,5 +367,73 @@ export class UsersService {
     );
     if (!updatedUser) throw new NotFoundException('Utilisateur introuvable');
     return updatedUser;
+  }
+
+  async applyForModerator(
+    userId: string,
+    motivation: string,
+  ): Promise<ModeratorApplicationDocument> {
+    const existing = await this.moderatorApplicationModel.findOne({
+      userId: new Types.ObjectId(userId),
+      status: { $in: [ApplicationStatus.PENDING, ApplicationStatus.APPROVED] },
+    });
+
+    if (existing) {
+      if (existing.status === ApplicationStatus.APPROVED) {
+        throw new BadRequestException('Vous etes deja modérateur.');
+      }
+      throw new BadRequestException('Vous avez deja une demande en attente.');
+    }
+
+    const application = new this.moderatorApplicationModel({
+      userId: new Types.ObjectId(userId),
+      motivation,
+      status: ApplicationStatus.PENDING,
+    });
+    return application.save();
+  }
+
+  async getLatestModeratorApplication(
+    userId: string,
+  ): Promise<ModeratorApplicationDocument | null> {
+    return this.moderatorApplicationModel
+      .findOne({ userId: new Types.ObjectId(userId) })
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  async getAllModeratorApplications(): Promise<ModeratorApplicationDocument[]> {
+    return this.moderatorApplicationModel
+      .find()
+      .populate('userId')
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  async decideModeratorApplication(
+    applicationId: string,
+    approved: boolean,
+  ): Promise<ModeratorApplicationDocument> {
+    const app = await this.moderatorApplicationModel.findById(applicationId);
+    if (!app) {
+      throw new NotFoundException('Candidature introuvable');
+    }
+
+    if (app.status !== ApplicationStatus.PENDING) {
+      throw new BadRequestException('Cette candidature a deja ete traitee.');
+    }
+
+    app.status = approved
+      ? ApplicationStatus.APPROVED
+      : ApplicationStatus.REJECTED;
+    const savedApp = await app.save();
+
+    if (approved) {
+      await this.userModel.findByIdAndUpdate(app.userId, {
+        $set: { role: 'moderator' },
+      });
+    }
+
+    return savedApp;
   }
 }

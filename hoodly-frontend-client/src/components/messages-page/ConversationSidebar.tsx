@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from 'react'
-import { MessageSquarePlus, Search, HeartHandshake, Loader2, PartyPopper } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { MessageSquarePlus, Search, HeartHandshake, Loader2, PartyPopper, Trash2, ArchiveRestore } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar'
+import { toast } from 'sonner'
 
 const CATEGORY_STYLES: Record<string, { bg: string, text: string, border: string }> = {
   Jardinage: { bg: 'bg-emerald-50 text-emerald-700 border-emerald-100', text: 'text-emerald-700', border: 'border-l-4 border-l-emerald-500' },
@@ -33,13 +33,72 @@ export function ConversationSidebar({
   currentUserEmail
 }: ConversationSidebarProps) {
   const [inboxSearch, setInboxSearch] = useState('')
-  const [activeTab, setActiveTab] = useState<'all' | 'services' | 'general'>('all')
+  const [activeTab, setActiveTab] = useState<'all' | 'services' | 'general' | 'archived'>('all')
+  const [archivedIds, setArchivedIds] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('hoodly_archived_convs') || '[]')
+    } catch {
+      return []
+    }
+  })
+
+  const prevActiveId = useRef(activeId)
+
+  useEffect(() => {
+    if (activeId && activeId !== prevActiveId.current) {
+      if (archivedIds.includes(activeId)) {
+        const updated = archivedIds.filter(id => id !== activeId)
+        setArchivedIds(updated)
+        localStorage.setItem('hoodly_archived_convs', JSON.stringify(updated))
+      }
+    }
+    prevActiveId.current = activeId
+  }, [activeId, archivedIds])
 
   const getOtherParticipant = (conv: any) => {
     return conv.participants.find((p: any) => p.email !== currentUserEmail)
   }
 
+  const handleArchive = (id: string) => {
+    if (window.confirm("Voulez-vous masquer cette discussion de votre boîte de réception ?")) {
+      let nextSelectedId = ''
+      if (activeId === id) {
+        const currentIndex = filteredConversations.findIndex((c) => c._id === id)
+        if (currentIndex !== -1) {
+          if (filteredConversations[currentIndex + 1]) {
+            nextSelectedId = filteredConversations[currentIndex + 1]._id
+          } else if (filteredConversations[currentIndex - 1]) {
+            nextSelectedId = filteredConversations[currentIndex - 1]._id
+          }
+        }
+      }
+
+      const updated = [...archivedIds, id]
+      setArchivedIds(updated)
+      localStorage.setItem('hoodly_archived_convs', JSON.stringify(updated))
+      toast.success("Discussion masquée. Vous pouvez la retrouver dans l'onglet 'Masqués'.")
+      
+      if (activeId === id) {
+        onSelectConversation(nextSelectedId)
+      }
+    }
+  }
+
+  const handleUnarchive = (id: string) => {
+    const updated = archivedIds.filter((item) => item !== id)
+    setArchivedIds(updated)
+    localStorage.setItem('hoodly_archived_convs', JSON.stringify(updated))
+    toast.success("Discussion restaurée dans votre boîte de réception !")
+  }
+
   const filteredConversations = conversations.filter((conv) => {
+    const isArchived = archivedIds.includes(conv._id)
+    if (activeTab === 'archived') {
+      if (!isArchived) return false
+    } else {
+      if (isArchived) return false
+    }
+
     const otherParticipant = getOtherParticipant(conv)
     const matchesSearch = otherParticipant?.name?.toLowerCase().includes(inboxSearch.toLowerCase()) ?? true
     if (!matchesSearch) return false
@@ -47,8 +106,11 @@ export function ConversationSidebar({
     if (activeTab === 'services') {
       return !!conv.serviceId
     }
+    if (activeTab === 'events') {
+      return !!conv.eventId
+    }
     if (activeTab === 'general') {
-      return !conv.serviceId
+      return !conv.serviceId && !conv.eventId
     }
     return true
   })
@@ -60,14 +122,32 @@ export function ConversationSidebar({
           <h2 className="text-xl font-bold text-[#1e224e]" style={{ fontFamily: "'Playfair Display', serif" }}>
             Discussions
           </h2>
-          <button
-            type="button"
-            onClick={onOpenSearchModal}
-            className="h-8 w-8 rounded-full bg-gray-50 hover:bg-[#e9eaf6] text-gray-500 hover:text-[#2c308e] flex items-center justify-center transition-all duration-200 cursor-pointer shadow-xs hover:scale-105 active:scale-98 border border-gray-200/40"
-            title="Nouvelle discussion générale"
-          >
-            <MessageSquarePlus className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {archivedIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setActiveTab(activeTab === 'archived' ? 'all' : 'archived')}
+                className={`h-8 px-2.5 rounded-full border transition-all flex items-center gap-1.5 cursor-pointer text-xs font-bold ${
+                  activeTab === 'archived'
+                    ? 'bg-rose-50 border-rose-100 text-rose-600 shadow-2xs scale-105'
+                    : 'bg-gray-50 border-gray-200/40 hover:bg-[#e9eaf6] text-gray-500 hover:text-[#2c308e]'
+                }`}
+                title={activeTab === 'archived' ? 'Retour aux discussions' : 'Voir les discussions masquées'}
+              >
+                <ArchiveRestore className="h-4 w-4" />
+                <span className="text-[10px]">{archivedIds.length}</span>
+              </button>
+            )}
+            
+            <button
+              type="button"
+              onClick={onOpenSearchModal}
+              className="h-8 w-8 rounded-full bg-gray-50 hover:bg-[#e9eaf6] text-gray-500 hover:text-[#2c308e] flex items-center justify-center transition-all duration-200 cursor-pointer shadow-xs hover:scale-105 active:scale-98 border border-gray-200/40"
+              title="Nouvelle discussion générale"
+            >
+              <MessageSquarePlus className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         <div className="relative">
@@ -82,39 +162,25 @@ export function ConversationSidebar({
         </div>
 
         <div className="flex bg-gray-100 p-0.5 rounded-lg border border-gray-200/50">
-          <button
-            type="button"
-            onClick={() => setActiveTab('all')}
-            className={`flex-1 text-[10px] font-bold py-1 px-2 rounded-md transition-all uppercase tracking-wider text-center cursor-pointer ${
-              activeTab === 'all'
-                ? 'bg-white text-[#2c308e] shadow-xs'
-                : 'text-gray-500 hover:text-gray-900'
-            }`}
-          >
-            Tous
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('services')}
-            className={`flex-1 text-[10px] font-bold py-1 px-2 rounded-md transition-all uppercase tracking-wider text-center cursor-pointer ${
-              activeTab === 'services'
-                ? 'bg-white text-[#2c308e] shadow-xs'
-                : 'text-gray-500 hover:text-gray-900'
-            }`}
-          >
-            Services
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('general')}
-            className={`flex-1 text-[10px] font-bold py-1 px-2 rounded-md transition-all uppercase tracking-wider text-center cursor-pointer ${
-              activeTab === 'general'
-                ? 'bg-white text-[#2c308e] shadow-xs'
-                : 'text-gray-500 hover:text-gray-900'
-            }`}
-          >
-            Général
-          </button>
+          {[
+            { id: 'all', label: 'Tous' },
+            { id: 'services', label: 'Services' },
+            { id: 'events', label: 'Événements' },
+            { id: 'general', label: 'Général' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex-1 text-[9px] font-extrabold py-1 px-1 rounded-md transition-all uppercase tracking-wider text-center cursor-pointer ${
+                activeTab === tab.id
+                  ? 'bg-white text-[#2c308e] shadow-xs'
+                  : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -130,13 +196,25 @@ export function ConversationSidebar({
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-800">
-                {activeTab === 'general' ? 'Aucune discussion générale' : activeTab === 'services' ? 'Aucun service en cours' : 'Aucune discussion'}
+                {activeTab === 'general'
+                  ? 'Aucune discussion générale'
+                  : activeTab === 'services'
+                  ? 'Aucun service en cours'
+                  : activeTab === 'events'
+                  ? 'Aucun événement en cours'
+                  : activeTab === 'archived'
+                  ? 'Aucune discussion masquée'
+                  : 'Aucune discussion'}
               </p>
               <p className="text-[10px] mt-1 text-gray-400 max-w-[200px] mx-auto leading-relaxed font-light">
                 {activeTab === 'general'
-                  ? "Vous n'avez pas encore de conversation générale avec vos voisins."
+                  ? "Vous n'avez pas encore de conversation générale directe avec vos voisins."
                   : activeTab === 'services'
                   ? "Aucune discussion liée à un service n'a été commencée."
+                  : activeTab === 'events'
+                  ? "Vous n'avez pas de discussion de groupe pour des événements."
+                  : activeTab === 'archived'
+                  ? "Vous n'avez masqué aucune discussion pour le moment."
                   : "Lancez une discussion en proposant ou acceptant un service !"}
               </p>
             </div>
@@ -158,69 +236,96 @@ export function ConversationSidebar({
             const hasServiceLink = !!conv.serviceId
             const categoryStyle = hasServiceLink && conv.serviceId ? CATEGORY_STYLES[conv.serviceId.categorie] : null
 
-            return (
-              <button
-                key={conv._id}
-                type="button"
-                onClick={() => onSelectConversation(conv._id)}
-                className={`flex w-full items-center gap-3 p-3 transition-all text-left outline-none cursor-pointer ${
-                  isGroup ? 'border-l-4 border-l-[#2c308e] rounded-r-2xl rounded-l-none' :
-                  categoryStyle ? `${categoryStyle.border} rounded-r-2xl rounded-l-none` : 'rounded-2xl'
-                } ${
-                  isSelected
-                    ? 'bg-[#e9eaf6] text-gray-900 shadow-xs'
-                    : 'hover:bg-gray-50 text-gray-600'
-                }`}
-              >
-                <div className="relative shrink-0">
-                  {isGroup ? (
-                    <div className="h-10 w-10 rounded-full bg-[#e9eaf6] border border-[#2c308e]/20 flex items-center justify-center">
-                      <PartyPopper className="h-5 w-5 text-[#2c308e]" />
+             return (
+              <div key={conv._id} className="relative group">
+                <button
+                  type="button"
+                  onClick={() => onSelectConversation(conv._id)}
+                  className={`flex w-full items-center gap-3 p-3 transition-all text-left outline-none cursor-pointer ${
+                    isGroup ? 'border-l-4 border-l-[#2c308e] rounded-r-2xl rounded-l-none' :
+                    categoryStyle ? `${categoryStyle.border} rounded-r-2xl rounded-l-none` : 'rounded-2xl'
+                  } ${
+                    isSelected
+                      ? 'bg-[#e9eaf6] text-gray-900 shadow-xs'
+                      : 'hover:bg-gray-50 text-gray-600'
+                  }`}
+                >
+                  <div className="relative shrink-0">
+                    {isGroup ? (
+                      <div className="h-10 w-10 rounded-full bg-[#e9eaf6] border border-[#2c308e]/20 flex items-center justify-center">
+                        <PartyPopper className="h-5 w-5 text-[#2c308e]" />
+                      </div>
+                    ) : (
+                      <>
+                        <Avatar className="h-10 w-10 border border-gray-100">
+                          <AvatarImage src={other?.picture} alt={other?.name} />
+                          <AvatarFallback className="bg-[#2c308e] text-white font-bold text-sm">
+                            {other?.name?.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        {other && (
+                          <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
+                            onlineUsers.has(other.id || other._id) ? 'bg-emerald-500' : 'bg-gray-300'
+                          }`} />
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-baseline mb-0.5">
+                      <p className="text-xs font-bold text-gray-900 truncate">
+                        {isGroup ? (conv.nom || 'Événement') : (other?.name || 'Voisin')}
+                      </p>
+                      <p className="text-[9px] text-gray-400 shrink-0">
+                        {new Date(conv.updatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                      </p>
                     </div>
-                  ) : (
-                    <>
-                      <Avatar className="h-10 w-10 border border-gray-100">
-                        <AvatarImage src={other?.picture} alt={other?.name} />
-                        <AvatarFallback className="bg-[#2c308e] text-white font-bold text-sm">
-                          {other?.name?.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      {other && (
-                        <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
-                          onlineUsers.has(other.id || other._id) ? 'bg-emerald-500' : 'bg-gray-300'
-                        }`} />
+                    <div className="flex items-center gap-1.5 justify-between">
+                      <p className="text-[11px] text-gray-500 truncate leading-relaxed">
+                        {isGroup
+                          ? `Groupe · ${conv.participants.length} participant${conv.participants.length > 1 ? 's' : ''}`
+                          : conv.serviceId ? `Entraide : ${conv.serviceId.titre}` : 'Discussion générale'}
+                      </p>
+                      {isGroup && (
+                        <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 border bg-[#e9eaf6] text-[#2c308e] border-[#2c308e]/20">
+                          Événement
+                        </span>
                       )}
-                    </>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-baseline mb-0.5">
-                    <p className="text-xs font-bold text-gray-900 truncate">
-                      {isGroup ? (conv.nom || 'Événement') : (other?.name || 'Voisin')}
-                    </p>
-                    <p className="text-[9px] text-gray-400 shrink-0">
-                      {new Date(conv.updatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                    </p>
+                      {!isGroup && hasServiceLink && conv.serviceId && categoryStyle && (
+                        <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 border ${categoryStyle.bg}`}>
+                          {conv.serviceId.categorie}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5 justify-between">
-                    <p className="text-[11px] text-gray-500 truncate leading-relaxed">
-                      {isGroup
-                        ? `Groupe · ${conv.participants.length} participant${conv.participants.length > 1 ? 's' : ''}`
-                        : conv.serviceId ? `Entraide : ${conv.serviceId.titre}` : 'Discussion générale'}
-                    </p>
-                    {isGroup && (
-                      <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 border bg-[#e9eaf6] text-[#2c308e] border-[#2c308e]/20">
-                        Événement
-                      </span>
-                    )}
-                    {!isGroup && hasServiceLink && conv.serviceId && categoryStyle && (
-                      <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 border ${categoryStyle.bg}`}>
-                        {conv.serviceId.categorie}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </button>
+                </button>
+                
+                {activeTab === 'archived' ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleUnarchive(conv._id)
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-xl bg-white border border-gray-150 hover:bg-emerald-50 hover:border-emerald-100 text-gray-400 hover:text-emerald-600 opacity-0 group-hover:opacity-100 transition-all shadow-xs cursor-pointer z-10 mr-1"
+                    title="Restaurer cette discussion"
+                  >
+                    <ArchiveRestore className="h-3.5 w-3.5" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleArchive(conv._id)
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-xl bg-white border border-gray-150 hover:bg-rose-50 hover:border-rose-100 text-gray-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all shadow-xs cursor-pointer z-10 mr-1"
+                    title="Masquer cette discussion"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
             )
           })
         )}

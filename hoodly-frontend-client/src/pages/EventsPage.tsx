@@ -6,7 +6,7 @@ import { eventsApi } from '../services/api/events'
 import { SwipeCard } from '../components/events-page/SwipeCard'
 import {
   Loader2, PartyPopper, Calendar, MapPin, Users, Check, Plus,
-  MessageSquare, ChevronDown, ChevronUp, Award, Gift, Coins, Camera, X,
+  MessageSquare, ChevronDown, ChevronUp, Award, Gift, Coins, Camera, X, XCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '../components/ui/badge'
@@ -26,8 +26,8 @@ const EMPTY_FORM: CreateEventDto = {
   capacite: 10,
   payant: false,
   pointsCout: 0,
-  pointsCreateur: 10,
-  pointsParticipant: 5,
+  pointsCreateur: 0,
+  pointsParticipant: 0,
 }
 
 const minDate = new Date().toISOString().slice(0, 16)
@@ -38,7 +38,7 @@ export default function EventsPage() {
   const {
     events, recommendations, isLoading,
     toggleInteret, participer, createEvent, isCreating,
-    validerEvenement, isValidating,
+    validerEvenement, isValidating, deleteEvent,
   } = useEvents()
 
   const [tab, setTab] = useState<Tab>('decouvrir')
@@ -95,7 +95,15 @@ export default function EventsPage() {
         toast.success(result.participating ? `Inscrit à "${event.titre}" !` : `Désinscrit de "${event.titre}"`)
       }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message ?? "Impossible de s'inscrire")
+      const errorData = err?.response?.data
+      if (errorData?.code === 'CONTRACT_SIGNATURE_REQUIRED' && errorData?.contractId) {
+        toast.info("Signature de la charte de participation requise. Redirection...")
+        setTimeout(() => {
+          navigate(`/contrats/${errorData.contractId}`)
+        }, 1500)
+      } else {
+        toast.error(errorData?.message ?? "Impossible de s'inscrire")
+      }
     }
   }
 
@@ -107,6 +115,17 @@ export default function EventsPage() {
       setPresentSelection(new Set())
     } catch (err: any) {
       toast.error(err?.response?.data?.message ?? "Impossible de valider l'événement")
+    }
+  }
+
+  const handleCancelEvent = async (id: string) => {
+    if (window.confirm("Êtes-vous sûr de vouloir annuler cet événement ? Tous les participants seront remboursés et le groupe de discussion sera supprimé.")) {
+      try {
+        await deleteEvent(id)
+        toast.success("Événement annulé avec succès.")
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || "Erreur lors de l'annulation de l'événement.")
+      }
     }
   }
 
@@ -313,6 +332,7 @@ export default function EventsPage() {
           onValider={handleValider}
           onVoirDiscussion={(convId) => navigate(`/messages?id=${convId}`)}
           onCreateFirst={() => setShowCreateModal(true)}
+          onCancelEvent={handleCancelEvent}
         />
       )}
 
@@ -440,82 +460,55 @@ export default function EventsPage() {
                 />
               </div>
 
-              <div className="rounded-2xl border border-[#2c308e]/10 bg-[#fafafe] p-4 space-y-4">
-                <p className="text-xs font-bold text-[#1e224e] flex items-center gap-2">
-                  <Award className="h-4 w-4 text-[#2c308e]" />
-                  Système de points
-                </p>
-
-                <div className="flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-gray-700">Événement payant</p>
-                    <p className="text-[10px] text-gray-400">Les participants paient des points à l'inscription</p>
-                  </div>
+              <div className="rounded-2xl border border-gray-100 bg-[#fafafe]/50 p-6 space-y-4">
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">
+                  Participation aux frais (Points)
+                </label>
+                
+                <div className="flex bg-gray-100/80 rounded-xl p-1 w-fit">
                   <button
                     type="button"
-                    onClick={() => setForm({ ...form, payant: !form.payant, pointsCout: form.payant ? 0 : 5 })}
-                    className={`flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors duration-200 cursor-pointer ${
-                      form.payant ? 'bg-[#2c308e] justify-end' : 'bg-gray-200 justify-start'
+                    onClick={() => setForm({ ...form, payant: false, pointsCout: 0 })}
+                    className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+                      !form.payant
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-400 hover:text-gray-600'
                     }`}
                   >
-                    <span className="h-5 w-5 rounded-full bg-white shadow-sm" />
+                    Gratuit / Libre
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, payant: true, pointsCout: 5 })}
+                    className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all ${
+                      form.payant
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-400 hover:text-gray-600'
+                    }`}
+                  >
+                    Participation payante
                   </button>
                 </div>
 
                 {form.payant && (
-                  <div className="space-y-1 animate-in fade-in duration-150">
-                    <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                      <Coins className="h-3.5 w-3.5 text-amber-500" />
-                      Coût par participant (pts)
-                    </label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={form.pointsCout ?? 5}
-                      onChange={(e) => setForm({ ...form, pointsCout: parseInt(e.target.value) || 1 })}
-                      className="w-full h-10 px-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#2c308e] focus:ring-1 focus:ring-[#2c308e]/20"
-                    />
+                  <div className="space-y-2 animate-in fade-in duration-200">
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-28">
+                        <input
+                          type="number"
+                          min={1}
+                          value={form.pointsCout ?? 5}
+                          onChange={(e) => setForm({ ...form, pointsCout: Math.max(1, parseInt(e.target.value) || 0) })}
+                          className="h-10 w-full rounded-xl bg-white border border-gray-200 focus:border-[#2c308e] text-center font-bold text-[#1f224e] outline-none"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-[#1f224e] uppercase tracking-wider block">POINTS PAR PARTICIPANT</span>
+                        <span className="text-[10px] text-gray-400 font-light block">Suggéré : 5 - 15 points pour couvrir les fournitures.</span>
+                      </div>
+                    </div>
                   </div>
                 )}
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                      <Award className="h-3.5 w-3.5 text-[#2c308e]" />
-                      Récompense organisateur
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min={0}
-                        value={form.pointsCreateur ?? 10}
-                        onChange={(e) => setForm({ ...form, pointsCreateur: parseInt(e.target.value) || 0 })}
-                        className="flex-1 h-10 px-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#2c308e] focus:ring-1 focus:ring-[#2c308e]/20"
-                      />
-                      <span className="text-xs text-gray-400 shrink-0">pts</span>
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                      <Gift className="h-3.5 w-3.5 text-emerald-500" />
-                      Récompense participant
-                    </label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        min={0}
-                        value={form.pointsParticipant ?? 5}
-                        onChange={(e) => setForm({ ...form, pointsParticipant: parseInt(e.target.value) || 0 })}
-                        className="flex-1 h-10 px-3 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#2c308e] focus:ring-1 focus:ring-[#2c308e]/20"
-                      />
-                      <span className="text-xs text-gray-400 shrink-0">pts</span>
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-[10px] text-gray-400 leading-relaxed">
-                  Les récompenses sont versées après validation de l'événement par l'organisateur.
-                </p>
               </div>
 
               <button
@@ -539,7 +532,7 @@ function MyCreations({
   events, isLoading,
   validatingEventId, presentSelection, isValidating,
   onStartValidation, onCancelValidation, onTogglePresent, onValider,
-  onVoirDiscussion, onCreateFirst,
+  onVoirDiscussion, onCreateFirst, onCancelEvent,
 }: {
   events: Event[]
   isLoading: boolean
@@ -552,6 +545,7 @@ function MyCreations({
   onValider: (id: string) => void
   onVoirDiscussion: (convId: string) => void
   onCreateFirst: () => void
+  onCancelEvent: (id: string) => void
 }) {
   if (isLoading) return <div className="flex justify-center py-24"><Loader2 className="h-8 w-8 animate-spin text-[#2c308e]" /></div>
 
@@ -589,6 +583,7 @@ function MyCreations({
               onTogglePresent={onTogglePresent}
               onValider={onValider}
               onVoirDiscussion={onVoirDiscussion}
+              onCancelEvent={onCancelEvent}
             />
           ))}
         </div>
@@ -613,6 +608,7 @@ function MyCreations({
               onTogglePresent={onTogglePresent}
               onValider={onValider}
               onVoirDiscussion={onVoirDiscussion}
+              onCancelEvent={onCancelEvent}
             />
           ))}
         </div>
@@ -623,7 +619,7 @@ function MyCreations({
 
 function CreationCard({
   event, validatingEventId, presentSelection, isValidating,
-  onStartValidation, onCancelValidation, onTogglePresent, onValider, onVoirDiscussion,
+  onStartValidation, onCancelValidation, onTogglePresent, onValider, onVoirDiscussion, onCancelEvent,
 }: {
   event: Event
   validatingEventId: string | null
@@ -634,6 +630,7 @@ function CreationCard({
   onTogglePresent: (id: string) => void
   onValider: (id: string) => void
   onVoirDiscussion: (convId: string) => void
+  onCancelEvent: (id: string) => void
 }) {
   const isPast = new Date(event.date) < new Date()
   const isValidated = event.statut === 'terminé'
@@ -683,12 +680,16 @@ function CreationCard({
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <span className="flex items-center gap-1 text-[10px] font-bold text-[#2c308e] bg-[#e9eaf6] px-2.5 py-1 rounded-full">
-            <Award className="h-3 w-3" />+{event.pointsCreateur} pts organisateur
-          </span>
-          <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
-            <Gift className="h-3 w-3" />+{event.pointsParticipant} pts par présent
-          </span>
+          {event.pointsCreateur > 0 && (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-[#2c308e] bg-[#e9eaf6] px-2.5 py-1 rounded-full">
+              <Award className="h-3 w-3" />+{event.pointsCreateur} pts organisateur
+            </span>
+          )}
+          {event.pointsParticipant > 0 && (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
+              <Gift className="h-3 w-3" />+{event.pointsParticipant} pts par présent
+            </span>
+          )}
           {event.payant && event.pointsCout && (
             <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full">
               <Coins className="h-3 w-3" />{event.pointsCout} pts / entrée
@@ -735,7 +736,7 @@ function CreationCard({
                 )}
                 <p className="text-[10px] text-gray-400">
                   {presentSelection.size} présent{presentSelection.size > 1 ? 's' : ''} sélectionné{presentSelection.size > 1 ? 's' : ''}
-                  {presentSelection.size > 0 && ` · +${presentSelection.size * event.pointsParticipant + event.pointsCreateur} pts distribués`}
+                  {presentSelection.size > 0 && (presentSelection.size * event.pointsParticipant + event.pointsCreateur) > 0 && ` · +${presentSelection.size * event.pointsParticipant + event.pointsCreateur} pts distribués`}
                 </p>
                 <div className="flex gap-2">
                   <button type="button" onClick={onCancelValidation} className="flex-1 py-2 rounded-xl text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-all cursor-pointer">
@@ -762,15 +763,28 @@ function CreationCard({
           </p>
         )}
 
-        {event.conversationId && (
-          <button
-            onClick={() => onVoirDiscussion(event.conversationId!)}
-            className="flex items-center gap-1.5 text-xs font-bold text-[#2c308e] hover:underline cursor-pointer"
-          >
-            <MessageSquare className="h-3.5 w-3.5" />
-            Voir la discussion de groupe
-          </button>
-        )}
+        <div className="flex items-center justify-between border-t border-gray-100 pt-3">
+          {event.conversationId && (
+            <button
+              onClick={() => onVoirDiscussion(event.conversationId!)}
+              className="flex items-center gap-1.5 text-xs font-bold text-[#2c308e] hover:underline cursor-pointer"
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              Voir la discussion de groupe
+            </button>
+          )}
+
+          {!isPast && !isCancelled && !isValidated && (
+            <button
+              type="button"
+              onClick={() => onCancelEvent(event.id)}
+              className="ml-auto text-xs font-bold text-rose-500 hover:text-rose-600 hover:underline cursor-pointer flex items-center gap-1.5"
+            >
+              <XCircle className="h-3.5 w-3.5" />
+              Annuler l'événement
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -896,26 +910,34 @@ function EventList({
                 ) : (
                   <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">Gratuit</span>
                 )}
-                <span className="flex items-center gap-1 text-[9px] font-bold text-[#2c308e] bg-[#e9eaf6] px-2 py-0.5 rounded-full border border-[#2c308e]/10">
-                  <Gift className="h-2.5 w-2.5" />+{event.pointsParticipant} pts à la participation
-                </span>
+                {event.pointsParticipant > 0 && (
+                  <span className="flex items-center gap-1 text-[9px] font-bold text-[#2c308e] bg-[#e9eaf6] px-2 py-0.5 rounded-full border border-[#2c308e]/10">
+                    <Gift className="h-2.5 w-2.5" />+{event.pointsParticipant} pts à la participation
+                  </span>
+                )}
               </div>
 
               <div className="flex gap-2 pt-1">
-                <button
-                  onClick={() => onParticiperToggle(event)}
-                  disabled={isFull}
-                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    isParticipant
-                      ? 'bg-green-50 border border-green-200 text-green-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
-                      : isFull
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-[#2c308e] text-white hover:bg-[#2c308e]/90'
-                  }`}
-                >
-                  {isParticipant ? <><Check className="h-3.5 w-3.5" /> Je participe</> : isFull ? 'Complet' : event.payant && event.pointsCout ? `Participer (${event.pointsCout} pts)` : 'Participer'}
-                </button>
-                {isParticipant && event.conversationId && (
+                {event.createurId === userId ? (
+                  <span className="flex-1 py-2 rounded-xl text-xs font-bold bg-[#e9eaf6] text-[#2c308e] flex items-center justify-center gap-1.5 border border-[#2c308e]/10">
+                    <Award className="h-3.5 w-3.5" /> Votre événement
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => onParticiperToggle(event)}
+                    disabled={isFull}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                      isParticipant
+                        ? 'bg-green-50 border border-green-200 text-green-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
+                        : isFull
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-[#2c308e] text-white hover:bg-[#2c308e]/90'
+                    }`}
+                  >
+                    {isParticipant ? <><Check className="h-3.5 w-3.5" /> Je participe</> : isFull ? 'Complet' : event.payant && event.pointsCout ? `Participer (${event.pointsCout} pts)` : 'Participer'}
+                  </button>
+                )}
+                {(isParticipant || event.createurId === userId) && event.conversationId && (
                   <button
                     onClick={() => onVoirDiscussion(event.conversationId!)}
                     className="px-3 py-2 rounded-xl text-xs font-bold bg-gray-100 text-gray-600 hover:bg-[#e9eaf6] hover:text-[#2c308e] transition-all cursor-pointer flex items-center gap-1.5"

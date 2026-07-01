@@ -220,10 +220,10 @@ export default function ContractDetailPage() {
                   <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50/50 flex flex-col justify-between min-h-[160px] relative">
                     <div>
                       <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">
-                        Le Client (Bénéficiaire)
+                        {contract.eventId ? "Le Participant" : "Le Client (Bénéficiaire)"}
                       </span>
                       <span className="text-xs font-bold text-slate-800 block mt-1 font-sans">
-                        {contract.clientId?.name || 'Voisin (Client)'}
+                        {contract.clientId?.name || (contract.eventId ? 'Voisin (Participant)' : 'Voisin (Client)')}
                       </span>
                     </div>
 
@@ -257,10 +257,10 @@ export default function ContractDetailPage() {
                   <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50/50 flex flex-col justify-between min-h-[160px] relative">
                     <div>
                       <span className="text-[9px] font-bold uppercase tracking-wider text-slate-400 block">
-                        Le Prestataire (Intervenant)
+                        {contract.eventId ? "L'Organisateur (Hôte)" : "Le Prestataire (Intervenant)"}
                       </span>
                       <span className="text-xs font-bold text-slate-800 block mt-1 font-sans">
-                        {contract.providerId?.name || 'Voisin (Prestataire)'}
+                        {contract.providerId?.name || (contract.eventId ? 'Voisin (Organisateur)' : 'Voisin (Prestataire)')}
                       </span>
                     </div>
 
@@ -300,7 +300,7 @@ export default function ContractDetailPage() {
           <Card className="bg-white border border-slate-100 rounded-[2rem] p-6 shadow-2xs overflow-hidden relative">
             <div className="space-y-4">
               <div className="flex justify-between items-center text-xs text-slate-400 uppercase tracking-wider font-semibold">
-                <span>Échange financier</span>
+                <span>{contract.eventId ? "Frais de participation" : "Échange financier"}</span>
                 <TrendingUp size={14} className="text-[#0c3383]" />
               </div>
               <div className="space-y-1">
@@ -315,7 +315,7 @@ export default function ContractDetailPage() {
                   )}
                   {contract.status === 'signed' && (
                     <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200/50 text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 w-max">
-                      🔒 Cagnotte sécurisée
+                      {contract.eventId ? "🔒 Transfert sécurisé" : "🔒 Cagnotte sécurisée"}
                     </Badge>
                   )}
                   {contract.status === 'completed' && (
@@ -332,18 +332,36 @@ export default function ContractDetailPage() {
               </div>
 
               <div className="border-t border-slate-100 pt-4 text-xs font-light text-slate-500 leading-relaxed space-y-2">
-                <span className="font-bold text-slate-800 block">Statut de la cagnotte :</span>
+                <span className="font-bold text-slate-800 block">
+                  {contract.eventId ? "Statut du transfert :" : "Statut de la cagnotte :"}
+                </span>
                 {contract.status === 'pending' && (
-                  <p>Les points requis seront automatiquement débités du client et placés dans la cagnotte sécurisée dès que les deux parties auront signé le contrat.</p>
+                  <p>
+                    {contract.eventId
+                      ? "Les points requis seront transférés à l'organisateur dès la signature de la charte de participation."
+                      : "Les points requis seront automatiquement débités du client et placés dans la cagnotte sécurisée dès que les deux parties auront signé le contrat."}
+                  </p>
                 )}
                 {contract.status === 'signed' && (
-                  <p className="text-emerald-700 font-medium">Les points ont été débités du client et sont conservés en toute sécurité dans la cagnotte Hoodly. Ils seront transférés au prestataire dès la validation finale du service.</p>
+                  <p className="text-emerald-700 font-medium">
+                    {contract.eventId
+                      ? "Les points ont été transférés avec succès à l'organisateur de l'événement."
+                      : "Les points ont été débités du client et sont conservés en toute sécurité dans la cagnotte Hoodly. Ils seront transférés au prestataire dès la validation finale du service."}
+                  </p>
                 )}
                 {contract.status === 'completed' && (
-                  <p>Le service a été validé. Les points ont été transférés avec succès au prestataire.</p>
+                  <p>
+                    {contract.eventId
+                      ? "La charte de participation a été signée et les points ont été transférés."
+                      : "Le service a été validé. Les points ont été transférés avec succès au prestataire."}
+                  </p>
                 )}
                 {contract.status === 'cancelled' && (
-                  <p>Le contrat a été annulé. Les points réservés dans la cagnotte ont été entièrement restitués sur le compte du client.</p>
+                  <p>
+                    {contract.eventId
+                      ? "La participation a été annulée et les points ont été restitués."
+                      : "Le contrat a été annulé. Les points réservés dans la cagnotte ont été entièrement restitués sur le compte du client."}
+                  </p>
                 )}
               </div>
             </div>
@@ -361,7 +379,7 @@ export default function ContractDetailPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                     <User size={14} className="text-[#0c3383]" />
-                    {contract.clientId?.name || 'Voisin (Client)'}
+                    {contract.clientId?.name || 'Voisin (Client)'} <span className="text-[10px] text-slate-400 font-normal">{contract.eventId ? '(Participant)' : '(Client)'}</span>
                   </span>
                   {clientSigned ? (
                     <Badge className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-[9px] font-semibold px-2 py-0.5 rounded-full">Signé</Badge>
@@ -383,7 +401,7 @@ export default function ContractDetailPage() {
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                     <User size={14} className="text-[#0c3383]" />
-                    {contract.providerId?.name || 'Voisin (Prestataire)'}
+                    {contract.providerId?.name || 'Voisin (Prestataire)'} <span className="text-[10px] text-slate-400 font-normal">{contract.eventId ? '(Organisateur)' : '(Prestataire)'}</span>
                   </span>
                   {providerSigned ? (
                     <Badge className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-[9px] font-semibold px-2 py-0.5 rounded-full">Signé</Badge>
@@ -425,6 +443,16 @@ export default function ContractDetailPage() {
               toast.success('Signature enregistrée ! Redirection vers votre discussion dans 2 secondes...', { duration: 2000 })
               setTimeout(() => {
                 navigate(`/messages?id=${fromChat}`)
+              }, 2000)
+            } else if (contract.eventId) {
+              toast.success('Charte de participation signée ! Retour à l\'événement...', { duration: 2000 })
+              setTimeout(() => {
+                navigate('/evenements')
+              }, 2000)
+            } else {
+              toast.success('Signature enregistrée ! Redirection...', { duration: 2000 })
+              setTimeout(() => {
+                navigate('/contrats')
               }, 2000)
             }
           }}

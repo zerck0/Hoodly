@@ -80,4 +80,10 @@ export class UserResponseDto {
 
   @ApiPropertyOptional({ description: 'Biographie / Description' })
   bio?: string;
+
+  @ApiPropertyOptional({
+    description: 'Missions déjà récupérées',
+    type: [String],
+  })
+  claimedMissions?: string[];
 }

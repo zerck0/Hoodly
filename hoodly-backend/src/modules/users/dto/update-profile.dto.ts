@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsArray } from 'class-validator';
+import { IsOptional, IsString, IsArray } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateProfileDto {
@@ -62,9 +62,4 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   bio?: string;
-
-  @ApiPropertyOptional({ description: 'Points accumulés' })
-  @IsOptional()
-  @IsNumber()
-  points?: number;
 }

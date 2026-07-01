@@ -399,7 +399,7 @@ export default function VotesPage() {
                                     <div className="text-[10px] text-gray-400 pl-1">
                                       Votants : {vote.votedUsers
                                         .filter(vu => vu.option === opt)
-                                        .map(vu => vu.userId === user?.id ? "Vous" : `Voisin (${vu.userId?.substring(0, 5)})`) // Note: backend can join names if we want, but keeping it simple for privacy
+                                        .map(vu => vu.userId === user?.id ? "Vous" : `Voisin (${vu.userId?.substring(0, 5)})`)
                                         .join(', ')}
                                     </div>
                                   )}

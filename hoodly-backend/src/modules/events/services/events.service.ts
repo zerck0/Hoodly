@@ -20,15 +20,25 @@ import { EventResponseDto } from '../dto/event-response.dto';
 import { ConversationsService } from '../../conversations/services/conversations.service';
 import { TransactionsService } from '../../transactions/services/transactions.service';
 import { Neo4jService } from '../../neo4j/neo4j.service';
+import { DocumentsService } from '../../documents/documents.service';
+import { User, UserDocument } from '../../users/schemas/user.schema';
+import { UploadsService } from '../../uploads/services/uploads.service';
+import {
+  DocumentType,
+} from '../../documents/schemas/document.schema';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
 @Injectable()
 export class EventsService {
   constructor(
     @InjectModel(Event.name) private eventModel: Model<EventDocument>,
     @InjectModel(Contract.name) private contractModel: Model<ContractDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     private readonly conversationsService: ConversationsService,
     private readonly transactionsService: TransactionsService,
     private readonly neo4j: Neo4jService,
+    private readonly documentsService: DocumentsService,
+    private readonly uploadsService: UploadsService,
   ) {}
 
   async create(
@@ -185,11 +195,154 @@ export class EventsService {
         .exec();
 
       if (!contract) {
-        if (!event.templateDocumentId) {
+        const participantUser = await this.userModel.findById(userId).lean();
+        const userPoints = (participantUser as any)?.points ?? 0;
+        if (userPoints < event.pointsCout) {
           throw new BadRequestException(
-            "Cet événement payant requiert une charte de participation qui n'a pas encore été configurée par l'organisateur.",
+            `Vous n'avez pas assez de points. Requis: ${event.pointsCout} pts, Votre solde: ${userPoints} pts`,
           );
         }
+
+        const organizerUser = await this.userModel
+          .findById(event.createurId)
+          .lean();
+        const participantName = (participantUser as any)?.name || 'Participant';
+        const participantEmail = (participantUser as any)?.email || '';
+        const organizerName = (organizerUser as any)?.name || 'Organisateur';
+        const organizerEmail = (organizerUser as any)?.email || '';
+
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage([595, 842]);
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+        page.drawText(`CHARTE DE PARTICIPATION - HOODLY`, {
+          x: 50,
+          y: 780,
+          size: 18,
+          font: fontBold,
+          color: rgb(0.05, 0.2, 0.5),
+        });
+
+        page.drawLine({
+          start: { x: 50, y: 760 },
+          end: { x: 545, y: 760 },
+          thickness: 1,
+          color: rgb(0.8, 0.8, 0.8),
+        });
+
+        const eventDate = new Date(event.date);
+        const day = String(eventDate.getDate()).padStart(2, '0');
+        const month = String(eventDate.getMonth() + 1).padStart(2, '0');
+        const year = eventDate.getFullYear();
+        const hours = String(eventDate.getHours()).padStart(2, '0');
+        const minutes = String(eventDate.getMinutes()).padStart(2, '0');
+        const dateStr = `${day}/${month}/${year} a ${hours}:${minutes}`;
+
+        const termsText =
+          `CHARTE DE PARTICIPATION DE QUARTIER\n\n` +
+          `EVENEMENT :\n` +
+          `- Titre : ${event.titre}\n` +
+          `- Categorie : ${event.categorie}\n` +
+          `- Date & Heure : Le ${dateStr}\n` +
+          `- Lieu : ${event.lieu?.ville || event.lieu?.adresse || 'Lieu a definir'}\n\n` +
+          `ORGANISATEUR : ${organizerName} (${organizerEmail})\n\n` +
+          `PARTICIPANT : ${participantName} (${participantEmail})\n\n` +
+          `ENGAGEMENTS DE PARTICIPATION :\n` +
+          `1. Je m'engage a participer a l'evenement "${event.titre}" aux date et heure indiquees.\n` +
+          `2. J'accepte le transfert automatique de ${event.pointsCout} points de mon compte a la signature.\n` +
+          `3. En cas de desinscription ou d'annulation de l'evenement, les points me seront integralement rembourses.\n\n` +
+          `SIGNATURES :\n` +
+          `En signant ce document par validation e-mail (OTP), le participant s'engage et valide la charte.`;
+
+        const lines = termsText.split('\n');
+        let yPos = 720;
+        for (const line of lines) {
+          const isHeader =
+            line.endsWith(':') ||
+            line.startsWith('CHARTE') ||
+            line.startsWith('EVENEMENT') ||
+            line.startsWith('ORGANISATEUR') ||
+            line.startsWith('PARTICIPANT') ||
+            line.startsWith('ENGAGEMENTS');
+          page.drawText(line, {
+            x: 50,
+            y: yPos,
+            size: isHeader ? 10 : 9,
+            font: isHeader ? fontBold : font,
+            color: isHeader ? rgb(0.1, 0.1, 0.1) : rgb(0.3, 0.3, 0.3),
+          });
+          yPos -= 15;
+        }
+
+        page.drawText(`Participant (Signez ci-dessous)`, {
+          x: 380,
+          y: 145,
+          size: 9,
+          font: fontBold,
+        });
+        page.drawRectangle({
+          x: 380,
+          y: 72,
+          width: 150,
+          height: 50,
+          borderColor: rgb(0.8, 0.8, 0.8),
+          borderWidth: 1,
+        });
+
+        page.drawText(`Organisateur (Certifie par le systeme)`, {
+          x: 80,
+          y: 145,
+          size: 9,
+          font: fontBold,
+        });
+        page.drawRectangle({
+          x: 80,
+          y: 72,
+          width: 160,
+          height: 50,
+          borderColor: rgb(0.8, 0.8, 0.8),
+          borderWidth: 1,
+        });
+        page.drawText(`Charte publiee par l'hote`, {
+          x: 90,
+          y: 102,
+          size: 8,
+          font: font,
+          color: rgb(0.2, 0.6, 0.2),
+        });
+        page.drawText(`(Signature automatique)`, {
+          x: 90,
+          y: 90,
+          size: 8,
+          font: font,
+          color: rgb(0.2, 0.6, 0.2),
+        });
+
+        const pdfBytes = await pdfDoc.save();
+        const pdfBuffer = Buffer.from(pdfBytes);
+
+        const fileUrl = await this.uploadsService.uploadFile({
+          fieldname: 'file',
+          originalname: `charte_participation_${event._id}_${userId}.pdf`,
+          encoding: '7bit',
+          mimetype: 'application/pdf',
+          size: pdfBuffer.length,
+          buffer: pdfBuffer,
+        });
+
+        const pdfHash = crypto
+          .createHash('sha256')
+          .update(pdfBuffer)
+          .digest('hex');
+
+        const templateDoc = await this.documentsService.create({
+          ownerId: userId,
+          title: `Charte de participation - ${event.titre}`,
+          fileUrl,
+          pdfHash,
+          type: DocumentType.CONTRACT_TEMPLATE,
+        });
 
         const newContract = new this.contractModel({
           clientId: userObjId,
@@ -198,7 +351,7 @@ export class EventsService {
           title: `Charte de participation - ${event.titre}`,
           terms: `En signant ce document, je m'engage à participer à l'événement ${event.titre} et accepte le transfert de ${event.pointsCout} points de mon compte.`,
           pricePoints: event.pointsCout,
-          templateDocumentId: event.templateDocumentId,
+          templateDocumentId: templateDoc._id,
           signatureZones: [
             {
               page: 1,
@@ -240,7 +393,6 @@ export class EventsService {
           contractId: contract._id.toString(),
         });
       }
-
     }
 
     await this.eventModel.findByIdAndUpdate(id, {
@@ -333,9 +485,35 @@ export class EventsService {
   }
 
   async delete(id: string) {
-    const result = await this.eventModel.findByIdAndDelete(id);
-    if (!result) throw new NotFoundException('Événement introuvable');
-    return { message: 'Événement supprimé' };
+    const event = await this.eventModel.findById(id);
+    if (!event) throw new NotFoundException('Événement introuvable');
+
+    if (event.payant && event.pointsCout && event.pointsCout > 0) {
+      for (const participantId of event.participants) {
+        try {
+          await this.transactionsService.transferPoints(
+            event.createurId.toString(),
+            participantId.toString(),
+            event.pointsCout,
+            `Remboursement annulation événement "${event.titre}"`,
+            id,
+          );
+        } catch (err) {
+          // Ignore
+        }
+      }
+
+      await this.contractModel.updateMany(
+        { eventId: event._id },
+        { $set: { status: ContractStatus.CANCELLED } },
+      );
+    }
+
+    await this.conversationsService.deleteByEventId(id);
+
+    await this.eventModel.findByIdAndDelete(id);
+
+    return { message: 'Événement annulé et participants remboursés' };
   }
 
   private buildSearchQuery(

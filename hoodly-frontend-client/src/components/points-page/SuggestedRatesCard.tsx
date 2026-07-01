@@ -4,7 +4,6 @@ import { Card, CardContent } from '../ui/card'
 interface RateItem {
   name: string
   rate: string
-  eq: string
 }
 
 interface SuggestedRatesCardProps {
@@ -29,9 +28,6 @@ export function SuggestedRatesCard({ rates }: SuggestedRatesCardProps) {
                 <div>
                   <p className="text-xs font-bold text-gray-900 leading-snug">
                     {item.name}
-                  </p>
-                  <p className="text-[10px] text-gray-400 font-light mt-0.5">
-                    Équivalent : {item.eq}
                   </p>
                 </div>
                 <span className="text-xs font-extrabold text-[#2c308e] bg-[#e9eaf6]/60 border border-[#e9eaf6] px-2.5 py-1 rounded-full shrink-0">

@@ -24,6 +24,18 @@ const CATEGORY_STYLES: Record<string, { bg: string, text: string }> = {
   Animaux: { bg: 'bg-purple-50 dark:bg-purple-950/20', text: 'text-purple-700 dark:text-purple-400 border-purple-100 dark:border-purple-900' }
 }
 
+const formatPlanification = (planif: string | undefined) => {
+  if (!planif) return 'Date flexible'
+  if (/[a-zA-Z]/.test(planif) || planif.includes(' ')) {
+    return planif
+  }
+  const date = new Date(planif)
+  if (!isNaN(date.getTime())) {
+    return `Le ${date.toLocaleDateString()}`
+  }
+  return planif
+}
+
 interface ServiceCardProps {
   service: Service
   onSelect: (service: Service) => void
@@ -77,7 +89,7 @@ export function ServiceCard({ service, onSelect }: ServiceCardProps) {
             <div className="flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
               <span>
-                {service.recurrente ? 'Service récurrent (hebdomadaire)' : service.datePlanification ? `Le ${new Date(service.datePlanification).toLocaleDateString()}` : 'Date flexible'}
+                {service.recurrente ? 'Service récurrent (hebdomadaire)' : formatPlanification(service.datePlanification)}
               </span>
             </div>
             {service.disponibilites && service.disponibilites.length > 0 && (

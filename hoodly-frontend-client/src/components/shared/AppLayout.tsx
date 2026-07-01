@@ -23,6 +23,7 @@ import {
   PartyPopper,
   FileText,
   Vote,
+  Shield,
 } from "lucide-react"
 import { Bell } from "../animate-ui/icons/bell"
 import {
@@ -87,45 +88,12 @@ export default function AppLayout() {
     (post) => post.author === user?.id || post.author === user?.auth0Id
   )
 
-  useEffect(() => {
-    if (!user?.id) return
 
-    const checkAndAwardMissions = async () => {
-      let pointsToAdd = 0
-      let pointsUpdated = false
-      const currentPoints = user.points ?? 100
+  const menuItems = [...items]
+  if (user?.role === 'admin') {
+    menuItems.push({ title: "Candidatures modérateurs", url: "/admin/candidatures", icon: Shield })
+  }
 
-      const msgClaimKey = `hoodly-claimed-msg-${user.id}`
-      if (hasMessages && !localStorage.getItem(msgClaimKey)) {
-        pointsToAdd += 20
-        localStorage.setItem(msgClaimKey, 'true')
-        pointsUpdated = true
-        toast.success("🎉 Mission accomplie : Premier message envoyé ! +20 points (2,00 €)", { duration: 6000 })
-      }
-
-      const postClaimKey = `hoodly-claimed-post-${user.id}`
-      if (hasPosts && !localStorage.getItem(postClaimKey)) {
-        pointsToAdd += 30
-        localStorage.setItem(postClaimKey, 'true')
-        pointsUpdated = true
-        toast.success("🎉 Mission accomplie : Premier post partagé ! +30 points (3,00 €)", { duration: 6000 })
-      }
-
-      if (pointsUpdated && pointsToAdd > 0) {
-        try {
-          await usersApi.updateProfile({ points: currentPoints + pointsToAdd })
-          if (refreshProfile) refreshProfile()
-          queryClient.invalidateQueries({ queryKey: ['user-profile'] })
-          queryClient.invalidateQueries({ queryKey: ['global-conversations'] })
-          queryClient.invalidateQueries({ queryKey: ['global-feed'] })
-        } catch (err) {
-          console.error("Failed to persist global points update", err)
-        }
-      }
-    }
-
-    checkAndAwardMissions()
-  }, [hasMessages, hasPosts, user?.id, queryClient, refreshProfile])
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-[#f5f3ed] dark:bg-gray-950">
@@ -146,8 +114,8 @@ export default function AppLayout() {
               <SidebarGroupContent>
                 <SidebarMenu className="px-4 gap-2">
                   {(() => {
-                    return items.map((item) => {
-                      const isRestricted = !isVerified && item.url !== "/dashboard"
+                    return menuItems.map((item) => {
+                      const isRestricted = !isVerified && item.url !== "/dashboard" && item.url !== "/admin/candidatures"
 
                       return (
                         <SidebarMenuItem key={item.title}>

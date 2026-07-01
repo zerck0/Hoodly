@@ -4,10 +4,9 @@ import { Badge } from '../ui/badge'
 
 interface PointsBalanceCardProps {
   points: number
-  euros: string
 }
 
-export function PointsBalanceCard({ points, euros }: PointsBalanceCardProps) {
+export function PointsBalanceCard({ points }: PointsBalanceCardProps) {
   return (
     <Card className="md:col-span-2 bg-[#1f224e] border-0 text-white rounded-[2rem] p-8 shadow-xl relative overflow-hidden flex flex-col justify-between min-h-[220px]">
       <div className="absolute right-0 top-0 text-white/5 pointer-events-none">
@@ -29,9 +28,6 @@ export function PointsBalanceCard({ points, euros }: PointsBalanceCardProps) {
           </span>
           <span className="text-xl font-semibold text-white/80">points</span>
         </div>
-        <p className="text-xs text-white/60 mt-1 font-light">
-          Équivalent de transaction d'entraide estimé à : <strong className="text-white font-bold">{euros} €</strong>
-        </p>
       </div>
 
       <div className="mt-6 pt-4 border-t border-white/10 flex flex-wrap gap-4 items-center justify-between z-10">

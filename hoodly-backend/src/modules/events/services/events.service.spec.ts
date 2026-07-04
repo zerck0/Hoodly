@@ -2,6 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EventsService } from './events.service';
 import { getModelToken } from '@nestjs/mongoose';
 import { Event, EventStatus } from '../schemas/event.schema';
+import { User } from '../../users/schemas/user.schema';
+import { ConversationsService } from '../../conversations/services/conversations.service';
+import { TransactionsService } from '../../transactions/services/transactions.service';
+import { Neo4jService } from '../../neo4j/neo4j.service';
 import {
   InternalServerErrorException,
   NotFoundException,
@@ -16,6 +20,10 @@ describe('EventsService', () => {
     findByIdAndDelete: jest.Mock;
     countDocuments: jest.Mock;
   };
+  let userModel: any;
+  let conversationsService: any;
+  let transactionsService: any;
+  let neo4jService: any;
 
   const makeEvent = (overrides: Record<string, unknown> = {}) => {
     const now = new Date('2026-01-01T10:00:00.000Z');
@@ -59,12 +67,54 @@ describe('EventsService', () => {
     eventModel.findByIdAndDelete = jest.fn();
     eventModel.countDocuments = jest.fn();
 
+    userModel = {
+      findById: jest.fn(),
+      findByIdAndUpdate: jest.fn(),
+    };
+
+    conversationsService = {
+      createForEvent: jest.fn(),
+      addParticipantToEvent: jest.fn(),
+      removeParticipantFromEvent: jest.fn(),
+      sendSystemMessage: jest.fn(),
+      deleteByEventId: jest.fn(),
+    };
+
+    transactionsService = {
+      create: jest.fn(),
+      awardPoints: jest.fn(),
+      transferPoints: jest.fn(),
+    };
+
+    neo4jService = {
+      syncInteret: jest.fn(),
+      removeInteret: jest.fn(),
+      syncParticipation: jest.fn(),
+      removeParticipation: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EventsService,
         {
           provide: getModelToken(Event.name),
           useValue: eventModel,
+        },
+        {
+          provide: getModelToken(User.name),
+          useValue: userModel,
+        },
+        {
+          provide: ConversationsService,
+          useValue: conversationsService,
+        },
+        {
+          provide: TransactionsService,
+          useValue: transactionsService,
+        },
+        {
+          provide: Neo4jService,
+          useValue: neo4jService,
         },
       ],
     }).compile();
@@ -233,16 +283,18 @@ describe('EventsService', () => {
   describe('delete', () => {
     it('should delete event successfully', async () => {
       const e = makeEvent();
+      eventModel.findById.mockResolvedValue(e);
       eventModel.findByIdAndDelete.mockResolvedValue(e);
 
       const result = await service.delete(e._id);
 
+      expect(eventModel.findById).toHaveBeenCalledWith(e._id);
       expect(eventModel.findByIdAndDelete).toHaveBeenCalledWith(e._id);
-      expect(result).toEqual({ message: 'Événement supprimé' });
+      expect(result).toEqual({ message: 'Événement annulé et participants remboursés' });
     });
 
     it('should throw NotFoundException if event to delete does not exist', async () => {
-      eventModel.findByIdAndDelete.mockResolvedValue(null);
+      eventModel.findById.mockResolvedValue(null);
 
       await expect(service.delete('missing')).rejects.toThrow(
         NotFoundException,

@@ -96,14 +96,7 @@ export default function EventsPage() {
       }
     } catch (err: any) {
       const errorData = err?.response?.data
-      if (errorData?.code === 'CONTRACT_SIGNATURE_REQUIRED' && errorData?.contractId) {
-        toast.info("Signature de la charte de participation requise. Redirection...")
-        setTimeout(() => {
-          navigate(`/contrats/${errorData.contractId}`)
-        }, 1500)
-      } else {
-        toast.error(errorData?.message ?? "Impossible de s'inscrire")
-      }
+      toast.error(errorData?.message ?? "Impossible de s'inscrire")
     }
   }
 
@@ -822,7 +815,9 @@ function EventList({
       {events.map((event) => {
         const isParticipant = event.participants.includes(userId)
         const isFull = event.participants.length >= event.capacite && !isParticipant
-        const formattedDate = new Date(event.date).toLocaleDateString('fr-FR', {
+        const eventDate = new Date(event.date)
+        const isTooLateToCancel = isParticipant && (eventDate.getTime() - Date.now() < 24 * 60 * 60 * 1000)
+        const formattedDate = eventDate.toLocaleDateString('fr-FR', {
           day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
         })
         const lieu = event.lieu?.ville || event.lieu?.adresse || 'Lieu à définir'
@@ -925,16 +920,26 @@ function EventList({
                 ) : (
                   <button
                     onClick={() => onParticiperToggle(event)}
-                    disabled={isFull}
-                    className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    disabled={isFull || isTooLateToCancel}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                       isParticipant
-                        ? 'bg-green-50 border border-green-200 text-green-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600'
+                        ? isTooLateToCancel
+                          ? 'bg-green-50/50 border border-green-100 text-green-600/60 cursor-not-allowed'
+                          : 'bg-green-50 border border-green-200 text-green-700 hover:bg-red-50 hover:border-red-200 hover:text-red-600 cursor-pointer'
                         : isFull
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-[#2c308e] text-white hover:bg-[#2c308e]/90'
+                        : 'bg-[#2c308e] text-white hover:bg-[#2c308e]/90 cursor-pointer'
                     }`}
                   >
-                    {isParticipant ? <><Check className="h-3.5 w-3.5" /> Je participe</> : isFull ? 'Complet' : event.payant && event.pointsCout ? `Participer (${event.pointsCout} pts)` : 'Participer'}
+                    {isParticipant 
+                      ? isTooLateToCancel 
+                        ? <><Check className="h-3.5 w-3.5 text-green-500/50" /> Inscrit (Désinscription bloquée)</>
+                        : <><Check className="h-3.5 w-3.5" /> Je participe</> 
+                      : isFull 
+                      ? 'Complet' 
+                      : event.payant && event.pointsCout 
+                      ? `Participer (${event.pointsCout} pts)` 
+                      : 'Participer'}
                   </button>
                 )}
                 {(isParticipant || event.createurId === userId) && event.conversationId && (

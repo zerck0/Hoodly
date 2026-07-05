@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Send, Loader2, Trash2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
-import { fr } from 'date-fns/locale'
+import { fr, enUS } from 'date-fns/locale'
 import { toast } from 'sonner'
 
 import { postsApi } from '../../../services/api/posts'
@@ -14,6 +14,7 @@ import { Input } from '../../ui/input'
 import { Separator } from '../../ui/separator'
 import { Skeleton } from '../../ui/skeleton'
 import type { Comment, PaginatedComments } from '../../../types/post.types'
+import { useTranslation } from 'react-i18next'
 
 interface CommentSectionProps {
   postId: string
@@ -22,6 +23,7 @@ interface CommentSectionProps {
 }
 
 export function CommentSection({ postId, onCommentAdded, onCommentDeleted }: CommentSectionProps) {
+  const { t, i18n } = useTranslation()
   const { user } = useUser()
   const isVerified = user?.zoneStatut === ZoneMembershipStatus.ACTIVE
   const queryClient = useQueryClient()
@@ -71,31 +73,31 @@ export function CommentSection({ postId, onCommentAdded, onCommentDeleted }: Com
         queryClient.setQueryData(['comments', postId], context.previousComments)
       }
       onCommentDeleted?.()
-      toast.error("Impossible d'ajouter le commentaire")
+      toast.error(t('dashboard.comments.addError', "Impossible d'ajouter le commentaire"))
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', postId] })
     },
     onSuccess: () => {
       setContent('')
-      toast.success('Commentaire ajouté !')
+      toast.success(t('dashboard.comments.addSuccess', 'Commentaire ajouté !'))
     },
   })
 
   const { mutate: handleDeleteComment } = useMutation({
     mutationFn: (commentId: string) => postsApi.deleteComment(commentId),
     onSuccess: () => {
-      toast.success('Commentaire supprimé')
+      toast.success(t('dashboard.comments.deleteSuccess', 'Commentaire supprimé'))
       queryClient.invalidateQueries({ queryKey: ['comments', postId] })
       onCommentDeleted?.()
     },
     onError: () => {
-      toast.error('Erreur lors de la suppression du commentaire')
+      toast.error(t('dashboard.comments.deleteError', 'Erreur lors de la suppression du commentaire'))
     },
   })
 
   const confirmDeleteComment = (commentId: string) => {
-    if (window.confirm('Voulez-vous vraiment supprimer ce commentaire ?')) {
+    if (window.confirm(t('dashboard.comments.confirmDelete', 'Voulez-vous vraiment supprimer ce commentaire ?'))) {
       handleDeleteComment(commentId)
     }
   }
@@ -107,6 +109,7 @@ export function CommentSection({ postId, onCommentAdded, onCommentDeleted }: Com
   }
 
   const commentsList = data?.data || []
+  const activeLocale = i18n.language === 'en' ? enUS : fr
 
   return (
     <div className="mt-4 pt-4 border-t space-y-4">
@@ -117,7 +120,9 @@ export function CommentSection({ postId, onCommentAdded, onCommentDeleted }: Com
         </Avatar>
         <div className="flex-1 flex gap-2">
           <Input
-            placeholder={isVerified ? "Écrire un commentaire..." : "Faites vérifier votre compte pour commenter..."}
+            placeholder={isVerified 
+              ? t('dashboard.comments.placeholder', 'Écrire un commentaire...') 
+              : t('dashboard.comments.verificationRequiredPlaceholder', 'Faites vérifier votre compte pour commenter...')}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             disabled={isSubmitting || !isVerified}
@@ -155,11 +160,11 @@ export function CommentSection({ postId, onCommentAdded, onCommentDeleted }: Com
           </div>
         ) : isError ? (
           <p className="text-center text-xs text-destructive py-2">
-            Erreur lors de la récupération des commentaires.
+            {t('dashboard.comments.retrieveError', 'Erreur lors de la récupération des commentaires.')}
           </p>
         ) : commentsList.length === 0 ? (
           <p className="text-center text-xs text-muted-foreground py-4">
-            Aucun commentaire pour le moment. Soyez le premier à réagir !
+            {t('dashboard.comments.emptyState', 'Aucun commentaire pour le moment. Soyez le premier à réagir !')}
           </p>
         ) : (
           commentsList.map((comment) => (
@@ -177,7 +182,7 @@ export function CommentSection({ postId, onCommentAdded, onCommentDeleted }: Com
                     <span className="text-[10px] text-muted-foreground">
                       {formatDistanceToNow(new Date(comment.createdAt), {
                         addSuffix: true,
-                        locale: fr,
+                        locale: activeLocale,
                       })}
                     </span>
                     {user?.id === comment.author && (

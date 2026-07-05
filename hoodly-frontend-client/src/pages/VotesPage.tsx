@@ -26,8 +26,10 @@ import { Badge } from '../components/ui/badge'
 import { toast } from 'sonner'
 import CreateVoteModal from '../components/votes/CreateVoteModal'
 import { Textarea } from '@/components/ui/textarea'
+import { useTranslation } from 'react-i18next'
 
 export default function VotesPage() {
+  const { t } = useTranslation()
   const { user } = useUser()
   const queryClient = useQueryClient()
   const { socket } = useSocket()
@@ -70,12 +72,12 @@ export default function VotesPage() {
       return data
     },
     onSuccess: () => {
-      toast.success('Votre vote a bien été enregistré !')
+      toast.success(t('votes.toasts.voteRecorded'))
       queryClient.invalidateQueries({ queryKey: ['votes'] })
       queryClient.invalidateQueries({ queryKey: ['global-feed'] })
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || 'Erreur lors de l\'enregistrement du vote'
+      const msg = err?.response?.data?.message || t('votes.errors.voteRecordFailed')
       toast.error(msg)
     }
   })
@@ -86,12 +88,12 @@ export default function VotesPage() {
       return data
     },
     onSuccess: () => {
-      toast.success('Le vote a été approuvé et publié !')
+      toast.success(t('votes.toasts.approvedSuccess'))
       queryClient.invalidateQueries({ queryKey: ['votes'] })
       queryClient.invalidateQueries({ queryKey: ['global-feed'] })
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message || 'Erreur lors de l\'approbation')
+      toast.error(err?.response?.data?.message || t('votes.errors.approveFailed'))
     }
   })
 
@@ -101,13 +103,13 @@ export default function VotesPage() {
       return data
     },
     onSuccess: () => {
-      toast.success('Le vote a été rejeté.')
+      toast.success(t('votes.toasts.rejectedSuccess'))
       setRejectingVoteId(null)
       setRejectionReason('')
       queryClient.invalidateQueries({ queryKey: ['votes'] })
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message || 'Erreur lors du rejet')
+      toast.error(err?.response?.data?.message || t('votes.errors.rejectFailed'))
     }
   })
 
@@ -116,11 +118,11 @@ export default function VotesPage() {
       await votesApi.delete(voteId)
     },
     onSuccess: () => {
-      toast.success('Le vote a été supprimé.')
+      toast.success(t('votes.toasts.deletedSuccess'))
       queryClient.invalidateQueries({ queryKey: ['votes'] })
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message || 'Erreur lors de la suppression')
+      toast.error(err?.response?.data?.message || t('votes.errors.deleteFailed'))
     }
   })
 
@@ -130,12 +132,12 @@ export default function VotesPage() {
       return data
     },
     onSuccess: () => {
-      toast.success('Le scrutin est maintenant clos.')
+      toast.success(t('votes.toasts.closedSuccess'))
       queryClient.invalidateQueries({ queryKey: ['votes'] })
       queryClient.invalidateQueries({ queryKey: ['global-feed'] })
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message || 'Erreur lors de la clôture')
+      toast.error(err?.response?.data?.message || t('votes.errors.closeFailed'))
     }
   })
 
@@ -144,7 +146,7 @@ export default function VotesPage() {
   const handleVoteSubmit = (voteId: string) => {
     const option = selectedOptions[voteId]
     if (!option) {
-      toast.error('Veuillez sélectionner une option')
+      toast.error(t('votes.errors.selectOptionRequired'))
       return
     }
     voteMutation.mutate({ voteId, option })
@@ -165,7 +167,7 @@ export default function VotesPage() {
 
   const handleRejectSubmit = () => {
     if (!rejectionReason.trim()) {
-      toast.error('Veuillez saisir un motif de refus')
+      toast.error(t('votes.errors.refusalReasonRequired'))
       return
     }
     setSubmittingRejection(true)
@@ -205,10 +207,10 @@ export default function VotesPage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold text-[#1e224e]" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Espace Votes
+            {t('votes.title')}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Participez aux décisions de votre quartier et exprimez votre voix.
+            {t('votes.subtitle')}
           </p>
         </div>
         <Button
@@ -216,7 +218,7 @@ export default function VotesPage() {
           className="bg-[#2c308e] hover:bg-[#2c308e]/95 text-white rounded-xl shadow-md flex items-center gap-1.5 font-bold h-11"
         >
           <Plus className="h-4 w-4" />
-          <span>Proposer un vote</span>
+          <span>{t('votes.buttons.proposeVote')}</span>
         </Button>
       </div>
 
@@ -229,7 +231,7 @@ export default function VotesPage() {
               : 'text-gray-500 hover:text-gray-800'
           }`}
         >
-          En cours ({activeVotes.length})
+          {t('votes.tabs.active', { count: activeVotes.length })}
         </button>
         <button
           onClick={() => setActiveTab('proposals')}
@@ -239,7 +241,7 @@ export default function VotesPage() {
               : 'text-gray-500 hover:text-gray-800'
           }`}
         >
-          Mes propositions ({userProposals.length})
+          {t('votes.tabs.proposals', { count: userProposals.length })}
         </button>
         <button
           onClick={() => setActiveTab('closed')}
@@ -249,7 +251,7 @@ export default function VotesPage() {
               : 'text-gray-500 hover:text-gray-800'
           }`}
         >
-          Clôturés ({closedVotes.length})
+          {t('votes.tabs.closed', { count: closedVotes.length })}
         </button>
         {isModeratorOrAdmin && (
           <button
@@ -260,7 +262,7 @@ export default function VotesPage() {
                 : 'text-amber-600 hover:text-amber-800 hover:bg-amber-50'
             }`}
           >
-            Modération ({pendingVotes.length})
+            {t('votes.tabs.moderation', { count: pendingVotes.length })}
           </button>
         )}
       </div>
@@ -268,12 +270,12 @@ export default function VotesPage() {
       {isLoading ? (
         <div className="flex flex-col items-center justify-center p-12 bg-white rounded-3xl border border-gray-100">
           <Loader2 className="h-8 w-8 text-[#2c308e] animate-spin mb-3" />
-          <p className="text-sm text-gray-500">Chargement des scrutins...</p>
+          <p className="text-sm text-gray-500">{t('votes.loading')}</p>
         </div>
       ) : isError ? (
         <div className="flex flex-col items-center justify-center p-12 bg-white rounded-3xl border border-gray-100 text-red-500">
           <AlertCircle className="h-8 w-8 mb-3" />
-          <p className="text-sm font-semibold">Une erreur est survenue lors de la récupération des votes.</p>
+          <p className="text-sm font-semibold">{t('votes.errors.fetchFailed')}</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -282,7 +284,7 @@ export default function VotesPage() {
             activeVotes.length === 0 ? (
               <div className="text-center p-12 bg-white rounded-3xl border border-gray-100">
                 <HelpCircle className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm font-medium text-gray-500">Aucun vote en cours dans votre quartier.</p>
+                <p className="text-sm font-medium text-gray-500">{t('votes.empty.noActive')}</p>
               </div>
             ) : (
               activeVotes.map((vote) => {
@@ -304,18 +306,18 @@ export default function VotesPage() {
                             {vote.isAnonymous ? (
                               <>
                                 <Lock className="h-3 w-3 text-emerald-600" />
-                                <span className="text-emerald-700">Vote Anonyme</span>
+                                <span className="text-emerald-700">{t('votes.card.anonymousLabel')}</span>
                               </>
                             ) : (
                               <>
                                 <Globe className="h-3 w-3 text-amber-600" />
-                                <span className="text-amber-700">Vote Public</span>
+                                <span className="text-amber-700">{t('votes.card.publicLabel')}</span>
                               </>
                             )}
                           </Badge>
                           <Badge className="bg-[#2c308e]/10 text-[#2c308e] hover:bg-[#2c308e]/20 border-none flex items-center gap-1 text-[10px] font-bold">
                             <Clock className="h-3 w-3" />
-                            <span>Jusqu'au {new Date(vote.expirationDate).toLocaleDateString()}</span>
+                            <span>{t('votes.card.expiresAt', { date: new Date(vote.expirationDate).toLocaleDateString() })}</span>
                           </Badge>
                         </div>
                       </div>
@@ -323,7 +325,7 @@ export default function VotesPage() {
                       {!voted ? (
                         <div className="mt-5 space-y-3">
                           <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                            FAITES VOTRE CHOIX
+                            {t('votes.card.makeChoice')}
                           </label>
                           <div className="grid gap-2.5">
                             {vote.options.map((opt) => (
@@ -352,7 +354,7 @@ export default function VotesPage() {
 
                           {!vote.isAnonymous && (
                             <p className="text-[10px] text-amber-600 font-medium flex items-center gap-1 mt-2">
-                              ⚠️ Ce vote est public. Les autres habitants verront votre choix après votre vote.
+                              {t('votes.card.publicWarning')}
                             </p>
                           )}
 
@@ -365,16 +367,16 @@ export default function VotesPage() {
                               {voteMutation.isPending ? (
                                 <Loader2 className="h-4 w-4 animate-spin mr-1" />
                               ) : null}
-                              Voter
+                              {t('votes.card.buttons.vote')}
                             </Button>
                           </div>
                         </div>
                       ) : (
                         <div className="mt-5 space-y-4">
                           <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                            <span>RÉSULTATS ACTUELS</span>
+                            <span>{t('votes.card.currentResults')}</span>
                             <span className="text-[#2c308e] flex items-center gap-1 normal-case font-bold">
-                              <TrendingUp className="h-3 w-3" /> Vous avez voté • {totalVotes} participant(s)
+                              <TrendingUp className="h-3 w-3" /> {t('votes.card.votedInfo', { count: totalVotes })}
                             </span>
                           </div>
 
@@ -397,9 +399,9 @@ export default function VotesPage() {
                                   </div>
                                   {!vote.isAnonymous && count > 0 && (
                                     <div className="text-[10px] text-gray-400 pl-1">
-                                      Votants : {vote.votedUsers
+                                      {t('votes.card.votersPrefix')}{vote.votedUsers
                                         .filter(vu => vu.option === opt)
-                                        .map(vu => vu.userId === user?.id ? "Vous" : `Voisin (${vu.userId?.substring(0, 5)})`)
+                                        .map(vu => vu.userId === user?.id ? t('votes.card.you') : t('votes.card.neighbor', { id: vu.userId?.substring(0, 5) }))
                                         .join(', ')}
                                     </div>
                                   )}
@@ -417,7 +419,7 @@ export default function VotesPage() {
                             variant="outline"
                             className="border-gray-200 text-gray-600 rounded-xl text-xs font-bold"
                           >
-                            Clore le scrutin
+                            {t('votes.card.buttons.closePoll')}
                           </Button>
                           <Button
                             onClick={() => deleteMutation.mutate(vote._id)}
@@ -425,7 +427,7 @@ export default function VotesPage() {
                             className="bg-red-50 hover:bg-red-100 text-red-600 border-none rounded-xl text-xs font-bold"
                           >
                             <Trash2 className="h-3.5 w-3.5 mr-1" />
-                            Supprimer
+                            {t('votes.card.buttons.delete')}
                           </Button>
                         </div>
                       )}
@@ -440,7 +442,7 @@ export default function VotesPage() {
             userProposals.length === 0 ? (
               <div className="text-center p-12 bg-white rounded-3xl border border-gray-100">
                 <HelpCircle className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm font-medium text-gray-500">Vous n'avez proposé aucun vote pour le moment.</p>
+                <p className="text-sm font-medium text-gray-500">{t('votes.empty.noProposals')}</p>
               </div>
             ) : (
               userProposals.map((vote) => (
@@ -454,42 +456,42 @@ export default function VotesPage() {
                         )}
                       </div>
                       <div className="flex flex-col items-end gap-2 shrink-0">
-                        {vote.status === 'pending' && (
+                         {vote.status === 'pending' && (
                           <Badge className="bg-amber-100 text-amber-800 border-amber-200 font-bold text-[10px]">
-                            En attente de modération
+                            {t('votes.card.status.pending')}
                           </Badge>
                         )}
                         {vote.status === 'active' && (
                           <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 font-bold text-[10px]">
-                            Actif / Publié
+                            {t('votes.card.status.active')}
                           </Badge>
                         )}
                         {vote.status === 'rejected' && (
                           <Badge className="bg-red-100 text-red-800 border-red-200 font-bold text-[10px]">
-                            Refusé
+                            {t('votes.card.status.rejected')}
                           </Badge>
                         )}
                         {vote.status === 'closed' && (
                           <Badge className="bg-gray-100 text-gray-700 border-gray-200 font-bold text-[10px]">
-                            Clôturé
+                            {t('votes.card.status.closed')}
                           </Badge>
                         )}
                         <span className="text-[10px] text-gray-400">
-                          Créé le {vote.createdAt ? new Date(vote.createdAt).toLocaleDateString() : 'N/A'}
+                          {t('votes.card.createdAt', { date: vote.createdAt ? new Date(vote.createdAt).toLocaleDateString() : t('votes.na') })}
                         </span>
                       </div>
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-gray-100">
                       <div className="flex flex-wrap justify-between items-center text-xs text-gray-500 gap-2">
-                        <span>Options : {vote.options.join(', ')}</span>
-                        <span>Mode : {vote.isAnonymous ? 'Anonyme' : 'Public'}</span>
+                        <span>{t('votes.card.optionsPrefix')}{vote.options.join(', ')}</span>
+                        <span>{t('votes.card.modePrefix')}{vote.isAnonymous ? t('votes.card.modeAnonymous') : t('votes.card.modePublic')}</span>
                       </div>
 
                       {vote.status === 'rejected' && vote.refusalReason && (
                         <div className="mt-4 p-3 bg-red-50/50 border border-red-100 rounded-xl text-xs text-red-700">
                           <p className="font-bold flex items-center gap-1">
-                            <XCircle className="h-4 w-4" /> Motif du refus par le modérateur :
+                            <XCircle className="h-4 w-4" /> {t('votes.card.refusalReasonLabel')}
                           </p>
                           <p className="mt-1 leading-relaxed">{vote.refusalReason}</p>
                         </div>
@@ -505,7 +507,7 @@ export default function VotesPage() {
             closedVotes.length === 0 ? (
               <div className="text-center p-12 bg-white rounded-3xl border border-gray-100">
                 <HelpCircle className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm font-medium text-gray-500">Aucun scrutin clôturé dans l'historique.</p>
+                <p className="text-sm font-medium text-gray-500">{t('votes.empty.noClosed')}</p>
               </div>
             ) : (
               closedVotes.map((vote) => {
@@ -523,18 +525,18 @@ export default function VotesPage() {
                         </div>
                         <div className="flex gap-2">
                           <Badge className="bg-gray-100 text-gray-500 border-none font-bold text-[10px]">
-                            Clos
+                            {t('votes.card.status.closedLabel')}
                           </Badge>
                           <Badge variant="outline" className="text-gray-400 border-gray-200 font-bold text-[10px]">
-                            {vote.isAnonymous ? 'Anonyme' : 'Public'}
+                            {vote.isAnonymous ? t('votes.card.modeAnonymous') : t('votes.card.modePublic')}
                           </Badge>
                         </div>
                       </div>
 
                       <div className="mt-4 space-y-3">
                         <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                          <span>RÉSULTATS FINAUX</span>
-                          <span>{totalVotes} participants</span>
+                          <span>{t('votes.card.finalResults')}</span>
+                          <span>{t('votes.card.participantsCount', { count: totalVotes })}</span>
                         </div>
 
                         <div className="space-y-3">
@@ -557,9 +559,9 @@ export default function VotesPage() {
 
                                 {!vote.isAnonymous && count > 0 && (
                                   <div className="text-[10px] text-gray-400 pl-1">
-                                    Votants : {vote.votedUsers
+                                    {t('votes.card.votersPrefix')}{vote.votedUsers
                                       .filter(vu => vu.option === opt)
-                                      .map(vu => vu.userId === user?.id ? "Vous" : `Voisin (${vu.userId?.substring(0, 5)})`)
+                                      .map(vu => vu.userId === user?.id ? t('votes.card.you') : t('votes.card.neighbor', { id: vu.userId?.substring(0, 5) }))
                                       .join(', ')}
                                   </div>
                                 )}
@@ -577,7 +579,7 @@ export default function VotesPage() {
                             className="bg-red-50 hover:bg-red-100 text-red-600 border-none rounded-xl text-xs font-bold h-9"
                           >
                             <Trash2 className="h-3.5 w-3.5 mr-1" />
-                            Supprimer l'historique
+                            {t('votes.card.buttons.deleteHistory')}
                           </Button>
                         </div>
                       )}
@@ -592,7 +594,7 @@ export default function VotesPage() {
             pendingVotes.length === 0 ? (
               <div className="text-center p-12 bg-white rounded-3xl border border-gray-100">
                 <CheckCircle2 className="h-10 w-10 text-emerald-400 mx-auto mb-3" />
-                <p className="text-sm font-medium text-gray-500">Toutes les demandes de vote ont été traitées !</p>
+                <p className="text-sm font-medium text-gray-500">{t('votes.moderation.allProcessed')}</p>
               </div>
             ) : (
               pendingVotes.map((vote) => {
@@ -606,7 +608,7 @@ export default function VotesPage() {
                           <div className="flex items-center gap-2">
                             <h3 className="text-lg font-bold text-[#1e224e]">{vote.title}</h3>
                             <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[9px] font-bold">
-                              En attente
+                              {t('votes.card.status.waiting')}
                             </Badge>
                           </div>
                           {vote.description && (
@@ -614,17 +616,17 @@ export default function VotesPage() {
                           )}
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-xs font-bold text-gray-700">Proposé par un habitant</p>
+                          <p className="text-xs font-bold text-gray-700">{t('votes.card.proposedByResident')}</p>
                           <p className="text-[10px] text-gray-400 mt-0.5">
-                            Expiration demandée : {new Date(vote.expirationDate).toLocaleDateString()}
+                            {t('votes.card.requestedExpiration', { date: new Date(vote.expirationDate).toLocaleDateString() })}
                           </p>
                         </div>
                       </div>
 
                       <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap justify-between items-center gap-4">
                         <div className="text-xs text-gray-500 space-y-1">
-                          <p>Options proposées : <strong className="text-gray-700">{vote.options.join(', ')}</strong></p>
-                          <p>Anonymat configuré : <strong className="text-gray-700">{vote.isAnonymous ? 'Anonyme' : 'Public'}</strong></p>
+                          <p>{t('votes.card.proposedOptionsPrefix')}<strong className="text-gray-700">{vote.options.join(', ')}</strong></p>
+                          <p>{t('votes.card.configuredAnonymityPrefix')}<strong className="text-gray-700">{vote.isAnonymous ? t('votes.card.modeAnonymous') : t('votes.card.modePublic')}</strong></p>
                         </div>
 
                         {!vote.isAnonymous && (
@@ -637,7 +639,7 @@ export default function VotesPage() {
                               className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500 cursor-pointer"
                             />
                             <label htmlFor={`force-anon-${vote._id}`} className="text-xs font-bold text-amber-800 cursor-pointer select-none">
-                              Forcer le vote en anonyme (Sujet sensible)
+                              {t('votes.moderation.forceAnonymous')}
                             </label>
                           </div>
                         )}
@@ -651,7 +653,7 @@ export default function VotesPage() {
                           disabled={approveMutation.isPending || rejectMutation.isPending}
                         >
                           <XCircle className="h-4 w-4 mr-1" />
-                          Refuser
+                          {t('votes.buttons.reject')}
                         </Button>
                         <Button
                           onClick={() => handleApprove(vote._id, vote.isAnonymous)}
@@ -663,7 +665,7 @@ export default function VotesPage() {
                           ) : (
                             <CheckCircle2 className="h-4 w-4 mr-1" />
                           )}
-                          Approuver et Publier
+                          {t('votes.buttons.approveAndPublish')}
                         </Button>
                       </div>
                     </CardContent>
@@ -684,15 +686,15 @@ export default function VotesPage() {
               <X className="h-5 w-5" />
             </button>
             <h3 className="text-lg font-bold text-[#1e224e] mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
-              Refuser la proposition de vote
+              {t('votes.rejectModal.title')}
             </h3>
             <p className="text-gray-500 text-xs mb-4">
-              Veuillez indiquer le motif du refus. L'habitant créateur verra ce message pour pouvoir corriger sa demande.
+              {t('votes.rejectModal.hint')}
             </p>
             <Textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="ex: Le titre comporte des attaques personnelles, merci de reformuler de manière neutre."
+              placeholder={t('votes.rejectModal.placeholder')}
               className="min-h-[100px] rounded-xl border-gray-200 p-3 text-sm focus:border-[#2c308e] mb-4"
               disabled={submittingRejection}
             />
@@ -703,7 +705,7 @@ export default function VotesPage() {
                 className="flex-1 rounded-xl"
                 disabled={submittingRejection}
               >
-                Annuler
+                {t('votes.buttons.cancel')}
               </Button>
               <Button
                 onClick={handleRejectSubmit}
@@ -713,7 +715,7 @@ export default function VotesPage() {
                 {submittingRejection ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  'Confirmer le refus'
+                  t('votes.rejectModal.confirmRefusal')
                 )}
               </Button>
             </div>

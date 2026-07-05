@@ -1,0 +1,1197 @@
+{
+  "adminCandidatures": {
+    "toast": {
+      "approved": "Candidature acceptée avec succès ! L'habitant est maintenant modérateur.",
+      "rejected": "Candidature refusée.",
+      "error": "Une erreur est survenue."
+    },
+    "unauthorized": {
+      "title": "Accès non autorisé",
+      "description": "Cette page est exclusivement réservée aux administrateurs de la plateforme.",
+      "back_button": "Retour à l'accueil"
+    },
+    "loading": "Chargement des candidatures...",
+    "admin_space": "Espace Administration",
+    "title": "Candidatures Modérateurs",
+    "description": "Examinez et nommez les modérateurs de votre quartier.",
+    "back_profile_button": "Retour au profil",
+    "habitant_fallback": "Habitant",
+    "pending": {
+      "title": "Demandes en attente",
+      "description": "Habitants souhaitant aider à modérer le quartier.",
+      "badge": "{{count}} en attente",
+      "empty_title": "Aucune demande en attente",
+      "empty_description": "Toutes les candidatures ont été traitées.",
+      "date": "Le {{date}}",
+      "reject_button": "Rejeter",
+      "approve_button": "Nommer Modérateur"
+    },
+    "history": {
+      "title": "Historique des décisions",
+      "description": "Suivi des anciennes candidatures.",
+      "empty": "Aucun historique disponible",
+      "accepted": "Accepté",
+      "rejected": "Refusé",
+      "date": "Le {{date}}"
+    }
+  },
+  "callback": {
+    "error": "Erreur lors de la connexion. Réessayez.",
+    "backToHome": "Retour à l'accueil",
+    "connecting": "Connexion en cours..."
+  },
+  "categories": {
+    "Jardinage": "Jardinage",
+    "Bricolage": "Bricolage",
+    "Cours": "Cours",
+    "Garde": "Garde",
+    "Courses": "Courses",
+    "Animaux": "Animaux"
+  },
+  "common": {
+    "logout": "Se déconnecter",
+    "searchPlaceholder": "Rechercher un voisin, un service...",
+    "unverifiedAccount": "Compte non vérifié",
+    "points": "{{count}} points",
+    "points_one": "{{count}} point",
+    "points_other": "{{count}} points"
+  },
+  "contractDetail": {
+    "toastDownloadSuccess": "Téléchargement du contrat PDF démarré !",
+    "toastDownloadError": "Erreur lors du téléchargement du contrat PDF.",
+    "loading": "Chargement des détails du contrat...",
+    "errorTitle": "Une erreur est survenue",
+    "errorDesc": "Impossible de récupérer les détails de ce contrat ou accès refusé.",
+    "backToDocuments": "Retour aux documents",
+    "backToChat": "Retourner à la discussion",
+    "backToContracts": "Retour aux contrats",
+    "createdOn": "Créé le {{date}}",
+    "downloading": "Téléchargement...",
+    "downloadPdf": "Télécharger le contrat (PDF)",
+    "officialDocument": "Document d'entraide officiel",
+    "signaturesTitle": "Signatures des parties",
+    "roleParticipant": "Le Participant",
+    "roleClientBeneficiary": "Le Client (Bénéficiaire)",
+    "defaultParticipant": "Voisin (Participant)",
+    "defaultClient": "Voisin (Client)",
+    "signedElectronicallyOn": "Signé électroniquement le {{date}}",
+    "signNow": "✍️ Signer maintenant",
+    "waitingForSignature": "En attente de signature",
+    "roleHost": "L'Organisateur (Hôte)",
+    "roleProviderIntervenant": "Le Prestataire (Intervenant)",
+    "defaultOrganizer": "Voisin (Organisateur)",
+    "defaultProvider": "Voisin (Prestataire)",
+    "participationFees": "Frais de participation",
+    "financialExchange": "Échange financier",
+    "pointsReserved": "Points réservés",
+    "transferSecured": "🔒 Transfert sécurisé",
+    "kittySecured": "🔒 Cagnotte sécurisée",
+    "paymentDone": "Paiement effectué",
+    "cancelledAndRefunded": "Annulé & Restitué",
+    "transferStatus": "Statut du transfert :",
+    "kittyStatus": "Statut de la cagnotte :",
+    "statusPendingEvent": "Les points requis seront transférés à l'organisateur dès la signature de la charte de participation.",
+    "statusPendingService": "Les points requis seront automatiquement débités du client et placés dans la cagnotte sécurisée dès que les deux parties auront signé le contrat.",
+    "statusSignedEvent": "Les points ont été transférés avec succès à l'organisateur de l'événement.",
+    "statusSignedService": "Les points ont été débités du client et sont conservés en toute sécurité dans la cagnotte Hoodly. Ils seront transférés au prestataire dès la validation finale du service.",
+    "statusCompletedEvent": "La charte de participation a été signée et les points ont été transférés.",
+    "statusCompletedService": "Le service a été validé. Les points ont été transférés avec succès au prestataire.",
+    "statusCancelledEvent": "La participation a été annulée et les points ont été restitués.",
+    "statusCancelledService": "Le contrat a été annulé. Les points réservés dans la cagnotte ont été entièrement restitués sur le compte du client.",
+    "signaturesAndPrints": "Signatures & Empreintes",
+    "otpTracking": "Suivi de la certification double facteur (OTP) et des métadonnées cryptographiques.",
+    "validationMfa": "Validé par double facteur e-mail (MFA)",
+    "dateLabel": "Date :",
+    "signContractNow": "✍️ Signer le contrat maintenant",
+    "toastSignatureSuccessChat": "Signature enregistrée ! Redirection vers votre discussion dans 2 secondes...",
+    "toastSignatureSuccessEvent": "Charte de participation signée ! Retour à l'événement...",
+    "toastSignatureSuccessDefault": "Signature enregistrée ! Redirection...",
+    "badgeStatusPendingSignature": "En attente de signature",
+    "badgeStatusSignedOngoing": "Signé - En cours",
+    "badgeStatusCompletedClosed": "Clôturé & Finalisé",
+    "badgeStatusCancelled": "Annulé",
+    "errorIdNotFound": "ID introuvable",
+    "pts": "pts",
+    "labelParticipantShort": "(Participant)",
+    "labelClientShort": "(Client)",
+    "labelOrganizerShort": "(Organisateur)",
+    "labelProviderShort": "(Prestataire)"
+  },
+  "contracts": {
+    "title": "Mes documents & contrats",
+    "subtitle": "Consultez, signez numériquement vos contrats et téléchargez les copies certifiées.",
+    "filterAll": "Tous",
+    "filterPending": "En attente",
+    "filterSigned": "Signés",
+    "filterCompleted": "Finalisés",
+    "filterCancelled": "Annulés",
+    "statusPending": "En attente",
+    "statusSigned": "Signé",
+    "statusCompleted": "Finalisé",
+    "statusCancelled": "Annulé",
+    "noDocument": "Aucun document trouvé",
+    "noDocumentDesc": "Vous n'avez pas de contrats correspondant à cette catégorie. Les contrats se créent automatiquement pour les services et événements payants.",
+    "roleClient": "Bénéficiaire",
+    "roleProvider": "Prestataire/Créateur",
+    "role": "Rôle : ",
+    "withNeighbor": "Avec le voisin",
+    "exchangeValue": "Valeur de l'échange :",
+    "pointsValue": "🪙 {{price}} pts",
+    "viewSign": "Consulter / Signer",
+    "securityTitle": "Sécurisation et RGPD :",
+    "securityText": " Vos signatures électroniques sont chiffrées et certifiées par la plateforme Hoodly. Dans le cadre du RGPD, les données d'audit associées (adresse IP, signatures) sont protégées et archivées de manière sécurisée. Vous pouvez exporter vos données personnelles depuis votre espace profil."
+  },
+  "dashboard": {
+    "welcome": "Bienvenue sur Hoodly !",
+    "joinNeighborhoodPrompt": "Rejoignez un quartier pour commencer à interagir avec vos voisins.",
+    "statusBanner": {
+      "verificationRefused": "Vérification refusée",
+      "verificationInProcess": "Vérification en cours",
+      "verificationRequired": "Action requise : Vérifiez votre compte",
+      "reasonText": "Motif : {{reason}}. Merci de renvoyer des justificatifs lisibles.",
+      "examiningText": "Nos modérateurs examinent vos documents. Vous recevrez un accès complet sous peu.",
+      "instructionText": "Pour interagir avec la communauté, merci de nous transmettre un justificatif de domicile.",
+      "refreshTooltip": "Actualiser le statut",
+      "modifyDocsBtn": "Modifier les documents",
+      "verifyBtn": "Vérifier mon compte"
+    },
+    "createPost": {
+      "successMsg": "Publication réussie !",
+      "errorMsg": "Erreur lors de la publication",
+      "errorSize": "L'image ne doit pas dépasser 5 Mo",
+      "errorType": "Le fichier doit être une image",
+      "placeholder": "Quoi de neuf dans votre quartier ?",
+      "photo": "Photo",
+      "typePlaceholder": "Type de post",
+      "types": {
+        "discussion": "Discussion",
+        "service": "Service",
+        "event": "Événement",
+        "alert": "Alerte"
+      },
+      "submit": "Publier"
+    },
+    "postCard": {
+      "deleteSuccess": "Publication supprimée avec succès",
+      "deleteError": "Erreur lors de la suppression de la publication",
+      "confirmDelete": "Voulez-vous vraiment supprimer cette publication ?",
+      "pinned": "Épinglé",
+      "joinVote": "🗳️ Participer à la consultation",
+      "verificationRequired": "Veuillez faire vérifier votre compte avec vos justificatifs pour interagir avec les publications.",
+      "commentsCount": "{{count}} commentaires",
+      "fullscreenPreview": "Aperçu grand écran"
+    },
+    "comments": {
+      "addError": "Impossible d'ajouter le commentaire",
+      "addSuccess": "Commentaire ajouté !",
+      "deleteSuccess": "Commentaire supprimé",
+      "deleteError": "Erreur lors de la suppression du commentaire",
+      "confirmDelete": "Voulez-vous vraiment supprimer ce commentaire ?",
+      "placeholder": "Écrire un commentaire...",
+      "verificationRequiredPlaceholder": "Faites vérifier votre compte pour commenter...",
+      "retrieveError": "Erreur lors de la récupération des commentaires.",
+      "emptyState": "Aucun commentaire pour le moment. Soyez le premier à réagir !"
+    }
+  },
+  "dropdown": {
+    "account": "Compte",
+    "profile": "Mon Profil",
+    "balance": "Mon Solde",
+    "contracts": "Contrats",
+    "planning": "Mon Planning",
+    "application": "Application",
+    "settings": "Paramètres",
+    "help": "Aide & Support",
+    "resident": "Habitant"
+  },
+  "events": {
+    "categories": {
+      "sport": "Sport",
+      "culture": "Culture",
+      "cuisine": "Cuisine",
+      "jardinage": "Jardinage",
+      "musique": "Musique",
+      "collecte": "Collecte",
+      "autre": "Autre"
+    },
+    "toasts": {
+      "addedToInterests": "Ajouté à vos intérêts !",
+      "registeredPaid": "Inscrit à \"{{title}}\" ! {{points}} pts débités.",
+      "unregisteredPaid": "Désinscrit de \"{{title}}\". {{points}} pts remboursés.",
+      "registered": "Inscrit à \"{{title}}\" !",
+      "unregistered": "Désinscrit de \"{{title}}\"",
+      "validatedSuccess": "Événement validé ! Les points ont été distribués.",
+      "cancelledSuccess": "Événement annulé avec succès.",
+      "createdSuccess": "Événement créé ! Une discussion de groupe a été ouverte."
+    },
+    "errors": {
+      "saveInterestFailed": "Impossible d'enregistrer l'intérêt",
+      "registerFailed": "Impossible de s'inscrire",
+      "validationFailed": "Impossible de valider l'événement",
+      "cancelFailed": "Erreur lors de l'annulation de l'événement.",
+      "photoTooLarge": "Photo trop volumineuse (max 5 Mo)",
+      "requiredFields": "Titre, catégorie et date sont obligatoires",
+      "photoUploadFailed": "Erreur lors de l'envoi de la photo. Création sans photo.",
+      "createFailed": "Impossible de créer l'événement"
+    },
+    "confirm": {
+      "cancelEvent": "Êtes-vous sûr de vouloir annuler cet événement ? Tous les participants seront remboursés et le groupe de discussion sera supprimé."
+    },
+    "tabs": {
+      "discover": "Découvrir",
+      "myInterests": "Mes intérêts",
+      "participating": "Je participe",
+      "myCreations": "Mes créations"
+    },
+    "title": "Événements du quartier",
+    "subtitle": "Découvrez et participez aux activités organisées par vos voisins.",
+    "loading": "Chargement...",
+    "suggestions": "Suggestions pour vous",
+    "deckCount_one": "{{count}} événement à découvrir",
+    "deckCount_other": "{{count}} événements à découvrir",
+    "empty": {
+      "allSeen": "Vous avez tout vu !",
+      "allSeenHint": "Revenez plus tard ou créez votre propre événement.",
+      "noInterests": "Aucun intérêt encore",
+      "noInterestsHint": "Swipez des événements dans l'onglet Découvrir !",
+      "noParticipations": "Aucune participation",
+      "noParticipationsHint": "Inscrivez-vous à des événements depuis vos intérêts !"
+    },
+    "createModal": {
+      "title": "Nouvel événement",
+      "addPhoto": "Ajouter une photo",
+      "photoFormatHint": "JPG, PNG · max 5 Mo",
+      "titleLabel": "Titre *",
+      "titlePlaceholder": "Soirée voisins, atelier jardinage...",
+      "categoryLabel": "Catégorie *",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Décrivez votre événement...",
+      "dateLabel": "Date et heure *",
+      "addressLabel": "Adresse",
+      "addressPlaceholder": "12 rue des Lilas",
+      "cityLabel": "Ville",
+      "cityPlaceholder": "Paris",
+      "capacityLabel": "Capacité maximale *",
+      "participationFeeLabel": "Participation aux frais (Points)",
+      "freeOption": "Gratuit / Libre",
+      "paidOption": "Participation payante",
+      "pointsPerParticipant": "POINTS PAR PARTICIPANT",
+      "suggestedPointsHint": "Suggéré : 5 - 15 points pour couvrir les fournitures."
+    },
+    "buttons": {
+      "createEvent": "Créer un événement",
+      "createEventConfirm": "Créer l'événement",
+      "cancel": "Annuler",
+      "confirm": "Confirmer"
+    },
+    "myCreations": {
+      "emptyTitle": "Aucun événement créé",
+      "emptyHint": "Organisez votre premier événement de quartier !",
+      "pastEvents": "Événements passés"
+    },
+    "card": {
+      "noLocation": "Lieu à définir",
+      "validatedStatus": "✓ Validé",
+      "cancelledStatus": "Annulé",
+      "toValidateStatus": "À valider",
+      "registeredCount": "{{current}}/{{max}} inscrits",
+      "organizerPoints": "+{{points}} pts organisateur",
+      "participantPoints": "+{{points}} pts par présent",
+      "entryPoints": "{{points}} pts / entrée",
+      "checkAttendeesLabel": "Cochez les participants présents :",
+      "noParticipants": "Aucun participant inscrit.",
+      "presentCount_one": "{{count}} présent sélectionné",
+      "presentCount_other": "{{count}} présents sélectionnés",
+      "pointsDistributed": " · +{{points}} pts distribués",
+      "validatedParticipants_one": "✓ {{count}} participant validé · Points distribués",
+      "validatedParticipants_other": "✓ {{count}} participants validés · Points distribués",
+      "you": "Vous",
+      "free": "Gratuit",
+      "pointsOnParticipation": "+{{points}} pts à la participation",
+      "yourEvent": "Votre événement",
+      "buttons": {
+        "validateAndDistribute": "Valider l'événement et distribuer les points",
+        "seeGroupChat": "Voir la discussion de groupe",
+        "cancelEvent": "Annuler l'événement",
+        "registeredLocked": "Inscrit (Désinscription bloquée)",
+        "participating": "Je participe",
+        "full": "Complet",
+        "participatePaid": "Participer ({{points}} pts)",
+        "participate": "Participer",
+        "discussion": "Discussion"
+      }
+    }
+  },
+  "help": {
+    "title": "Aide & Support",
+    "description": "Une question sur le fonctionnement de Hoodly ? Besoin d'assistance ? Trouvez toutes les réponses ici ou contactez-nous directement.",
+    "search_placeholder": "Rechercher une question (ex: points, contrat, incident...)",
+    "faq_title": "Foire Aux Questions (FAQ)",
+    "faq_description": "Les réponses aux questions les plus fréquentes sur notre plateforme.",
+    "no_results": "Aucune réponse ne correspond à votre recherche. Essayez d'autres mots-clés.",
+    "email_support": {
+      "title": "Support par E-mail",
+      "description": "Notre équipe technique et support vous répond sous 24h ouvrées pour toute question complexe."
+    },
+    "moderators": {
+      "title": "Modérateurs de Quartier",
+      "description": "Pour des questions sur la validation de justificatifs ou des signalements locaux, contactez un modérateur.",
+      "open_chat": "Ouvrir la messagerie"
+    },
+    "faq": {
+      "join_neighborhood": {
+        "question": "Comment rejoindre un quartier ?",
+        "answer": "Lors de votre inscription ou depuis votre profil, renseignez votre adresse postale. Notre algorithme vous associera automatiquement au quartier correspondant. Pour interagir et proposer des services, votre compte doit être validé par un modérateur du quartier qui vérifiera votre justificatif de domicile."
+      },
+      "points_system": {
+        "question": "Comment fonctionne le système de points ?",
+        "answer": "Sur Hoodly, l'entraide peut être gratuite ou basée sur des points communautaires. Lorsque vous rendez service (bricolage, jardinage, cours, etc.), vous gagnez des points. Vous pouvez ensuite utiliser ces points pour demander de l'aide à votre tour. Vous commencez avec un solde de bienvenue gratuit de 100 points !"
+      },
+      "contract": {
+        "question": "Comment signer un contrat d'entraide ?",
+        "answer": "Pour chaque service payant, un contrat numérique est automatiquement généré. Les deux voisins doivent le signer électroniquement avant le début du service. Une fois le service réalisé et validé par le demandeur, la transaction de points est libérée de manière sécurisée."
+      },
+      "incident": {
+        "question": "Comment signaler un incident dans le quartier ?",
+        "answer": "Si vous constatez un problème dans le quartier (dégradation, animal perdu, nuisances, etc.), rendez-vous sur l'onglet 'Incidents' et cliquez sur 'Signaler un incident'. Renseignez le titre, la description, la gravité et ajoutez une photo si besoin. Les voisins et le modérateur seront alertés."
+      },
+      "rgpd": {
+        "question": "Mes données personnelles sont-elles protégées (RGPD) ?",
+        "answer": "Oui, entièrement. Hoodly respecte le règlement général sur la protection des données (RGPD). Vous pouvez à tout moment exporter l'intégralité de vos données personnelles sous format JSON ou demander l'anonymisation de votre compte depuis la page Paramètres de votre profil."
+      }
+    }
+  },
+  "incidents": {
+    "categories": {
+      "electricity": "Électricité",
+      "waterLeak": "Eau / Fuite",
+      "roadway": "Voirie / Route",
+      "greenSpaces": "Espaces Verts",
+      "waste": "Déchets",
+      "lighting": "Éclairage",
+      "animals": "Animaux",
+      "other": "Autre",
+      "damagedEquipment": "Matériel endommagé",
+      "delayAbsence": "Retard / Absence",
+      "behavior": "Comportement",
+      "noiseNuisance": "Nuisance sonore",
+      "venueDamage": "Dégradation lieu",
+      "security": "Sécurité"
+    },
+    "toasts": {
+      "createSuccess": "Incident signalé avec succès ! Le modérateur en a été informé."
+    },
+    "errors": {
+      "photoTooLarge": "La photo est trop volumineuse (max 5 Mo)",
+      "natureRequired": "Veuillez sélectionner la nature de l'incident.",
+      "serviceRequired": "Veuillez sélectionner le service concerné.",
+      "eventRequired": "Veuillez sélectionner l'événement concerné.",
+      "descriptionRequired": "Veuillez fournir une description de la situation.",
+      "photoUploadFailed": "Erreur d'upload photo, signalement créé sans photo.",
+      "createFailed": "Impossible d'enregistrer l'incident."
+    },
+    "status": {
+      "signale": "Signalé",
+      "en_cours": "En cours",
+      "resolu": "Résolu",
+      "ferme": "Clôturé"
+    },
+    "context": {
+      "quartier": "Quartier",
+      "service": "Service",
+      "evenement": "Événement"
+    },
+    "priority": {
+      "basse": "Basse",
+      "normale": "Normale",
+      "haute": "Haute",
+      "urgente": "Urgente",
+      "normalHint": "Maintenance courante",
+      "urgentHint": "Danger immédiat / Sécurité"
+    },
+    "titleLabel": "Communauté Active",
+    "titlePart1": "Signaler un",
+    "titlePart2": "Incident Local",
+    "subtitle": "Contribuez à la sécurité et au bien-être de votre quartier. Vos signalements aident les services municipaux, les modérateurs et vos voisins à agir rapidement.",
+    "tabs": {
+      "newReport": "Nouveau Signalement",
+      "followUp": "Suivi des Incidents ({{count}})"
+    },
+    "form": {
+      "contextHeader": "0. Contexte de l'incident",
+      "contextQuartier": "Dans le quartier",
+      "contextService": "Lors d'un service",
+      "contextEvent": "Lors d'un événement",
+      "natureHeader": "1. Nature de l'incident",
+      "selectServiceLabel": "Sélectionner le service concerné",
+      "noServicesHint": "Vous n'avez pas de services récents enregistrés où vous êtes impliqué. Le signalement d'incident lié à un service nécessite d'avoir participé à un échange de service.",
+      "selectServicePlaceholder": "-- Choisir un service --",
+      "offer": "Offre",
+      "request": "Demande",
+      "selectEventLabel": "Sélectionner l'événement concerné",
+      "noEventsHint": "Vous n'avez pas participé ou manifesté d'intérêt pour des événements récents. Le signalement d'incident lié à un événement nécessite d'être impliqué dans cet événement.",
+      "selectEventPlaceholder": "-- Choisir un événement --",
+      "detailsHeader": "2. Détails & Photos",
+      "descriptionPlaceholder": "Décrivez précisément l'incident, les risques éventuels pour les habitants, ou les détails pertinents pour la résolution...",
+      "visualEvidence": "Preuves visuelles (Photos)",
+      "addPhoto": "Ajouter",
+      "submitButton": "Signaler l'incident ▷",
+      "submittingText": "Transmission du signalement...",
+      "submitDisclaimer": "En signalant cet incident, vous acceptez que vos informations soient partagées avec les modérateurs du quartier et les intervenants."
+    },
+    "priorityHeader": "Niveau de priorité",
+    "howItWorks": {
+      "title": "Comment ça marche ?",
+      "step1": "Votre signalement est publié dans la zone de votre quartier.",
+      "step2": "Les modérateurs reçoivent une alerte immédiate (surtout si l'incident est urgent).",
+      "step3Part1": "Le statut passera à",
+      "step3Part2": "En cours",
+      "step3Part3": "lorsqu'un intervenant sera désigné.",
+      "step4": "Une fois résolu, vous recevrez une confirmation."
+    },
+    "followUp": {
+      "title": "Suivi des Incidents du Quartier",
+      "loading": "Chargement des signalements...",
+      "allGoodTitle": "Tout va bien dans le quartier !",
+      "allGoodHint": "Aucun incident n'est actuellement signalé dans votre zone."
+    },
+    "card": {
+      "reportedBy": "Signalé par {{name}}",
+      "unknownDate": "Date inconnue",
+      "viewPhoto": "Voir photo"
+    }
+  },
+  "landing": {},
+  "messages": {
+    "toasts": {
+      "chatStarted": "Discussion générale démarrée !",
+      "startFailed": "Impossible de démarrer la discussion."
+    },
+    "chatWindow": {
+      "placeholder": "Écrivez un message à votre voisin..."
+    },
+    "sidebar": {
+      "title": "Discussions",
+      "backToChats": "Retour aux discussions",
+      "viewHiddenChats": "Voir les discussions masquées",
+      "newChatTooltip": "Nouvelle discussion générale",
+      "searchPlaceholder": "Rechercher un voisin...",
+      "tabs": {
+        "all": "Tous",
+        "services": "Services",
+        "events": "Événements",
+        "general": "Général"
+      },
+      "empty": {
+        "noGeneralTitle": "Aucune discussion générale",
+        "noServicesTitle": "Aucun service en cours",
+        "noEventsTitle": "Aucun événement en cours",
+        "noArchivedTitle": "Aucune discussion masquée",
+        "noChatsTitle": "Aucune discussion",
+        "noGeneralDesc": "Vous n'avez pas encore de conversation générale directe avec vos voisins.",
+        "noServicesDesc": "Aucune discussion liée à un service n'a été commencée.",
+        "noEventsDesc": "Vous n'avez pas de discussion de groupe pour des événements.",
+        "noArchivedDesc": "Vous n'avez masqué aucune discussion pour le moment.",
+        "noChatsDesc": "Lancez une discussion en proposant ou acceptant un service !",
+        "btnFindNeighbor": "Faire connaissance avec un voisin"
+      },
+      "eventFallback": "Événement",
+      "neighborFallback": "Voisin",
+      "groupParticipantsCount": "Groupe · {{count}} participants",
+      "servicePrefix": "Entraide : {{title}}",
+      "generalChat": "Discussion générale",
+      "eventBadge": "Événement",
+      "restoreChatTooltip": "Restaurer cette discussion",
+      "hideChatTooltip": "Masquer cette discussion"
+    },
+    "searchModal": {
+      "errorSearching": "Erreur lors de la recherche des voisins.",
+      "title": "Nouveau message privé",
+      "subtitle": "Trouvez un voisin et commencez à discuter directement avec lui.",
+      "searchPlaceholder": "Rechercher par nom ou email...",
+      "globalSearch": "Recherche à l'échelle de Hoodly",
+      "resultsCount": "Résultats ({{count}})",
+      "noResults": "Aucun voisin trouvé",
+      "noResultsDesc": "Saisissez un nom ou changez de filtre."
+    },
+    "system": {
+      "joined": "👋 {{name}} a rejoint la discussion.",
+      "left": "👋 {{name}} a quitté la discussion.",
+      "groupCreated": "🎉 Discussion de groupe créée pour l'événement \"{{title}}\". Les participants seront ajoutés automatiquement à cette discussion.",
+      "mutualAidStarted": "👋 Nouvelle discussion lancée au sujet de cette annonce d'entraide. C'est le moment d'échanger et de caler vos rendez-vous !",
+      "generalChatStarted": "👋 Bonjour ! Discussion générale démarrée entre voisins. Rapprochons notre quartier !",
+      "appointmentConfirmed": "🎉 Rendez-vous confirmé ! La prestation est planifiée pour le {{date}} de {{start}} à {{end}}.",
+      "serviceValidatedAndCompleted": "✅ Prestation validée et terminée ! Le transfert de {{points}} points au prestataire a été effectué.",
+      "contractCancelled": "❌ Le contrat d'entraide payant a été annulé. Le rendez-vous a été annulé et les points ont été restitués au client.",
+      "proposalAccepted": "🤝 Proposition acceptée ! Le créateur a validé votre profil. Vous pouvez maintenant échanger librement pour planifier les détails.",
+      "proposalRefused": "Merci d'avoir proposé votre aide ! Le créateur a finalement choisi de s'organiser différemment pour cette fois. À charge de revanche !",
+      "serviceStarted": "🚀 {{starter}} a démarré la prestation ! Bon travail à vous deux.",
+      "serviceEnded": "✅ Prestation déclarée terminée par {{finisher}}. En attente de validation finale par le bénéficiaire...",
+      "transactionSuccess": "Transaction réussie : {{points}} points ont été transférés de {{payer}} à {{recipient}}.",
+      "serviceClosed": "🎉 Réalisation validée par le bénéficiaire. Le service est désormais clos avec succès. Merci pour ce beau coup de main !",
+      "eventValidated": "🎉 Événement validé par l'organisateur ! {{count}} participant présent. Les points ont été distribués.",
+      "eventValidated_other": "🎉 Événement validé par l'organisateur ! {{count}} participants présents. Les points ont été distribués.",
+      "roles": {
+        "provider": "Le prestataire",
+        "helper": "L'intervenant"
+      }
+    }
+  },
+  "newService": {
+    "toastErrorPhotoSize": "La photo est trop volumineuse (max 5 Mo)",
+    "toastErrorTitleRequired": "Le titre du service est requis",
+    "toastErrorCategoryRequired": "Veuillez sélectionner une catégorie",
+    "toastErrorDescriptionRequired": "Veuillez décrire le service",
+    "toastErrorPointsRequired": "Le nombre de points doit être supérieur à 0 pour un service payant",
+    "toastErrorSingleDateRequired": "Veuillez indiquer le jour requis",
+    "toastErrorRangeDatesRequired": "Veuillez indiquer les dates de début et de fin",
+    "toastErrorRegularRequired": "Veuillez sélectionner au moins un jour et une période",
+    "toastErrorPhotoUpload": "Erreur lors de l'envoi de la photo. Enregistrement en cours sans photo...",
+    "toastSuccessOffer": "Votre offre a été publiée avec succès !",
+    "toastSuccessRequest": "Votre demande a été publiée avec succès !",
+    "toastErrorPublish": "Une erreur est survenue lors de la publication.",
+    "backToCatalogue": "Retour au catalogue",
+    "titleOffer": "Proposez un Service",
+    "titleRequest": "Demandez un Service",
+    "descOffer": "Partagez vos compétences avec vos voisins et offrez vos disponibilités.",
+    "descRequest": "Sollicitez de l'aide auprès de vos voisins et fixez votre calendrier.",
+    "tabOffer": "Je propose mes services (Offre)",
+    "tabRequest": "Je recherche de l'aide (Demande)",
+    "labelWhatServiceOffer": "QUEL SERVICE PROPOSEZ-VOUS ?",
+    "labelWhatServiceRequest": "QUEL SERVICE RECHERCHEZ-VOUS ?",
+    "placeholderOfferTitle": "ex: Cours d'anglais, Jardinage, Conseils en Python...",
+    "placeholderRequestTitle": "ex: Aide pour déménager, Tonte de pelouse...",
+    "labelCategory": "CATÉGORIE",
+    "labelServiceDetails": "DÉTAILS DU SERVICE",
+    "placeholderOfferDetails": "Décrivez votre service, vos compétences, vos disponibilités régulières et votre expérience...",
+    "placeholderRequestDetails": "Décrivez la tâche précise à accomplir, le matériel requis et tout autre détail utile...",
+    "labelWeeklyAvailabilities": "MES DISPONIBILITÉS HEBDOMADAIRES",
+    "descWeeklyAvailabilities": "Cochez les moments où vous êtes généralement disponible pour rendre ce service.",
+    "tableHeaderDay": "Jour",
+    "tableHeaderMorning": "Matin",
+    "tableHeaderAfternoon": "Après-midi",
+    "tableHeaderEvening": "Soirée",
+    "labelDispoRemarks": "PRÉCISIONS OU REMARQUES SUR VOS HORAIRES (OPTIONNEL)",
+    "placeholderDispoRemarks": "Ex : Disponible principalement en fin de journée le week-end, ou flexible selon vos besoins...",
+    "labelPlanningNeed": "PLANIFICATION DU BESOIN",
+    "planifASAP": "⚡ Urgent / Dès que possible",
+    "planifSingleDate": "📅 Jour & Heures spécifiques",
+    "planifRangeDates": "🗓️ Plage de dates (ex: Week-end)",
+    "planifRegular": "🔄 Régulier / Récurrent",
+    "labelSelectDate": "Sélectionnez la date",
+    "labelFromHour": "De (Heure)",
+    "labelToHour": "À (Heure)",
+    "labelStartDate": "Date de début",
+    "labelEndDate": "Date de fin",
+    "labelAllDay": "Toute la journée / Horaires libres",
+    "labelConcernedDays": "Jours concernés",
+    "labelPeriodOfDay": "Période de la journée",
+    "labelServicePricing": "TARIFICATION DU SERVICE",
+    "btnPayingPoints": "Payant (Points)",
+    "btnFreeMutualAid": "Gratuit / Entraide",
+    "tarifHourly": "Tarif horaire",
+    "tarifFixed": "Forfait fixe",
+    "pointsPerHour": "POINTS / HEURE",
+    "pointsPerPrestation": "POINTS / PRESTATION",
+    "labelRecommendedRate": "Recommandé : {{rate}}",
+    "labelAllocatedPointsBudget": "BUDGET EN POINTS ALLOUÉ",
+    "btnOfferPoints": "Proposer des Points",
+    "btnFreeVolunteerAid": "Gratuit / Entraide bénévole",
+    "labelPointsForTask": "POINTS POUR LA TÂCHE",
+    "labelPhotos": "PHOTOS",
+    "clickToAddPhotos": "Cliquez pour ajouter des photos",
+    "photoFormatHint": "Format JPG, PNG (Max 5Mo)",
+    "publishingInProgress": "Publication en cours...",
+    "publishAnnouncement": "Publier l'annonce ▷",
+    "termsAcceptanceHint": "En publiant, vous acceptez la charte de bon voisinage de HOODLY.",
+    "categories": {
+      "Bricolage": "Bricolage",
+      "Cours": "Cours",
+      "Jardinage": "Jardinage",
+      "Animaux": "Animaux",
+      "Courses": "Courses"
+    },
+    "dispoLabels": {
+      "semaine_matin": "Matinée (Semaine)",
+      "semaine_aprem": "Après-midi (Semaine)",
+      "semaine_soir": "Soirée (Semaine)",
+      "samedi": "Samedi",
+      "dimanche": "Dimanche"
+    },
+    "days": {
+      "Lundi": "Lundi",
+      "Mardi": "Mardi",
+      "Mercredi": "Mercredi",
+      "Jeudi": "Jeudi",
+      "Vendredi": "Vendredi",
+      "Samedi": "Samedi",
+      "Dimanche": "Dimanche"
+    },
+    "daysShort": {
+      "Lundi": "Lun",
+      "Mardi": "Mar",
+      "Mercredi": "Mer",
+      "Jeudi": "Jeu",
+      "Vendredi": "Ven",
+      "Samedi": "Sam",
+      "Dimanche": "Dim"
+    },
+    "periods": {
+      "Matin": "Matin",
+      "Matinée": "Matinée",
+      "Après-midi": "Après-midi",
+      "Soirée": "Soirée"
+    },
+    "suggestedRates": {
+      "Bricolage": "30 - 50 pts / h",
+      "Cours": "30 - 50 pts / h",
+      "Jardinage": "30 - 50 pts / h",
+      "Animaux": "10 pts / promenade",
+      "Courses": "20 pts / trajet",
+      "default": "10 - 50 pts"
+    },
+    "planifStringASAP": "Dès que possible (urgent)",
+    "planifStringSingleDate": "Le {{date}} de {{start}} à {{end}}",
+    "planifStringRangeAllDay": "Du {{startDate}} au {{endDate}} (toute la journée)",
+    "planifStringRangeHours": "Du {{startDate}} au {{endDate}} de {{start}} à {{end}}",
+    "planifStringRegular": "Régulier : {{days}} ({{periods}})"
+  },
+  "onboarding": {
+    "newZoneName": "Nouveau quartier",
+    "addressDescription": "Adresse : {{address}}",
+    "errorInvalidAddressOrZone": "Adresse ou quartier non valide pour l'inscription.",
+    "errorValidation": "Une erreur est survenue lors de la validation. Veuillez réessayer.",
+    "refusalZone": "Demande de création de quartier refusée",
+    "refusalMembership": "Adhésion au quartier refusée",
+    "refusalReasonIntro": "Votre précédente demande n'a pas pu être acceptée pour le motif suivant :",
+    "refusalReasonOutro": "Vous pouvez modifier vos informations et tenter une nouvelle demande."
+  },
+  "planning": {
+    "toast": {
+      "start_success": "Prestation démarrée avec succès !",
+      "start_error": "Erreur lors du démarrage.",
+      "finish_success": "Prestation marquée comme accomplie !",
+      "finish_error": "Erreur lors de la finalisation.",
+      "validate_success": "Réalisation validée et transaction réglée !",
+      "validate_error": "Erreur lors de la validation."
+    },
+    "title": "Mon Agenda de Quartier",
+    "description": "Consultez toutes vos prestations d'entraide et événements du quartier.",
+    "schedule_appointment_button": "Planifier un rendez-vous",
+    "days": {
+      "mon": "Lun",
+      "tue": "Mar",
+      "wed": "Mer",
+      "thu": "Jeu",
+      "fri": "Ven",
+      "sat": "Sam",
+      "sun": "Dim"
+    },
+    "other_count_one": "+{{count}} autre",
+    "other_count_other": "+{{count}} autres",
+    "legend": {
+      "services": "Services",
+      "events": "Événements"
+    },
+    "upcoming": {
+      "title": "À venir",
+      "empty_title": "Rien de planifié",
+      "empty_description": "Proposez des créneaux dans vos discussions ou participez à des événements.",
+      "voisin": "Voisin : {{name}}",
+      "event_info": "{{role}} · {{current}}/{{max}}"
+    },
+    "voisin_fallback": "Voisin",
+    "organizer": "Organisateur",
+    "participant": "Participant",
+    "status": {
+      "scheduled": "Planifié",
+      "in_progress": "En Cours",
+      "completed": "Terminé"
+    },
+    "modal": {
+      "free": "Gratuit / Entraide",
+      "points": "{{count}} pts",
+      "from": "De",
+      "to": "à",
+      "associated_neighbor": "Voisin associé",
+      "start_button": "Démarrer la prestation",
+      "complete_button": "Marquer comme accompli",
+      "validate_button": "Valider la réalisation (Payer)",
+      "write_neighbor_button": "Écrire au voisin",
+      "close_button": "Fermer",
+      "event_date_time": "{{date}} à {{time}}",
+      "participants_count": "{{count}}/{{max}} participants inscrits",
+      "view_chat_button": "Voir la discussion"
+    }
+  },
+  "points": {
+    "title": "Économie locale & Solde",
+    "description": "Gérez votre portefeuille de points virtuelles Hoodly, visualisez votre historique et découvrez la valeur de l'entraide de quartier.",
+    "recently": "Récemment",
+    "system_category": "Système",
+    "completed_status": "complété",
+    "suggested_rates": {
+      "school_support": "Soutien scolaire",
+      "diy_garden": "Bricolage & Jardin",
+      "babysitting": "Babysitting",
+      "shopping": "Courses",
+      "animals": "Animaux",
+      "school_support_rate": "30 - 50 pts / h",
+      "diy_garden_rate": "30 - 50 pts / h",
+      "babysitting_rate": "20 pts / h",
+      "shopping_rate": "20 pts / trajet",
+      "animals_rate": "10 pts / promenade"
+    },
+    "balanceCard": {
+      "title": "Solde Actif du Compte",
+      "activeAccount": "Compte Actif",
+      "points": "points",
+      "guaranteeTitle": "Garantie Anti-spéculation Hoodly",
+      "guaranteeText": "Hoodly maintient une économie circulaire où chaque point gagné encourage et rémunère le travail de bon voisinage."
+    },
+    "rulesCard": {
+      "title": "Règles d'échange",
+      "desc1": "Le solde de points Hoodly est purement virtuel et communautaire.",
+      "desc2": "Chaque nouvel habitant bénéficie d'un cadeau de 100 points pour commencer à solliciter de l'aide auprès de ses voisins.",
+      "missionsCitoyennesTitle": "Missions citoyennes :",
+      "missionsCitoyennesText": "Réalisez vos premières actions de bon voisinage (publier sur le feed, signaler un incident...) pour gagner des points supplémentaires."
+    },
+    "suggestedRatesCard": {
+      "title": "Grille de tarifs indicatifs",
+      "desc": "Voici les recommandations de tarifs d'entraide issues des moyennes de transactions de votre quartier :",
+      "helpLink": "Comment fixer mes tarifs ?"
+    },
+    "transactionList": {
+      "title": "Activité & Historique récent",
+      "loading": "Chargement de votre historique...",
+      "empty": "Aucune transaction enregistrée pour le moment.",
+      "pointsSuffix": "pts"
+    },
+    "transactions": {
+      "welcomeGrant": "Cadeau de Bienvenue Hoodly",
+      "refundUnregister": "Remboursement désinscription \"{{title}}\"",
+      "reservedPoints": "Points réservés pour l'événement \"{{title}}\"",
+      "rewardOrganizer": "Récompense organisation de l'événement \"{{title}}\"",
+      "rewardParticipant": "Récompense participation à l'événement \"{{title}}\"",
+      "accumulatedPoints": "Points accumulés des inscriptions pour l'événement \"{{title}}\"",
+      "refundCancellation": "Remboursement annulation événement \"{{title}}\"",
+      "confirmedRegistration": "Inscription confirmée pour l'événement \"{{title}}\"",
+      "refundEscrow": "Remboursement du séquestre pour le contrat annulé : {{title}}",
+      "contractTransfer": "Transaction de points pour contrat : {{title}}",
+      "servicePayment": "Paiement pour le service \"{{title}}\"",
+      "missionCompleted": "Mission accomplie : {{title}}",
+      "missions": {
+        "discussion": "Discussion active",
+        "firstPost": "Premier pas sur le feed",
+        "firstIncident": "Signalement civique",
+        "createEvent": "Organisateur de quartier",
+        "joinEvent": "Esprit d'équipe"
+      }
+    }
+  },
+  "profile": {
+    "toast": {
+      "motivation_required": "Veuillez écrire votre motivation.",
+      "application_sent": "Votre candidature a été envoyée avec succès.",
+      "error": "Une erreur est survenue.",
+      "profile_saved": "Profil enregistré avec succès !",
+      "profile_save_error": "Erreur lors de la mise à jour du profil",
+      "reward_claimed": "🪙 Récompense récupérée avec succès !",
+      "reward_claim_error": "Erreur lors de la récupération.",
+      "service_updated": "Service mis à jour avec succès !",
+      "service_update_error": "Erreur lors de la modification du service",
+      "service_deleted": "Service supprimé avec succès !",
+      "service_delete_error": "Erreur lors de la suppression du service",
+      "service_completed": "Félicitations ! Le service est clôturé et les points sont accordés !",
+      "service_complete_error": "Erreur lors de la clôture du service",
+      "upload_error": "Erreur lors du téléchargement de l'image",
+      "name_required": "Le prénom et le nom sont obligatoires",
+      "title_required": "Le titre est obligatoire",
+      "event_feature_coming_soon": "Fonctionnalité d'événement communautaire à venir bientôt !"
+    },
+    "title": "Mon Espace Profil",
+    "description": "Gérez vos informations d'habitant, modifiez vos coordonnées et suivez vos missions de quartier.",
+    "change_photo": "Changer la photo",
+    "role": {
+      "moderator": "Modérateur",
+      "administrator": "Administrateur"
+    },
+    "district": "Quartier",
+    "district_fallback": "Saint-Gilles Sud",
+    "points_balance": "SOLDE DE POINTS",
+    "my_services": "Mes services proposés au quartier",
+    "no_services": "Aucun service proposé pour le moment",
+    "no_services_description": "Proposez un service de bricolage, jardinage ou aide aux devoirs pour faire vivre votre quartier.",
+    "service_status": {
+      "active": "Actif",
+      "in_progress": "En Cours",
+      "closed": "Clôturé"
+    },
+    "edit_service": {
+      "title_label": "Titre du service",
+      "points_label": "Montant en points (🪙)",
+      "description_label": "Description",
+      "cancel": "Annuler",
+      "save": "Enregistrer"
+    },
+    "service": {
+      "free": "Gratuit",
+      "points": "{{count}} pts",
+      "per_hour": "/h",
+      "complete_button": "Clôturer",
+      "edit_tooltip": "Modifier",
+      "confirm_delete": "Confirmer",
+      "delete_tooltip": "Supprimer"
+    },
+    "help_neighbors": {
+      "title": "Envie d'aider vos voisins ?",
+      "description": "Ajoutez un nouveau service ou créez un événement communautaire pour gagner des points de confiance.",
+      "new_service_button": "Nouveau Service",
+      "create_event_button": "Créer Événement"
+    },
+    "apply_mod": {
+      "title": "Devenir Modérateur du Quartier",
+      "description": "Aidez à maintenir la convivialité et le respect dans votre quartier en modérant les publications, incidents et votes.",
+      "status_label": "Statut de la demande",
+      "status": {
+        "pending": "En cours d'examen",
+        "rejected": "Refusée"
+      },
+      "motivation_label": "Votre message de motivation :",
+      "reapply_button": "Postuler à nouveau",
+      "apply_button": "Faire une demande",
+      "form": {
+        "motivations_label": "Vos motivations",
+        "placeholder": "Expliquez brièvement pourquoi vous souhaitez devenir modérateur et comment vous pouvez aider le quartier...",
+        "cancel": "Annuler",
+        "submit": "Envoyer ma demande",
+        "submitting": "Envoi..."
+      }
+    },
+    "info": {
+      "title": "Informations Personnelles",
+      "description": "Modifiez vos coordonnées de contact et présentez-vous à votre quartier.",
+      "first_name": "Prénom",
+      "first_name_placeholder": "Ex: Julien",
+      "last_name": "Nom de famille",
+      "last_name_placeholder": "Ex: Bernard",
+      "civility": "Civilité",
+      "civility_select": "Sélectionner...",
+      "civility_mr": "Monsieur",
+      "civility_mrs": "Madame",
+      "civility_other": "Autre",
+      "birth_date": "Date de naissance",
+      "phone": "Téléphone",
+      "phone_placeholder": "Ex: +33 6 12 34 56 78",
+      "email_label": "Adresse Email (Non modifiable)",
+      "bio": "Biographie (À propos de moi)",
+      "bio_placeholder": "Décrivez qui vous êtes, vos passions et vos compétences pour vos voisins.",
+      "save_button": "Enregistrer"
+    },
+    "missions": {
+      "title": "Missions de quartier",
+      "badge": "Gagner du Solde",
+      "claimed": "Récupérée",
+      "points": "+{{count}} pts",
+      "progress": "Progression : {{progress}}",
+      "progress_pts": "{{count}} / {{max}} pts",
+      "claim_button": "Récupérer",
+      "claimed_badge": "Récupérée ✓",
+      "in_progress_badge": "En cours",
+      "discussion": {
+        "title": "Discussion active",
+        "description": "Lancer ou participer à une discussion en écrivant un message à un voisin."
+      },
+      "first_post": {
+        "title": "Premier pas sur le feed",
+        "description": "Partagez votre première publication sur le fil d'actualité de quartier."
+      },
+      "first_incident": {
+        "title": "Signalement civique",
+        "description": "Contribuez à la sécurité du quartier en signalant votre premier incident."
+      },
+      "create_event": {
+        "title": "Organisateur de quartier",
+        "description": "Prenez l'initiative de créer votre premier événement de quartier."
+      },
+      "join_event": {
+        "title": "Esprit d'équipe",
+        "description": "Inscrivez-vous à votre premier événement pour rencontrer vos voisins."
+      }
+    }
+  },
+  "services": {
+    "titleLocal": "Entraide du quartier",
+    "titleMine": "Mes annonces d'entraide",
+    "descLocal": "Découvrez les services proposés par vos voisins ou publiez un besoin d'entraide.",
+    "descMine": "Gérez vos offres de services déposées et vos demandes d'aide en cours.",
+    "localServices": "Services locaux",
+    "myServices": "Mes services",
+    "createAnnouncement": "Créer une annonce",
+    "loadingServices": "Chargement des services...",
+    "noServiceFound": "Aucun service trouvé pour l'instant",
+    "noServiceFoundDesc": "Soyez le premier à proposer un service d'entraide ou à formuler une demande de bon voisinage dans votre quartier !",
+    "toastErrorOpenChat": "Impossible d'ouvrir la discussion : aucun voisin n'est associé à cette action.",
+    "toastErrorMessaging": "Impossible d'ouvrir la messagerie.",
+    "promo": {
+      "title": "Besoin d'autre chose ?",
+      "desc": "Vous ne trouvez pas ce que vous cherchez ? Publiez une demande d'entraide pour mobiliser vos voisins !",
+      "button": "Publier une demande"
+    },
+    "card": {
+      "flexibleDate": "Date flexible",
+      "dateOn": "Le {{date}}",
+      "free": "Gratuit",
+      "typeOffer": "Offre",
+      "typeRequest": "Demande",
+      "recurrent": "Service récurrent (hebdomadaire)",
+      "neighborFallback": "Voisin",
+      "details": "Détails"
+    },
+    "filters": {
+      "allServices": "Tous les services",
+      "searchPlaceholder": "Rechercher une offre, un besoin d'entraide...",
+      "filtersButton": "Filtres",
+      "typeLabel": "Type d'entraide",
+      "pointsLabel": "Barème de points",
+      "all": "Tous",
+      "offers": "Offres",
+      "requests": "Demandes",
+      "free": "Gratuits",
+      "withPoints": "Avec points"
+    }
+  },
+  "settings": {
+    "title": "Paramètres",
+    "description": "Gérez vos préférences d'apparence et vos données personnelles RGPD.",
+    "confirm_delete_word": "SUPPRIMER",
+    "export_success": "Données exportées avec succès.",
+    "export_error": "Erreur lors de l'exportation des données.",
+    "delete_validation_error": "Veuillez saisir \"SUPPRIMER\" pour valider.",
+    "delete_success": "Votre compte a été anonymisé. Déconnexion...",
+    "delete_error": "Erreur lors de l'anonymisation des données.",
+    "appearance": {
+      "title": "Apparence & Design",
+      "description": "Personnalisez le look de l'application en mode clair ou sombre.",
+      "theme_label": "Thème de l'interface",
+      "light_mode": "Mode Clair",
+      "dark_mode": "Mode Sombre"
+    },
+    "rgpd": {
+      "title": "Confidentialité & Données RGPD",
+      "description": "Exercez vos droits sur vos données personnelles conformément au règlement RGPD.",
+      "export_title": "Exporter mes données (Droit d'accès)",
+      "export_description": "Téléchargez une copie complète de vos données personnelles stockées sur Hoodly au format JSON.",
+      "export_button": "Exporter mes données",
+      "delete_title": "Anonymiser / Supprimer mes données",
+      "delete_description": "Supprimez vos informations personnelles sensibles de notre base de données. Cette action est irréversible.",
+      "confirm_prompt_prefix": "Entrez ",
+      "confirm_prompt_suffix": " pour confirmer l'action :",
+      "delete_account_button": "Supprimer mon compte (RGPD)"
+    },
+    "confirm_button": "Confirmer",
+    "cancel_button": "Annuler"
+  },
+  "sidebar": {
+    "myQuarter": "Mon Quartier",
+    "dashboard": "Accueil",
+    "services": "Services",
+    "events": "Événements",
+    "messages": "Messages",
+    "votes": "Votes",
+    "incidents": "Incidents",
+    "adminCandidatures": "Candidatures modérateurs",
+    "verificationAlert": "Veuillez faire vérifier votre compte pour accéder à cette fonctionnalité.",
+    "verificationAlert_messages": "Vérifiez votre compte pour pouvoir communiquer avec vos voisins.",
+    "verificationAlert_services": "Vérifiez votre compte pour pouvoir accéder aux services de quartier.",
+    "verificationAlert_planning": "Vérifiez votre compte pour pouvoir accéder à l'agenda de quartier.",
+    "verificationAlert_profil": "Vérifiez votre compte pour pouvoir accéder à votre profil complet.",
+    "verificationAlert_evenements": "Vérifiez votre compte pour pouvoir accéder aux événements du quartier.",
+    "verificationAlert_votes": "Vérifiez votre compte pour pouvoir participer aux votes de quartier.",
+    "verificationAlert_incidents": "Vérifiez votre compte pour pouvoir accéder au signalement d'incidents.",
+    "verificationAlert_map": "Vérifiez votre compte pour pouvoir accéder à la carte de quartier."
+  },
+  "verificationModal": {
+    "errorSelectBoth": "Veuillez sélectionner les deux documents.",
+    "errorUpload": "Une erreur est survenue lors de l'envoi des documents.",
+    "title": "Vérifier mon compte",
+    "description": "Pour garantir la sécurité de la communauté, nous devons vérifier que vous habitez bien dans ce quartier.",
+    "proofOfAddressLabel": "Justificatif de domicile",
+    "proofOfAddressDesc": "Facture EDF, loyer, etc. (moins de 3 mois)",
+    "idCardLabel": "Pièce d'identité",
+    "idCardDesc": "Carte d'identité ou Passeport",
+    "cancel": "Annuler",
+    "sending": "Envoi...",
+    "verify": "Vérifier"
+  },
+  "votes": {
+    "toasts": {
+      "voteRecorded": "Votre vote a bien été enregistré !",
+      "approvedSuccess": "Le vote a été approuvé et publié !",
+      "rejectedSuccess": "Le vote a été rejeté.",
+      "deletedSuccess": "Le vote a été supprimé.",
+      "closedSuccess": "Le scrutin est maintenant clos."
+    },
+    "errors": {
+      "voteRecordFailed": "Erreur lors de l'enregistrement du vote",
+      "approveFailed": "Erreur lors de l'approbation",
+      "rejectFailed": "Erreur lors du rejet",
+      "deleteFailed": "Erreur lors de la suppression",
+      "closeFailed": "Erreur lors de la clôture",
+      "selectOptionRequired": "Veuillez sélectionner une option",
+      "refusalReasonRequired": "Veuillez saisir un motif de refus",
+      "fetchFailed": "Une erreur est survenue lors de la récupération des votes."
+    },
+    "title": "Espace Votes",
+    "subtitle": "Participez aux décisions de votre quartier et exprimez votre voix.",
+    "loading": "Chargement des scrutins...",
+    "na": "N/A",
+    "buttons": {
+      "proposeVote": "Proposer un vote",
+      "cancel": "Annuler",
+      "reject": "Refuser",
+      "approveAndPublish": "Approuver et Publier"
+    },
+    "tabs": {
+      "active": "En cours ({{count}})",
+      "proposals": "Mes propositions ({{count}})",
+      "closed": "Clôturés ({{count}})",
+      "moderation": "Modération ({{count}})"
+    },
+    "empty": {
+      "noActive": "Aucun vote en cours dans votre quartier.",
+      "noProposals": "Vous n'avez proposé aucun vote pour le moment.",
+      "noClosed": "Aucun scrutin clôturé dans l'historique."
+    },
+    "card": {
+      "anonymousLabel": "Vote Anonyme",
+      "publicLabel": "Vote Public",
+      "expiresAt": "Jusqu'au {{date}}",
+      "makeChoice": "FAITES VOTRE CHOIX",
+      "publicWarning": "⚠️ Ce vote est public. Les autres habitants verront votre choix après votre vote.",
+      "currentResults": "RÉSULTATS ACTUELS",
+      "votedInfo_one": "Vous avez voté • {{count}} participant",
+      "votedInfo_other": "Vous avez voté • {{count}} participants",
+      "you": "Vous",
+      "neighbor": "Voisin ({{id}})",
+      "votersPrefix": "Votants : ",
+      "optionsPrefix": "Options : ",
+      "modePrefix": "Mode : ",
+      "modeAnonymous": "Anonyme",
+      "modePublic": "Public",
+      "refusalReasonLabel": "Motif du refus par le modérateur :",
+      "finalResults": "RÉSULTATS FINAUX",
+      "participantsCount_one": "{{count}} participant",
+      "participantsCount_other": "{{count}} participants",
+      "proposedByResident": "Proposé par un habitant",
+      "requestedExpiration": "Expiration demandée : {{date}}",
+      "proposedOptionsPrefix": "Options proposées : ",
+      "configuredAnonymityPrefix": "Anonymat configuré : ",
+      "status": {
+        "pending": "En attente de modération",
+        "active": "Actif / Publié",
+        "rejected": "Refusé",
+        "closed": "Clôturé",
+        "closedLabel": "Clos",
+        "waiting": "En attente"
+      },
+      "createdAt": "Créé le {{date}}",
+      "buttons": {
+        "vote": "Voter",
+        "closePoll": "Clore le scrutin",
+        "delete": "Supprimer",
+        "deleteHistory": "Supprimer l'historique"
+      }
+    },
+    "moderation": {
+      "allProcessed": "Toutes les demandes de vote ont été traitées !",
+      "forceAnonymous": "Forcer le vote en anonyme (Sujet sensible)"
+    },
+    "rejectModal": {
+      "title": "Refuser la proposition de vote",
+      "hint": "Veuillez indiquer le motif du refus. L'habitant créateur verra ce message pour pouvoir corriger sa demande.",
+      "placeholder": "ex: Le titre comporte des attaques personnelles, merci de reformuler de manière neutre.",
+      "confirmRefusal": "Confirmer le refus"
+    },
+    "createModal": {
+      "errorTwoOptionsRequired": "Un vote nécessite au moins 2 options",
+      "errorTitleRequired": "Le titre est requis",
+      "errorMinOptions": "Veuillez renseigner au moins 2 options valides",
+      "successMsg": "Votre proposition de vote a été soumise avec succès !",
+      "errorMsg": "Une erreur est survenue lors de la création.",
+      "title": "Proposer un vote",
+      "subtitle": "Les autres habitants pourront voter sur ce sujet après validation par un modérateur. Durée du vote : 1 semaine.",
+      "questionLabel": "Question ou titre du vote",
+      "questionPlaceholder": "ex: Doit-on planter un cerisier dans la cour ?",
+      "descLabel": "Description (contexte)",
+      "descPlaceholder": "Expliquez brièvement l'intérêt de ce vote à vos voisins...",
+      "optionsLabel": "Options de réponse",
+      "optionPlaceholder": "Option {{index}}",
+      "addOption": "Ajouter une option",
+      "anonymousLabel": "Vote Anonyme",
+      "anonymousDescTrue": "Les votes de chacun resteront entièrement secrets (recommandé).",
+      "anonymousDescFalse": "Les choix et noms des participants seront visibles par tous sur les résultats.",
+      "submitBtn": "Proposer",
+      "submittingBtn": "Soumission..."
+    }
+  },
+  "waiting": {
+    "membershipRequestedTitle": "Demande d'adhésion envoyée",
+    "membershipRequestedDesc": "Votre demande pour rejoindre le quartier est en cours de traitement par un administrateur.",
+    "zoneCreationRequestedTitle": "Demande de création envoyée",
+    "zoneCreationRequestedDesc": "Votre demande de création de quartier est en cours de traitement par un administrateur.",
+    "defaultTitle": "Demande en cours de traitement",
+    "defaultDesc": "Votre demande sera traitée par un administrateur dans les plus brefs délais."
+  },
+  "SignatureModal": {
+    "title": "Signature Électronique",
+    "subtitle": "Veuillez procéder à la signature et à la double vérification MFA par e-mail.",
+    "draw_label": "1. Dessinez votre signature",
+    "mfa_label": "2. Validation Double Facteur (MFA)",
+    "sent": "Envoyé",
+    "sending_otp": "Génération et envoi du code par e-mail...",
+    "cannot_send_auto": "Impossible d'envoyer le code automatiquement.",
+    "retry": "Réessayer",
+    "mfa_desc": "Saisissez le code à 6 chiffres reçu par e-mail pour valider votre signature.",
+    "otp_placeholder": "Entrez le code à 6 chiffres",
+    "resend": "Renvoyer",
+    "consent_label": "En cochant cette case, je consens à signer numériquement ce document et je reconnais que ma signature a valeur légale sur la plateforme Hoodly conformément à l’article 1367 du Code Civil.",
+    "cancel": "Annuler",
+    "signing": "Signature...",
+    "sign_btn": "Signer le document",
+    "toast_otp_sent": "Code de vérification envoyé par e-mail.",
+    "toast_otp_error": "Impossible d'envoyer le code OTP. Veuillez réessayer.",
+    "toast_draw_error": "Veuillez dessiner votre signature avant de valider.",
+    "toast_otp_format_error": "Veuillez entrer le code OTP à 6 chiffres.",
+    "toast_consent_error": "Vous devez accepter le consentement pour signer le document.",
+    "toast_success": "Votre signature a été enregistrée avec succès.",
+    "toast_sign_error": "Erreur lors de la signature."
+  },
+  "SignaturePad": {
+    "placeholder": "Signez avec votre souris ou doigt",
+    "clear": "Effacer"
+  },
+  "PDFSignatureViewer": {
+    "prev": "Précédent",
+    "next": "Suivant",
+    "page_of": "Page {{current}} sur {{total}}",
+    "sign_here": "Signez ici",
+    "sign_client": "Sign. Client",
+    "sign_provider": "Sign. Prestataire"
+  },
+  "PDFSignatureZonesEditor": {
+    "title": "Éditeur de zones",
+    "desc": "Ajoutez des zones de signature pour le client et le prestataire, puis faites-les glisser à l'endroit désigné.",
+    "btn_client": "Zone Client (Bleu)",
+    "btn_provider": "Zone Prestataire (Violet)",
+    "zones_page": "Zones de la page ({{count}})",
+    "no_zones": "Aucune zone sur cette page",
+    "client": "Client",
+    "provider": "Prestataire",
+    "prev": "Précédent",
+    "next": "Suivant",
+    "page_of": "Page {{current}} sur {{total}}",
+    "sign_client": "Sign. Client",
+    "sign_provider": "Sign. Prestataire"
+  }
+}

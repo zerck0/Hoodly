@@ -166,64 +166,13 @@ export function SchedulerModal({
     return `${String(endH).padStart(2, '0')}:${String(m).padStart(2, '0')}`
   }
 
-  const getAvailableTimeSlots = (dateStr: string) => {
-    const morningSlots = [
-      { start: '08:00', label: '8h00 - 9h00' },
-      { start: '09:00', label: '9h00 - 10h00' },
-      { start: '10:00', label: '10h00 - 11h00' },
-      { start: '11:00', label: '11h00 - 12h00' }
-    ]
-    const afternoonSlots = [
-      { start: '14:00', label: '14h00 - 15h00' },
-      { start: '15:00', label: '15h00 - 16h00' },
-      { start: '16:00', label: '16h00 - 17h00' },
-      { start: '17:00', label: '17h00 - 18h00' }
-    ]
-    const eveningSlots = [
-      { start: '18:00', label: '18h00 - 19h00' },
-      { start: '19:00', label: '19h00 - 20h00' },
-      { start: '20:00', label: '20h00 - 21h00' },
-      { start: '21:00', label: '21h00 - 22h00' }
-    ]
 
-    const service = activeConversation?.serviceId
-    if (!service || service.type !== 'offre' || !service.disponibilites || service.disponibilites.length === 0) {
-      return [...morningSlots, ...afternoonSlots, ...eveningSlots]
-    }
-
-    const parts = parseLocalDateParts(dateStr)
-    if (!parts) return []
-
-    const dateObj = new Date(parts.year, parts.month - 1, parts.day)
-    const dayOfWeek = dateObj.getDay()
-
-    let slots: any[] = []
-
-    if (dayOfWeek === 6 || dayOfWeek === 0) {
-      slots = [...morningSlots, ...afternoonSlots, ...eveningSlots]
-    } else {
-      if (service.disponibilites.includes('semaine_matin')) {
-        slots = [...slots, ...morningSlots]
-      }
-      if (service.disponibilites.includes('semaine_aprem')) {
-        slots = [...slots, ...afternoonSlots]
-      }
-      if (service.disponibilites.includes('semaine_soir')) {
-        slots = [...slots, ...eveningSlots]
-      }
-      if (slots.length === 0 && service.disponibilites.some((d: string) => d.startsWith('semaine_'))) {
-        slots = [...morningSlots, ...afternoonSlots, ...eveningSlots]
-      }
-    }
-    return slots
-  }
 
   const handlePropose = async () => {
     if (!slotDate || !slotStart || !slotEnd) return
     await onProposeSlot({ id: activeConversation._id, date: slotDate, debut: slotStart, fin: slotEnd })
   }
 
-  const timeSlots = getAvailableTimeSlots(slotDate)
   const isDateAvail = getIsDateAvailable(slotDate)
   const clashing = getClashingBooking(slotDate, slotStart, slotEnd)
 

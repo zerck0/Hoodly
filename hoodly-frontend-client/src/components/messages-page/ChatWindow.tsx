@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Calendar,
   Send,
@@ -82,6 +83,94 @@ export function ChatWindow({
   onlineUsers,
   conversations
 }: ChatWindowProps) {
+  const { t } = useTranslation()
+  const translateSystemMessage = (content: string) => {
+    if (!content) return content;
+
+    let match = content.match(/^👋 (.*) a rejoint la discussion\.$/);
+    if (match) {
+      return t('messages.system.joined', { name: match[1], defaultValue: `👋 ${match[1]} a rejoint la discussion.` });
+    }
+
+    match = content.match(/^👋 (.*) a quitté la discussion\.$/);
+    if (match) {
+      return t('messages.system.left', { name: match[1], defaultValue: `👋 ${match[1]} a quitté la discussion.` });
+    }
+
+    match = content.match(/^🎉 Discussion de groupe créée pour l'événement "([^"]*)"\. Les participants seront ajoutés automatiquement à cette discussion\.$/);
+    if (match) {
+      return t('messages.system.groupCreated', { title: match[1], defaultValue: `🎉 Discussion de groupe créée pour l'événement "${match[1]}". Les participants seront ajoutés automatiquement à cette discussion.` });
+    }
+
+    if (content === "👋 Nouvelle discussion lancée au sujet de cette annonce d'entraide. C'est le moment d'échanger et de caler vos rendez-vous !") {
+      return t('messages.system.mutualAidStarted', "👋 Nouvelle discussion lancée au sujet de cette annonce d'entraide. C'est le moment d'échanger et de caler vos rendez-vous !");
+    }
+
+    if (content === "👋 Bonjour ! Discussion générale démarrée entre voisins. Rapprochons notre quartier !") {
+      return t('messages.system.generalChatStarted', "👋 Bonjour ! Discussion générale démarrée entre voisins. Rapprochons notre quartier !");
+    }
+
+    match = content.match(/^🎉 Rendez-vous confirmé ! La prestation est planifiée pour le (.*) de (.*) à (.*)\.$/);
+    if (match) {
+      return t('messages.system.appointmentConfirmed', { date: match[1], start: match[2], end: match[3], defaultValue: `🎉 Rendez-vous confirmé ! La prestation est planifiée pour le ${match[1]} de ${match[2]} à ${match[3]}.` });
+    }
+
+    match = content.match(/^✅ Prestation validée et terminée ! Le transfert de (\d+) points au prestataire a été effectué\.$/);
+    if (match) {
+      return t('messages.system.serviceValidatedAndCompleted', { points: match[1], defaultValue: `✅ Prestation validée et terminée ! Le transfert de ${match[1]} points au prestataire a été effectué.` });
+    }
+
+    if (content === "❌ Le contrat d'entraide payant a été annulé. Le rendez-vous a été annulé et les points ont été restitués au client.") {
+      return t('messages.system.contractCancelled', "❌ Le contrat d'entraide payant a été annulé. Le rendez-vous a été annulé et les points ont été restitués au client.");
+    }
+
+    if (content === "🤝 Proposition acceptée ! Le créateur a validé votre profil. Vous pouvez maintenant échanger librement pour planifier les détails.") {
+      return t('messages.system.proposalAccepted', "🤝 Proposition acceptée ! Le créateur a validé votre profil. Vous pouvez maintenant échanger librement pour planifier les détails.");
+    }
+
+    if (content === "Merci d'avoir proposé votre aide ! Le créateur a finalement choisi de s'organiser différemment pour cette fois. À charge de revanche !") {
+      return t('messages.system.proposalRefused', "Merci d'avoir proposé votre aide ! Le créateur a finalement choisi de s'organiser différemment pour cette fois. À charge de revanche !");
+    }
+
+    match = content.match(/^🚀 (.*) a démarré la prestation ! Bon travail à vous deux\.$/);
+    if (match) {
+      let starter = match[1];
+      if (starter === 'Le prestataire') {
+        starter = t('messages.system.roles.provider', 'Le prestataire');
+      } else if (starter === "L'intervenant") {
+        starter = t('messages.system.roles.helper', "L'intervenant");
+      }
+      return t('messages.system.serviceStarted', { starter, defaultValue: `🚀 ${starter} a démarré la prestation ! Bon travail à vous deux.` });
+    }
+
+    match = content.match(/^✅ Prestation déclarée terminée par (.*)\. En attente de validation finale par le bénéficiaire\.\.\.$/);
+    if (match) {
+      let finisher = match[1];
+      if (finisher === 'Le prestataire') {
+        finisher = t('messages.system.roles.provider', 'Le prestataire');
+      } else if (finisher === "L'intervenant") {
+        finisher = t('messages.system.roles.helper', "L'intervenant");
+      }
+      return t('messages.system.serviceEnded', { finisher, defaultValue: `✅ Prestation déclarée terminée par ${finisher}. En attente de validation finale par le bénéficiaire...` });
+    }
+
+    match = content.match(/^Transaction réussie : (\d+) points ont été transférés de (.*) à (.*)\.$/);
+    if (match) {
+      return t('messages.system.transactionSuccess', { points: match[1], payer: match[2], recipient: match[3], defaultValue: `Transaction réussie : ${match[1]} points ont été transférés de ${match[2]} à ${match[3]}.` });
+    }
+
+    if (content === "🎉 Réalisation validée par le bénéficiaire. Le service est désormais clos avec succès. Merci pour ce beau coup de main !") {
+      return t('messages.system.serviceClosed', "🎉 Réalisation validée par le bénéficiaire. Le service est désormais clos avec succès. Merci pour ce beau coup de main !");
+    }
+
+    match = content.match(/^🎉 Événement validé par l'organisateur ! (\d+) participant(?:s)? présent(?:s)?\. Les points ont été distribués\.$/);
+    if (match) {
+      const count = Number(match[1]);
+      return t('messages.system.eventValidated', { count, defaultValue: `🎉 Événement validé par l'organisateur ! ${count} participant${count > 1 ? 's' : ''} présent${count > 1 ? 's' : ''}. Les points ont été distribués.` });
+    }
+
+    return content;
+  }
   const navigate = useNavigate()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -313,7 +402,6 @@ export function ChatWindow({
           ? service.createurId.email === currentUser?.email
           : service.createurId === currentUser?.id
 
-        const otherId = otherParticipant?.id || otherParticipant?._id || ''
         const isProvider = service.type === 'demande' ? !isCreator : isCreator
         const isClient = service.type === 'demande' ? isCreator : !isCreator
 
@@ -706,7 +794,7 @@ export function ChatWindow({
               return (
                 <div key={msg._id} className="flex justify-center my-4 animate-in fade-in duration-200">
                   <div className="bg-white border border-gray-200/80 text-gray-500 rounded-2xl px-5 py-3 text-[11px] text-center max-w-sm font-semibold shadow-xs leading-relaxed">
-                    {msg.content}
+                    {translateSystemMessage(msg.content)}
                   </div>
                 </div>
               )
@@ -818,7 +906,7 @@ export function ChatWindow({
           value={newMessage}
           onChange={handleTextareaChange}
           onKeyDown={handleKeyDown}
-          placeholder="Écrivez un message à votre voisin..."
+          placeholder={t('messages.chatWindow.placeholder', 'Écrivez un message à votre voisin...')}
           disabled={isSending}
           rows={1}
           className="flex-1 rounded-2xl bg-gray-50 border border-gray-200/60 px-4 py-3 text-xs outline-none focus:bg-white focus:border-[#2c308e] focus:ring-1 focus:ring-[#2c308e]/10 transition-all disabled:opacity-50 resize-none h-[44px] min-h-[44px] max-h-[120px] overflow-y-auto leading-relaxed"

@@ -1,5 +1,6 @@
 import { ChevronRight, HelpCircle } from 'lucide-react'
 import { Card, CardContent } from '../ui/card'
+import { useTranslation } from 'react-i18next'
 
 interface RateItem {
   name: string
@@ -11,15 +12,16 @@ interface SuggestedRatesCardProps {
 }
 
 export function SuggestedRatesCard({ rates }: SuggestedRatesCardProps) {
+  const { t } = useTranslation()
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-gray-900 leading-none">
-        Grille de tarifs indicatifs
+        {t('points.suggestedRatesCard.title', 'Grille de tarifs indicatifs')}
       </h2>
       <Card className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden shadow-sm">
         <CardContent className="p-6 space-y-4">
           <p className="text-xs text-gray-500 leading-relaxed font-light">
-            Voici les recommandations de tarifs d'entraide issues des moyennes de transactions de votre quartier :
+            {t('points.suggestedRatesCard.desc', "Voici les recommandations de tarifs d'entraide issues des moyennes de transactions de votre quartier :")}
           </p>
 
           <div className="space-y-3">
@@ -41,7 +43,7 @@ export function SuggestedRatesCard({ rates }: SuggestedRatesCardProps) {
             <button className="w-full flex items-center justify-between text-xs font-bold text-[#2c308e] hover:text-[#2c308e]/80 transition-colors cursor-pointer">
               <span className="flex items-center gap-1">
                 <HelpCircle className="h-4 w-4" />
-                Comment fixer mes tarifs ?
+                {t('points.suggestedRatesCard.helpLink', 'Comment fixer mes tarifs ?')}
               </span>
               <ChevronRight className="h-4 w-4" />
             </button>

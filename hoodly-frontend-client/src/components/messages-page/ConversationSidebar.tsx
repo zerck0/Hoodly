@@ -3,6 +3,7 @@ import { MessageSquarePlus, Search, HeartHandshake, Loader2, PartyPopper, Trash2
 import { Button } from '../ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 
 const CATEGORY_STYLES: Record<string, { bg: string, text: string, border: string }> = {
   Jardinage: { bg: 'bg-emerald-50 text-emerald-700 border-emerald-100', text: 'text-emerald-700', border: 'border-l-4 border-l-emerald-500' },
@@ -32,8 +33,9 @@ export function ConversationSidebar({
   onOpenSearchModal,
   currentUserEmail
 }: ConversationSidebarProps) {
+  const { t } = useTranslation()
   const [inboxSearch, setInboxSearch] = useState('')
-  const [activeTab, setActiveTab] = useState<'all' | 'services' | 'general' | 'archived'>('all')
+  const [activeTab, setActiveTab] = useState<'all' | 'services' | 'events' | 'general' | 'archived'>('all')
   const [archivedIds, setArchivedIds] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem('hoodly_archived_convs') || '[]')
@@ -60,7 +62,7 @@ export function ConversationSidebar({
   }
 
   const handleArchive = (id: string) => {
-    if (window.confirm("Voulez-vous masquer cette discussion de votre boîte de réception ?")) {
+    if (window.confirm(t('messages.sidebar.confirmArchive', 'Voulez-vous masquer cette discussion de votre boîte de réception ?'))) {
       let nextSelectedId = ''
       if (activeId === id) {
         const currentIndex = filteredConversations.findIndex((c) => c._id === id)
@@ -76,7 +78,7 @@ export function ConversationSidebar({
       const updated = [...archivedIds, id]
       setArchivedIds(updated)
       localStorage.setItem('hoodly_archived_convs', JSON.stringify(updated))
-      toast.success("Discussion masquée. Vous pouvez la retrouver dans l'onglet 'Masqués'.")
+      toast.success(t('messages.sidebar.archiveSuccess', "Discussion masquée. Vous pouvez la retrouver dans l'onglet 'Masqués'."))
       
       if (activeId === id) {
         onSelectConversation(nextSelectedId)
@@ -88,7 +90,7 @@ export function ConversationSidebar({
     const updated = archivedIds.filter((item) => item !== id)
     setArchivedIds(updated)
     localStorage.setItem('hoodly_archived_convs', JSON.stringify(updated))
-    toast.success("Discussion restaurée dans votre boîte de réception !")
+    toast.success(t('messages.sidebar.unarchiveSuccess', "Discussion restaurée dans votre boîte de réception !"))
   }
 
   const filteredConversations = conversations.filter((conv) => {
@@ -120,7 +122,7 @@ export function ConversationSidebar({
       <div className="p-4 border-b border-gray-100 space-y-3 shrink-0">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-[#1e224e]" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Discussions
+            {t('messages.sidebar.title', 'Discussions')}
           </h2>
           <div className="flex items-center gap-1.5">
             {archivedIds.length > 0 && (
@@ -132,7 +134,7 @@ export function ConversationSidebar({
                     ? 'bg-rose-50 border-rose-100 text-rose-600 shadow-2xs scale-105'
                     : 'bg-gray-50 border-gray-200/40 hover:bg-[#e9eaf6] text-gray-500 hover:text-[#2c308e]'
                 }`}
-                title={activeTab === 'archived' ? 'Retour aux discussions' : 'Voir les discussions masquées'}
+                title={activeTab === 'archived' ? t('messages.sidebar.backToChats', 'Retour aux discussions') : t('messages.sidebar.viewHiddenChats', 'Voir les discussions masquées')}
               >
                 <ArchiveRestore className="h-4 w-4" />
                 <span className="text-[10px]">{archivedIds.length}</span>
@@ -143,7 +145,7 @@ export function ConversationSidebar({
               type="button"
               onClick={onOpenSearchModal}
               className="h-8 w-8 rounded-full bg-gray-50 hover:bg-[#e9eaf6] text-gray-500 hover:text-[#2c308e] flex items-center justify-center transition-all duration-200 cursor-pointer shadow-xs hover:scale-105 active:scale-98 border border-gray-200/40"
-              title="Nouvelle discussion générale"
+              title={t('messages.sidebar.newChatTooltip', 'Nouvelle discussion générale')}
             >
               <MessageSquarePlus className="h-4 w-4" />
             </button>
@@ -156,17 +158,17 @@ export function ConversationSidebar({
             type="text"
             value={inboxSearch}
             onChange={(e) => setInboxSearch(e.target.value)}
-            placeholder="Rechercher un voisin..."
+            placeholder={t('messages.sidebar.searchPlaceholder', 'Rechercher un voisin...')}
             className="h-9 w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-3 text-xs outline-none focus:bg-white focus:border-[#2c308e] transition-all"
           />
         </div>
 
         <div className="flex bg-gray-100 p-0.5 rounded-lg border border-gray-200/50">
           {[
-            { id: 'all', label: 'Tous' },
-            { id: 'services', label: 'Services' },
-            { id: 'events', label: 'Événements' },
-            { id: 'general', label: 'Général' }
+            { id: 'all', label: t('messages.sidebar.tabs.all', 'Tous') },
+            { id: 'services', label: t('messages.sidebar.tabs.services', 'Services') },
+            { id: 'events', label: t('messages.sidebar.tabs.events', 'Événements') },
+            { id: 'general', label: t('messages.sidebar.tabs.general', 'Général') }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -197,25 +199,25 @@ export function ConversationSidebar({
             <div>
               <p className="text-xs font-semibold text-gray-800">
                 {activeTab === 'general'
-                  ? 'Aucune discussion générale'
+                  ? t('messages.sidebar.empty.noGeneralTitle', 'Aucune discussion générale')
                   : activeTab === 'services'
-                  ? 'Aucun service en cours'
+                  ? t('messages.sidebar.empty.noServicesTitle', 'Aucun service en cours')
                   : activeTab === 'events'
-                  ? 'Aucun événement en cours'
+                  ? t('messages.sidebar.empty.noEventsTitle', 'Aucun événement en cours')
                   : activeTab === 'archived'
-                  ? 'Aucune discussion masquée'
-                  : 'Aucune discussion'}
+                  ? t('messages.sidebar.empty.noArchivedTitle', 'Aucune discussion masquée')
+                  : t('messages.sidebar.empty.noChatsTitle', 'Aucune discussion')}
               </p>
               <p className="text-[10px] mt-1 text-gray-400 max-w-[200px] mx-auto leading-relaxed font-light">
                 {activeTab === 'general'
-                  ? "Vous n'avez pas encore de conversation générale directe avec vos voisins."
+                  ? t('messages.sidebar.empty.noGeneralDesc', "Vous n'avez pas encore de conversation générale directe avec vos voisins.")
                   : activeTab === 'services'
-                  ? "Aucune discussion liée à un service n'a été commencée."
+                  ? t('messages.sidebar.empty.noServicesDesc', "Aucune discussion liée à un service n'a été commencée.")
                   : activeTab === 'events'
-                  ? "Vous n'avez pas de discussion de groupe pour des événements."
+                  ? t('messages.sidebar.empty.noEventsDesc', "Vous n'avez pas de discussion de groupe pour des événements.")
                   : activeTab === 'archived'
-                  ? "Vous n'avez masqué aucune discussion pour le moment."
-                  : "Lancez une discussion en proposant ou acceptant un service !"}
+                  ? t('messages.sidebar.empty.noArchivedDesc', "Vous n'avez masqué aucune discussion pour le moment.")
+                  : t('messages.sidebar.empty.noChatsDesc', "Lancez une discussion en proposant ou acceptant un service !")}
               </p>
             </div>
             {activeTab === 'general' && (
@@ -224,7 +226,7 @@ export function ConversationSidebar({
                 onClick={onOpenSearchModal}
                 className="bg-[#2c308e] hover:bg-[#2c308e]/95 text-white text-[10px] font-bold rounded-xl px-4 py-2 shadow-sm cursor-pointer transition-all hover:scale-102 active:scale-98"
               >
-                Faire connaissance avec un voisin
+                {t('messages.sidebar.empty.btnFindNeighbor', 'Faire connaissance avec un voisin')}
               </Button>
             )}
           </div>
@@ -239,16 +241,16 @@ export function ConversationSidebar({
              return (
               <div key={conv._id} className="relative group">
                 <button
-                  type="button"
-                  onClick={() => onSelectConversation(conv._id)}
-                  className={`flex w-full items-center gap-3 p-3 transition-all text-left outline-none cursor-pointer ${
-                    isGroup ? 'border-l-4 border-l-[#2c308e] rounded-r-2xl rounded-l-none' :
-                    categoryStyle ? `${categoryStyle.border} rounded-r-2xl rounded-l-none` : 'rounded-2xl'
-                  } ${
-                    isSelected
-                      ? 'bg-[#e9eaf6] text-gray-900 shadow-xs'
-                      : 'hover:bg-gray-50 text-gray-600'
-                  }`}
+                   type="button"
+                   onClick={() => onSelectConversation(conv._id)}
+                   className={`flex w-full items-center gap-3 p-3 transition-all text-left outline-none cursor-pointer ${
+                     isGroup ? 'border-l-4 border-l-[#2c308e] rounded-r-2xl rounded-l-none' :
+                     categoryStyle ? `${categoryStyle.border} rounded-r-2xl rounded-l-none` : 'rounded-2xl'
+                   } ${
+                     isSelected
+                       ? 'bg-[#e9eaf6] text-gray-900 shadow-xs'
+                       : 'hover:bg-gray-50 text-gray-600'
+                   }`}
                 >
                   <div className="relative shrink-0">
                     {isGroup ? (
@@ -274,7 +276,7 @@ export function ConversationSidebar({
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-baseline mb-0.5">
                       <p className="text-xs font-bold text-gray-900 truncate">
-                        {isGroup ? (conv.nom || 'Événement') : (other?.name || 'Voisin')}
+                        {isGroup ? (conv.nom || t('messages.sidebar.eventFallback', 'Événement')) : (other?.name || t('messages.sidebar.neighborFallback', 'Voisin'))}
                       </p>
                       <p className="text-[9px] text-gray-400 shrink-0">
                         {new Date(conv.updatedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
@@ -283,17 +285,19 @@ export function ConversationSidebar({
                     <div className="flex items-center gap-1.5 justify-between">
                       <p className="text-[11px] text-gray-500 truncate leading-relaxed">
                         {isGroup
-                          ? `Groupe · ${conv.participants.length} participant${conv.participants.length > 1 ? 's' : ''}`
-                          : conv.serviceId ? `Entraide : ${conv.serviceId.titre}` : 'Discussion générale'}
+                          ? t('messages.sidebar.groupParticipantsCount', { count: conv.participants.length, defaultValue: `Groupe · ${conv.participants.length} participants` })
+                          : conv.serviceId 
+                            ? t('messages.sidebar.servicePrefix', { title: conv.serviceId.titre, defaultValue: `Entraide : ${conv.serviceId.titre}` }) 
+                            : t('messages.sidebar.generalChat', 'Discussion générale')}
                       </p>
                       {isGroup && (
                         <span className="text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 border bg-[#e9eaf6] text-[#2c308e] border-[#2c308e]/20">
-                          Événement
+                          {t('messages.sidebar.eventBadge', 'Événement')}
                         </span>
                       )}
                       {!isGroup && hasServiceLink && conv.serviceId && categoryStyle && (
                         <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0 border ${categoryStyle.bg}`}>
-                          {conv.serviceId.categorie}
+                          {t('categories.' + conv.serviceId.categorie, { defaultValue: conv.serviceId.categorie })}
                         </span>
                       )}
                     </div>
@@ -308,7 +312,7 @@ export function ConversationSidebar({
                       handleUnarchive(conv._id)
                     }}
                     className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-xl bg-white border border-gray-150 hover:bg-emerald-50 hover:border-emerald-100 text-gray-400 hover:text-emerald-600 opacity-0 group-hover:opacity-100 transition-all shadow-xs cursor-pointer z-10 mr-1"
-                    title="Restaurer cette discussion"
+                    title={t('messages.sidebar.restoreChatTooltip', 'Restaurer cette discussion')}
                   >
                     <ArchiveRestore className="h-3.5 w-3.5" />
                   </button>
@@ -320,7 +324,7 @@ export function ConversationSidebar({
                       handleArchive(conv._id)
                     }}
                     className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-xl bg-white border border-gray-150 hover:bg-rose-50 hover:border-rose-100 text-gray-400 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all shadow-xs cursor-pointer z-10 mr-1"
-                    title="Masquer cette discussion"
+                    title={t('messages.sidebar.hideChatTooltip', 'Masquer cette discussion')}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>

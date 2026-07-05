@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { zonesApi } from '../../services/api/zone'
 import { authApi } from '../../services/api/auth'
 import { useAuthStore } from '../../stores/auth.store'
@@ -9,6 +10,7 @@ interface VerificationModalProps {
 }
 
 function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
+  const { t } = useTranslation()
   const user = useAuthStore((state) => state.user)
   const setUser = useAuthStore((state) => state.setUser)
 
@@ -22,7 +24,7 @@ function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!justificatif || !pieceIdentite) {
-      setError('Veuillez sélectionner les deux documents.')
+      setError(t('verificationModal.errorSelectBoth'))
       return
     }
 
@@ -45,7 +47,7 @@ function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
       onClose()
     } catch (err) {
       console.error(err)
-      setError('Une erreur est survenue lors de l\'envoi des documents.')
+      setError(t('verificationModal.errorUpload'))
     } finally {
       setLoading(false)
     }
@@ -55,12 +57,12 @@ function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl animate-in fade-in zoom-in duration-200">
         <div className="flex items-center justify-between border-b pb-4 mb-4">
-          <h3 className="text-xl font-bold text-gray-900">Vérifier mon compte</h3>
+          <h3 className="text-xl font-bold text-gray-900">{t('verificationModal.title')}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
         </div>
 
         <p className="text-sm text-gray-600 mb-6">
-          Pour garantir la sécurité de la communauté, nous devons vérifier que vous habitez bien dans ce quartier.
+          {t('verificationModal.description')}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -72,9 +74,9 @@ function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">
-              Justificatif de domicile
+              {t('verificationModal.proofOfAddressLabel')}
             </label>
-            <p className="text-xs text-gray-500 mb-2">Facture EDF, loyer, etc. (moins de 3 mois)</p>
+            <p className="text-xs text-gray-500 mb-2">{t('verificationModal.proofOfAddressDesc')}</p>
             <input
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
@@ -85,9 +87,9 @@ function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">
-              Pièce d'identité
+              {t('verificationModal.idCardLabel')}
             </label>
-            <p className="text-xs text-gray-500 mb-2">Carte d'identité ou Passeport</p>
+            <p className="text-xs text-gray-500 mb-2">{t('verificationModal.idCardDesc')}</p>
             <input
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
@@ -102,14 +104,14 @@ function VerificationModal({ isOpen, onClose }: VerificationModalProps) {
               onClick={onClose}
               className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              Annuler
+              {t('verificationModal.cancel')}
             </button>
             <button
               type="submit"
               disabled={loading || !justificatif || !pieceIdentite}
               className="flex-1 rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-500/20"
             >
-              {loading ? 'Envoi...' : 'Vérifier'}
+              {loading ? t('verificationModal.sending') : t('verificationModal.verify')}
             </button>
           </div>
         </form>

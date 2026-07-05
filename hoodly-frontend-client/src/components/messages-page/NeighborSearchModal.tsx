@@ -4,6 +4,7 @@ import { Search, Globe, Inbox, Loader2, X } from 'lucide-react'
 import { usersApi } from '../../services/api/user'
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 
 interface NeighborSearchModalProps {
   isOpen: boolean
@@ -16,6 +17,7 @@ export function NeighborSearchModal({
   onClose,
   onStartConversation
 }: NeighborSearchModalProps) {
+  const { t } = useTranslation()
   const [searchQuery, setSearchQuery] = useState('')
   const [searchGlobal, setSearchGlobal] = useState(false)
   const [searchResults, setSearchResults] = useState<any[]>([])
@@ -34,14 +36,14 @@ export function NeighborSearchModal({
         const { data } = await usersApi.searchVoisins(searchQuery, searchGlobal)
         setSearchResults(data)
       } catch {
-        toast.error('Erreur lors de la recherche des voisins.')
+        toast.error(t('messages.searchModal.errorSearching', 'Erreur lors de la recherche des voisins.'))
       } finally {
         setIsSearchingNeighbors(false)
       }
     }, 300)
 
     return () => clearTimeout(delayDebounce)
-  }, [searchQuery, searchGlobal, isOpen])
+  }, [searchQuery, searchGlobal, isOpen, t])
 
   if (!isOpen) return null
 
@@ -58,10 +60,10 @@ export function NeighborSearchModal({
 
         <div>
           <h3 className="text-lg font-bold text-gray-900 leading-snug">
-            💬 Nouveau message privé
+            💬 {t('messages.searchModal.title', 'Nouveau message privé')}
           </h3>
           <p className="text-xs text-gray-400 mt-1 font-light leading-relaxed">
-            Trouvez un voisin et commencez à discuter directement avec lui.
+            {t('messages.searchModal.subtitle', 'Trouvez un voisin et commencez à discuter directement avec lui.')}
           </p>
         </div>
 
@@ -72,7 +74,7 @@ export function NeighborSearchModal({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher par nom ou email..."
+              placeholder={t('messages.searchModal.searchPlaceholder', 'Rechercher par nom ou email...')}
               className="h-11 w-full rounded-2xl bg-gray-50 border border-gray-200 pl-10 pr-4 text-xs outline-none focus:bg-white focus:border-[#2c308e] focus:ring-1 focus:ring-[#2c308e]/10 transition-all"
             />
           </div>
@@ -81,7 +83,7 @@ export function NeighborSearchModal({
             <div className="flex items-center gap-2">
               <Globe className="h-4 w-4 text-[#2c308e]" />
               <span className="text-xs font-semibold text-gray-700 select-none">
-                Recherche à l'échelle de Hoodly
+                {t('messages.searchModal.globalSearch', "Recherche à l'échelle de Hoodly")}
               </span>
             </div>
             <input
@@ -95,7 +97,7 @@ export function NeighborSearchModal({
 
           <div className="space-y-2">
             <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider">
-              Résultats ({searchResults.length})
+              {t('messages.searchModal.resultsCount', { count: searchResults.length, defaultValue: `Résultats (${searchResults.length})` })}
             </label>
 
             <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1 font-sans">
@@ -106,8 +108,8 @@ export function NeighborSearchModal({
               ) : searchResults.length === 0 ? (
                 <div className="text-center py-8 text-gray-400 bg-gray-50/20 rounded-2xl border border-dashed border-gray-200">
                   <Inbox className="h-6 w-6 text-gray-200 mx-auto mb-2" />
-                  <p className="text-[10px] font-semibold">Aucun voisin trouvé</p>
-                  <p className="text-[9px] text-gray-400 mt-0.5">Saisissez un nom ou changez de filtre.</p>
+                  <p className="text-[10px] font-semibold">{t('messages.searchModal.noResults', 'Aucun voisin trouvé')}</p>
+                  <p className="text-[9px] text-gray-400 mt-0.5">{t('messages.searchModal.noResultsDesc', 'Saisissez un nom ou changez de filtre.')}</p>
                 </div>
               ) : (
                 searchResults.map((voisin) => (

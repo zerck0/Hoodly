@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useUser } from '../hooks/useUser'
 import { useServices } from '../hooks/useServices'
 import { servicesApi } from '../services/api/services'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowLeft,
   Wrench,
@@ -28,23 +29,8 @@ const CATEGORY_CARDS = [
   { name: 'Courses', icon: ShoppingBag }
 ]
 
-const SUGGESTED_RATES_BY_CATEGORY: Record<string, string> = {
-  Bricolage: '30 - 50 pts / h',
-  Cours: '30 - 50 pts / h',
-  Jardinage: '30 - 50 pts / h',
-  Animaux: '10 pts / promenade',
-  Courses: '20 pts / trajet'
-}
-
-const AVAILABLE_DISPOS = [
-  { key: 'semaine_matin', label: 'Matinée (Semaine)' },
-  { key: 'semaine_aprem', label: 'Après-midi (Semaine)' },
-  { key: 'semaine_soir', label: 'Soirée (Semaine)' },
-  { key: 'samedi', label: 'Samedi' },
-  { key: 'dimanche', label: 'Dimanche' }
-]
-
 export default function NewServicePage() {
+  const { t } = useTranslation()
   const { user } = useUser()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -95,7 +81,7 @@ export default function NewServicePage() {
     const file = e.target.files?.[0]
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('La photo est trop volumineuse (max 5 Mo)')
+        toast.error(t('newService.toastErrorPhotoSize'))
         return
       }
       setPhotoFile(file)
@@ -136,33 +122,33 @@ export default function NewServicePage() {
     e.preventDefault()
 
     if (!titre.trim()) {
-      toast.error('Le titre du service est requis')
+      toast.error(t('newService.toastErrorTitleRequired'))
       return
     }
     if (!categorie) {
-      toast.error('Veuillez sélectionner une catégorie')
+      toast.error(t('newService.toastErrorCategoryRequired'))
       return
     }
     if (!description.trim()) {
-      toast.error('Veuillez décrire le service')
+      toast.error(t('newService.toastErrorDescriptionRequired'))
       return
     }
     if (!gratuit && (points === undefined || points < 1)) {
-      toast.error('Le nombre de points doit être supérieur à 0 pour un service payant')
+      toast.error(t('newService.toastErrorPointsRequired'))
       return
     }
 
     if (type === 'demande') {
       if (planifChoice === 'date_unique' && !singleDate) {
-        toast.error('Veuillez indiquer le jour requis')
+        toast.error(t('newService.toastErrorSingleDateRequired'))
         return
       }
       if (planifChoice === 'plage_dates' && (!rangeStartDate || !rangeEndDate)) {
-        toast.error('Veuillez indiquer les dates de début et de fin')
+        toast.error(t('newService.toastErrorRangeDatesRequired'))
         return
       }
       if (planifChoice === 'regulier' && (regularDays.length === 0 || regularPeriods.length === 0)) {
-        toast.error('Veuillez sélectionner au moins un jour et une période')
+        toast.error(t('newService.toastErrorRegularRequired'))
         return
       }
     }
@@ -176,24 +162,26 @@ export default function NewServicePage() {
           const uploadRes = await servicesApi.uploadPhoto(photoFile)
           uploadedPhotoUrl = uploadRes.data.fileUrl
         } catch {
-          toast.error("Erreur lors de l'envoi de la photo. Enregistrement en cours sans photo...")
+          toast.error(t('newService.toastErrorPhotoUpload'))
         }
       }
 
       let datePlanification: string | undefined = undefined
       if (type === 'demande') {
         if (planifChoice === 'asap') {
-          datePlanification = 'Dès que possible (urgent)'
+          datePlanification = t('newService.planifStringASAP')
         } else if (planifChoice === 'date_unique') {
-          datePlanification = `Le ${formatDateFr(singleDate)} de ${singleStartHour} à ${singleEndHour}`
+          datePlanification = t('newService.planifStringSingleDate', { date: formatDateFr(singleDate), start: singleStartHour, end: singleEndHour })
         } else if (planifChoice === 'plage_dates') {
           if (rangeAllDay) {
-            datePlanification = `Du ${formatDateFr(rangeStartDate)} au ${formatDateFr(rangeEndDate)} (toute la journée)`
+            datePlanification = t('newService.planifStringRangeAllDay', { startDate: formatDateFr(rangeStartDate), endDate: formatDateFr(rangeEndDate) })
           } else {
-            datePlanification = `Du ${formatDateFr(rangeStartDate)} au ${formatDateFr(rangeEndDate)} de ${rangeStartHour} à ${rangeEndHour}`
+            datePlanification = t('newService.planifStringRangeHours', { startDate: formatDateFr(rangeStartDate), endDate: formatDateFr(rangeEndDate), start: rangeStartHour, end: rangeEndHour })
           }
         } else if (planifChoice === 'regulier') {
-          datePlanification = `Régulier : ${regularDays.join(', ')} (${regularPeriods.join(', ')})`
+          const translatedDays = regularDays.map(day => t(`newService.days.${day}`)).join(', ')
+          const translatedPeriods = regularPeriods.map(p => t(`newService.periods.${p}`)).join(', ')
+          datePlanification = t('newService.planifStringRegular', { days: translatedDays, periods: translatedPeriods })
         }
       }
 
@@ -234,12 +222,12 @@ export default function NewServicePage() {
 
       toast.success(
         type === 'offre'
-          ? 'Votre offre a été publiée avec succès !'
-          : 'Votre demande a été publiée avec succès !'
+          ? t('newService.toastSuccessOffer')
+          : t('newService.toastSuccessRequest')
       )
       navigate('/services')
     } catch {
-      toast.error("Une erreur est survenue lors de la publication.")
+      toast.error(t('newService.toastErrorPublish'))
     } finally {
       setSubmitting(false)
     }
@@ -252,18 +240,18 @@ export default function NewServicePage() {
         className="flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors mb-6 text-sm font-medium"
       >
         <ArrowLeft className="h-4 w-4" />
-        <span>Retour au catalogue</span>
+        <span>{t('newService.backToCatalogue')}</span>
       </button>
 
       <div className="bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-[#1e224e]" style={{ fontFamily: "'Playfair Display', serif" }}>
-            {type === 'offre' ? 'Proposez un Service' : 'Demandez un Service'}
+            {type === 'offre' ? t('newService.titleOffer') : t('newService.titleRequest')}
           </h1>
           <p className="text-gray-500 mt-2 text-sm font-light leading-relaxed">
             {type === 'offre'
-              ? 'Partagez vos compétences avec vos voisins et offrez vos disponibilités.'
-              : 'Sollicitez de l\'aide auprès de vos voisins et fixez votre calendrier.'}
+              ? t('newService.descOffer')
+              : t('newService.descRequest')}
           </p>
         </div>
 
@@ -277,7 +265,7 @@ export default function NewServicePage() {
                 : 'text-gray-400 hover:text-gray-600'
             }`}
           >
-            Je propose mes services (Offre)
+            {t('newService.tabOffer')}
           </button>
           <button
             type="button"
@@ -288,20 +276,20 @@ export default function NewServicePage() {
                 : 'text-gray-400 hover:text-gray-600'
             }`}
           >
-            Je recherche de l'aide (Demande)
+            {t('newService.tabRequest')}
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-              {type === 'offre' ? 'QUEL SERVICE PROPOSEZ-VOUS ?' : 'QUEL SERVICE RECHERCHEZ-VOUS ?'}
+              {type === 'offre' ? t('newService.labelWhatServiceOffer') : t('newService.labelWhatServiceRequest')}
             </label>
             <Input
               type="text"
               value={titre}
               onChange={(e) => setTitre(e.target.value)}
-              placeholder={type === 'offre' ? "ex: Cours d'anglais, Jardinage, Conseils en Python..." : "ex: Aide pour déménager, Tonte de pelouse..."}
+              placeholder={type === 'offre' ? t('newService.placeholderOfferTitle') : t('newService.placeholderRequestTitle')}
               className="h-12 rounded-xl border-gray-200 focus:border-[#2c308e] focus:ring-1 focus:ring-[#2c308e]/10 text-sm"
               disabled={submitting}
             />
@@ -309,7 +297,7 @@ export default function NewServicePage() {
 
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
-              CATÉGORIE
+              {t('newService.labelCategory')}
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
               {CATEGORY_CARDS.map((card) => {
@@ -327,7 +315,7 @@ export default function NewServicePage() {
                     }`}
                   >
                     <card.icon className="h-6 w-6 mb-2" />
-                    <span className="text-xs font-semibold">{card.name}</span>
+                    <span className="text-xs font-semibold">{t(`newService.categories.${card.name}`)}</span>
                   </button>
                 )
               })}
@@ -336,12 +324,12 @@ export default function NewServicePage() {
 
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-              DÉTAILS DU SERVICE
+              {t('newService.labelServiceDetails')}
             </label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder={type === 'offre' ? "Décrivez votre service, vos compétences, vos disponibilités régulières et votre expérience..." : "Décrivez la tâche précise à accomplir, le matériel requis et tout autre détail utile..."}
+              placeholder={type === 'offre' ? t('newService.placeholderOfferDetails') : t('newService.placeholderRequestDetails')}
               className="min-h-[140px] rounded-2xl border-gray-200 focus:border-[#2c308e] focus:ring-1 focus:ring-[#2c308e]/10 text-sm leading-relaxed p-4"
               disabled={submitting}
             />
@@ -351,26 +339,26 @@ export default function NewServicePage() {
             <div className="space-y-6 animate-in fade-in duration-300">
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  MES DISPONIBILITÉS HEBDOMADAIRES
+                  {t('newService.labelWeeklyAvailabilities')}
                 </label>
                 <p className="text-xs text-gray-400 mb-4 font-light">
-                  Cochez les moments où vous êtes généralement disponible pour rendre ce service.
+                  {t('newService.descWeeklyAvailabilities')}
                 </p>
 
                 <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-gray-50/30">
                   <table className="w-full text-left border-collapse min-w-[500px]">
                     <thead>
                       <tr className="border-b border-gray-100">
-                        <th className="p-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider w-1/4">Jour</th>
+                        <th className="p-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider w-1/4">{t('newService.tableHeaderDay')}</th>
                         {['Matin', 'Après-midi', 'Soirée'].map((p) => (
-                          <th key={p} className="p-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">{p}</th>
+                          <th key={p} className="p-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-center">{t(`newService.periods.${p}`)}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'].map((day) => (
                         <tr key={day} className="border-b border-gray-100/60 last:border-0 hover:bg-gray-50/50">
-                          <td className="p-3 text-xs font-bold text-gray-700">{day}</td>
+                          <td className="p-3 text-xs font-bold text-gray-700">{t(`newService.days.${day}`)}</td>
                           {['Matin', 'Après-midi', 'Soirée'].map((period) => {
                             const isChecked = weeklyAvail[day]?.includes(period)
                             return (
@@ -399,12 +387,12 @@ export default function NewServicePage() {
 
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
-                  PRÉCISIONS OU REMARQUES SUR VOS HORAIRES (OPTIONNEL)
+                  {t('newService.labelDispoRemarks')}
                 </label>
                 <Textarea
                   value={dispoRemarks}
                   onChange={(e) => setDispoRemarks(e.target.value)}
-                  placeholder="Ex : Disponible principalement en fin de journée le week-end, ou flexible selon vos besoins..."
+                  placeholder={t('newService.placeholderDispoRemarks')}
                   className="min-h-[80px] rounded-2xl border-gray-200 focus:border-[#2c308e] focus:ring-1 focus:ring-[#2c308e]/10 text-sm p-3"
                   disabled={submitting}
                 />
@@ -416,20 +404,20 @@ export default function NewServicePage() {
             <div className="space-y-6 animate-in fade-in duration-300">
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  PLANIFICATION DU BESOIN
+                  {t('newService.labelPlanningNeed')}
                 </label>
                 
                 <div className="grid grid-cols-2 gap-2 mb-4">
                   {[
-                    { key: 'asap', label: '⚡ Urgent / Dès que possible' },
-                    { key: 'date_unique', label: '📅 Jour & Heures spécifiques' },
-                    { key: 'plage_dates', label: '🗓️ Plage de dates (ex: Week-end)' },
-                    { key: 'regulier', label: '🔄 Régulier / Récurrent' }
+                    { key: 'asap', label: t('newService.planifASAP') },
+                    { key: 'date_unique', label: t('newService.planifSingleDate') },
+                    { key: 'plage_dates', label: t('newService.planifRangeDates') },
+                    { key: 'regulier', label: t('newService.planifRegular') }
                   ].map((opt) => (
                     <button
                       key={opt.key}
                       type="button"
-                      onClick={() => setPlanifChoice(opt.key as any)}
+                      onClick={() => setPlanifChoice(opt.key as 'asap' | 'date_unique' | 'plage_dates' | 'regulier')}
                       disabled={submitting}
                       className={`px-4 py-3 rounded-2xl border text-xs font-semibold transition-all text-left ${
                         planifChoice === opt.key
@@ -445,7 +433,7 @@ export default function NewServicePage() {
                 {planifChoice === 'date_unique' && (
                   <div className="p-5 rounded-3xl border border-gray-100 bg-[#fafafe]/60 space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
                     <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sélectionnez la date</span>
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('newService.labelSelectDate')}</span>
                       <Input
                         type="date"
                         value={singleDate}
@@ -456,7 +444,7 @@ export default function NewServicePage() {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">De (Heure)</span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('newService.labelFromHour')}</span>
                         <Input
                           type="time"
                           value={singleStartHour}
@@ -466,7 +454,7 @@ export default function NewServicePage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">À (Heure)</span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('newService.labelToHour')}</span>
                         <Input
                           type="time"
                           value={singleEndHour}
@@ -483,7 +471,7 @@ export default function NewServicePage() {
                   <div className="p-5 rounded-3xl border border-gray-100 bg-[#fafafe]/60 space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Date de début</span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('newService.labelStartDate')}</span>
                         <Input
                           type="date"
                           value={rangeStartDate}
@@ -493,7 +481,7 @@ export default function NewServicePage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Date de fin</span>
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('newService.labelEndDate')}</span>
                         <Input
                           type="date"
                           value={rangeEndDate}
@@ -514,13 +502,13 @@ export default function NewServicePage() {
                       >
                         ✓
                       </button>
-                      <span className="text-xs font-semibold text-gray-600">Toute la journée / Horaires libres</span>
+                      <span className="text-xs font-semibold text-gray-600">{t('newService.labelAllDay')}</span>
                     </div>
 
                     {!rangeAllDay && (
                       <div className="grid grid-cols-2 gap-3 animate-in fade-in duration-200">
                         <div className="space-y-1">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">De (Heure)</span>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('newService.labelFromHour')}</span>
                           <Input
                             type="time"
                             value={rangeStartHour}
@@ -530,7 +518,7 @@ export default function NewServicePage() {
                           />
                         </div>
                         <div className="space-y-1">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">À (Heure)</span>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('newService.labelToHour')}</span>
                           <Input
                             type="time"
                             value={rangeEndHour}
@@ -547,7 +535,7 @@ export default function NewServicePage() {
                 {planifChoice === 'regulier' && (
                   <div className="p-5 rounded-3xl border border-gray-100 bg-[#fafafe]/60 space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
                     <div>
-                      <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Jours concernés</span>
+                      <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">{t('newService.labelConcernedDays')}</span>
                       <div className="flex flex-wrap gap-1.5">
                         {['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'].map((day) => {
                           const isSel = regularDays.includes(day)
@@ -560,7 +548,7 @@ export default function NewServicePage() {
                                 isSel ? 'bg-[#2c308e] border-[#2c308e] text-white shadow-2xs' : 'bg-white border-gray-200 text-gray-500'
                               }`}
                             >
-                              {day.slice(0, 3)}
+                              {t(`newService.daysShort.${day}`)}
                             </button>
                           )
                         })}
@@ -568,7 +556,7 @@ export default function NewServicePage() {
                     </div>
 
                     <div>
-                      <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Période de la journée</span>
+                      <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">{t('newService.labelPeriodOfDay')}</span>
                       <div className="flex gap-2">
                         {['Matinée', 'Après-midi', 'Soirée'].map((p) => {
                           const isSel = regularPeriods.includes(p)
@@ -581,7 +569,7 @@ export default function NewServicePage() {
                                 isSel ? 'bg-[#2c308e] border-[#2c308e] text-white shadow-2xs' : 'bg-white border-gray-200 text-gray-500'
                               }`}
                             >
-                              {p}
+                              {t(`newService.periods.${p}`)}
                             </button>
                           )
                         })}
@@ -596,7 +584,7 @@ export default function NewServicePage() {
           {type === 'offre' ? (
             <div>
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
-                TARIFICATION DU SERVICE
+                {t('newService.labelServicePricing')}
               </label>
               <div className="flex gap-3 mb-4">
                 <button
@@ -609,7 +597,7 @@ export default function NewServicePage() {
                       : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                   }`}
                 >
-                  Payant (Points)
+                  {t('newService.btnPayingPoints')}
                 </button>
                 <button
                   type="button"
@@ -621,7 +609,7 @@ export default function NewServicePage() {
                       : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                   }`}
                 >
-                  Gratuit / Entraide
+                  {t('newService.btnFreeMutualAid')}
                 </button>
               </div>
 
@@ -637,7 +625,7 @@ export default function NewServicePage() {
                           : 'text-gray-400'
                       }`}
                     >
-                      Tarif horaire
+                      {t('newService.tarifHourly')}
                     </button>
                     <button
                       type="button"
@@ -648,7 +636,7 @@ export default function NewServicePage() {
                           : 'text-gray-400'
                       }`}
                     >
-                      Forfait fixe
+                      {t('newService.tarifFixed')}
                     </button>
                   </div>
 
@@ -665,10 +653,10 @@ export default function NewServicePage() {
                     </div>
                     <div>
                       <span className="text-xs font-bold text-[#1f224e] uppercase tracking-wider block">
-                        POINTS {tarifType === 'horaire' ? '/ HEURE' : '/ PRESTATION'}
+                        {tarifType === 'horaire' ? t('newService.pointsPerHour') : t('newService.pointsPerPrestation')}
                       </span>
                       <span className="text-[10px] text-gray-400 font-light block mt-0.5">
-                        Recommandé : {SUGGESTED_RATES_BY_CATEGORY[categorie] || '10 - 50 pts'}
+                        {t('newService.labelRecommendedRate', { rate: t(`newService.suggestedRates.${categorie}`) || t('newService.suggestedRates.default') })}
                       </span>
                     </div>
                   </div>
@@ -678,7 +666,7 @@ export default function NewServicePage() {
           ) : (
             <div>
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
-                BUDGET EN POINTS ALLOUÉ
+                {t('newService.labelAllocatedPointsBudget')}
               </label>
               <div className="flex gap-3 mb-4">
                 <button
@@ -691,7 +679,7 @@ export default function NewServicePage() {
                       : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                   }`}
                 >
-                  Proposer des Points
+                  {t('newService.btnOfferPoints')}
                 </button>
                 <button
                   type="button"
@@ -703,7 +691,7 @@ export default function NewServicePage() {
                       : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                   }`}
                 >
-                  Gratuit / Entraide bénévole
+                  {t('newService.btnFreeVolunteerAid')}
                 </button>
               </div>
 
@@ -720,9 +708,9 @@ export default function NewServicePage() {
                     />
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-[#1f224e] uppercase tracking-wider block">POINTS POUR LA TÂCHE</span>
+                    <span className="text-xs font-bold text-[#1f224e] uppercase tracking-wider block">{t('newService.labelPointsForTask')}</span>
                     <span className="text-[10px] text-gray-400 font-light block mt-0.5">
-                      Recommandé : {SUGGESTED_RATES_BY_CATEGORY[categorie] || '10 - 50 pts'}
+                      {t('newService.labelRecommendedRate', { rate: t(`newService.suggestedRates.${categorie}`) || t('newService.suggestedRates.default') })}
                     </span>
                   </div>
                 </div>
@@ -732,7 +720,7 @@ export default function NewServicePage() {
 
           <div>
             <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-              PHOTOS
+              {t('newService.labelPhotos')}
             </label>
 
             <input
@@ -772,8 +760,8 @@ export default function NewServicePage() {
                   <div className="h-10 w-10 rounded-full bg-gray-50 flex items-center justify-center mb-3">
                     <Camera className="h-5 w-5 text-gray-400" />
                   </div>
-                  <p className="text-xs font-bold text-[#1f224e]">Cliquez pour ajouter des photos</p>
-                  <p className="text-[10px] text-gray-400 mt-1">Format JPG, PNG (Max 5Mo)</p>
+                  <p className="text-xs font-bold text-[#1f224e]">{t('newService.clickToAddPhotos')}</p>
+                  <p className="text-[10px] text-gray-400 mt-1">{t('newService.photoFormatHint')}</p>
                 </>
               )}
             </div>
@@ -788,16 +776,16 @@ export default function NewServicePage() {
               {submitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Publication en cours...</span>
+                  <span>{t('newService.publishingInProgress')}</span>
                 </>
               ) : (
                 <>
-                  <span>Publier l'annonce ▷</span>
+                  <span>{t('newService.publishAnnouncement')}</span>
                 </>
               )}
             </Button>
             <p className="text-[10px] text-gray-400 text-center">
-              En publiant, vous acceptez la charte de bon voisinage de HOODLY.
+              {t('newService.termsAcceptanceHint')}
             </p>
           </div>
         </form>

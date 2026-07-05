@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import * as pdfjsLib from 'pdfjs-dist'
 import { Plus, User, FileText, Trash } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
@@ -26,6 +27,7 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
   zones,
   onChange,
 }) => {
+  const { t } = useTranslation()
   const [numPages, setNumPages] = useState<number>(0)
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [loading, setLoading] = useState<boolean>(true)
@@ -162,10 +164,10 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
       <div className="md:w-64 flex flex-col gap-4">
         <h3 className="font-semibold text-slate-800 flex items-center gap-2">
           <FileText size={18} className="text-emerald-600" />
-          Éditeur de zones
+          {t('PDFSignatureZonesEditor.title', 'Éditeur de zones')}
         </h3>
         <p className="text-xs text-slate-500">
-          Ajoutez des zones de signature pour le client et le prestataire, puis faites-les glisser à l'endroit désigné.
+          {t('PDFSignatureZonesEditor.desc', "Ajoutez des zones de signature pour le client et le prestataire, puis faites-les glisser à l'endroit désigné.")}
         </p>
 
         <div className="flex flex-col gap-2 mt-2">
@@ -175,7 +177,7 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
             className="flex items-center justify-center gap-2 text-sm bg-blue-50 text-blue-700 hover:bg-blue-100 px-4 py-2.5 rounded-xl transition-all border border-blue-200/50 font-medium"
           >
             <Plus size={16} />
-            Zone Client (Bleu)
+            {t('PDFSignatureZonesEditor.btn_client', 'Zone Client (Bleu)')}
           </button>
           <button
             type="button"
@@ -183,16 +185,16 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
             className="flex items-center justify-center gap-2 text-sm bg-purple-50 text-purple-700 hover:bg-purple-100 px-4 py-2.5 rounded-xl transition-all border border-purple-200/50 font-medium"
           >
             <Plus size={16} />
-            Zone Prestataire (Violet)
+            {t('PDFSignatureZonesEditor.btn_provider', 'Zone Prestataire (Violet)')}
           </button>
         </div>
 
         <div className="mt-4 border-t border-slate-100 pt-4">
           <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-            Zones de la page ({currentPageZones.length})
+            {t('PDFSignatureZonesEditor.zones_page', { count: currentPageZones.length, defaultValue: `Zones de la page (${currentPageZones.length})` })}
           </h4>
           {currentPageZones.length === 0 ? (
-            <p className="text-xs italic text-slate-400">Aucune zone sur cette page</p>
+            <p className="text-xs italic text-slate-400">{t('PDFSignatureZonesEditor.no_zones', 'Aucune zone sur cette page')}</p>
           ) : (
             <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
               {zones.map((zone, index) => {
@@ -207,7 +209,7 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
                     }`}
                   >
                     <span className="font-medium">
-                      {zone.assignee === 'client' ? 'Client' : 'Prestataire'} (x: {zone.x}, y: {zone.y})
+                      {zone.assignee === 'client' ? t('PDFSignatureZonesEditor.client', 'Client') : t('PDFSignatureZonesEditor.provider', 'Prestataire')} (x: {zone.x}, y: {zone.y})
                     </span>
                     <button
                       type="button"
@@ -232,10 +234,10 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
             onClick={() => setCurrentPage(currentPage - 1)}
             className="text-slate-600 hover:text-slate-900 disabled:text-slate-300 font-medium transition-colors"
           >
-            Précédent
+            {t('PDFSignatureZonesEditor.prev', 'Précédent')}
           </button>
           <span className="font-medium text-slate-700">
-            Page {currentPage} sur {numPages || '?'}
+            {t('PDFSignatureZonesEditor.page_of', { current: currentPage, total: numPages || '?', defaultValue: `Page ${currentPage} sur ${numPages || '?'}` })}
           </span>
           <button
             type="button"
@@ -243,7 +245,7 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
             onClick={() => setCurrentPage(currentPage + 1)}
             className="text-slate-600 hover:text-slate-900 disabled:text-slate-300 font-medium transition-colors"
           >
-            Suivant
+            {t('PDFSignatureZonesEditor.next', 'Suivant')}
           </button>
         </div>
 
@@ -283,7 +285,7 @@ export const PDFSignatureZonesEditor: React.FC<PDFSignatureZonesEditorProps> = (
               >
                 <div className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
                   <User size={10} />
-                  {isClient ? 'Sign. Client' : 'Sign. Prestataire'}
+                  {isClient ? t('PDFSignatureZonesEditor.sign_client', 'Sign. Client') : t('PDFSignatureZonesEditor.sign_provider', 'Sign. Prestataire')}
                 </div>
                 <button
                   type="button"

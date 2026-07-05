@@ -5,6 +5,7 @@ import { useServices } from '../hooks/useServices'
 import { useConversations } from '../hooks/useConversations'
 import { Plus, HeartHandshake, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 import type { Service } from '../types/service.types'
 
 import { ServiceCard } from '../components/services-page/ServiceCard'
@@ -13,6 +14,7 @@ import { ServiceDetailModal } from '../components/services-page/ServiceDetailMod
 import { PromoCTA } from '../components/services-page/PromoCTA'
 
 export default function ServicesPage() {
+  const { t } = useTranslation()
   const { user } = useUser()
   const navigate = useNavigate()
   const [searchParamsRoute, setSearchParamsRoute] = useSearchParams()
@@ -69,7 +71,7 @@ export default function ServicesPage() {
     const destinataireId = isCreator ? responderId : creatorId
 
     if (!destinataireId) {
-      toast.error("Impossible d'ouvrir la discussion : aucun voisin n'est associé à cette action.")
+      toast.error(t('services.toastErrorOpenChat'))
       return
     }
 
@@ -81,7 +83,7 @@ export default function ServicesPage() {
       })
       navigate(`/messages?id=${conv._id}`)
     } catch {
-      toast.error("Impossible d'ouvrir la messagerie.")
+      toast.error(t('services.toastErrorMessaging'))
     }
   }
 
@@ -90,12 +92,12 @@ export default function ServicesPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-[#1e224e] dark:text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
-            {filterParam === 'mine' ? 'Mes annonces d\'entraide' : 'Entraide du quartier'}
+            {filterParam === 'mine' ? t('services.titleMine') : t('services.titleLocal')}
           </h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm font-light leading-relaxed">
             {filterParam === 'mine'
-              ? 'Gérez vos offres de services déposées et vos demandes d\'aide en cours.'
-              : 'Découvrez les services proposés par vos voisins ou publiez un besoin d\'entraide.'}
+              ? t('services.descMine')
+              : t('services.descLocal')}
           </p>
         </div>
 
@@ -108,7 +110,7 @@ export default function ServicesPage() {
                 filterParam === 'local' ? 'bg-white dark:bg-gray-900 text-[#2c308e] dark:text-indigo-400 shadow-3xs' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
-              Services locaux
+              {t('services.localServices')}
             </button>
             <button
               type="button"
@@ -117,7 +119,7 @@ export default function ServicesPage() {
                 filterParam === 'mine' ? 'bg-white dark:bg-gray-900 text-[#2c308e] dark:text-indigo-400 shadow-3xs' : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
-              Mes services
+              {t('services.myServices')}
             </button>
           </div>
 
@@ -126,7 +128,7 @@ export default function ServicesPage() {
             className="h-10 px-5 rounded-2xl bg-[#2c308e] hover:bg-[#2c308e]/95 text-white flex items-center justify-center gap-1.5 text-xs font-bold shadow-sm transition-all hover:scale-102 active:scale-98 cursor-pointer"
           >
             <Plus className="h-4 w-4" />
-            <span>Créer une annonce</span>
+            <span>{t('services.createAnnouncement')}</span>
           </Link>
         </div>
       </div>
@@ -145,15 +147,15 @@ export default function ServicesPage() {
       {isLoading ? (
         <div className="flex justify-center items-center py-24 flex-col text-gray-400 gap-3">
           <Loader2 className="h-8 w-8 text-[#2c308e] dark:text-indigo-400 animate-spin" />
-          <p className="text-xs font-bold">Chargement des services...</p>
+          <p className="text-xs font-bold">{t('services.loadingServices')}</p>
         </div>
       ) : filteredServices.length === 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 flex flex-col items-center justify-center p-12 text-center text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-900 rounded-[2rem] border border-dashed border-gray-200 dark:border-gray-800">
             <HeartHandshake className="h-12 w-12 mb-3 text-gray-300 dark:text-gray-700" />
-            <p className="text-sm font-bold text-gray-800 dark:text-gray-250">Aucun service trouvé pour l'instant</p>
+            <p className="text-sm font-bold text-gray-800 dark:text-gray-250">{t('services.noServiceFound')}</p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-sm leading-relaxed font-light">
-              Soyez le premier à proposer un service d'entraide ou à formuler une demande de bon voisinage dans votre quartier !
+              {t('services.noServiceFoundDesc')}
             </p>
           </div>
           {filterParam === 'local' && <PromoCTA />}

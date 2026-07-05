@@ -4,6 +4,7 @@ import { useConversations } from '../hooks/useConversations'
 import { useServices } from '../hooks/useServices'
 import { useUser } from '../hooks/useUser'
 import { useEvents } from '../hooks/useEvents'
+import { useTranslation } from 'react-i18next'
 import {
   ChevronLeft,
   ChevronRight,
@@ -43,6 +44,7 @@ type SelectedItem =
   | { type: 'event'; data: Event }
 
 export default function PlanningPage() {
+  const { t, i18n } = useTranslation()
   const { user } = useUser()
   const navigate = useNavigate()
   const { conversations } = useConversations()
@@ -81,7 +83,7 @@ export default function PlanningPage() {
   for (let i = 0; i < firstDayIndex; i++) daysArray.push(null)
   for (let d = 1; d <= totalDays; d++) daysArray.push(d)
 
-  const monthName = currentDate.toLocaleString('fr-FR', { month: 'long', year: 'numeric' })
+  const monthName = currentDate.toLocaleString(i18n.language, { month: 'long', year: 'numeric' })
 
   const getServicesForDay = (day: number) =>
     confirmedBookings.filter((b) => {
@@ -102,10 +104,10 @@ export default function PlanningPage() {
     if (!conv.serviceId) return
     try {
       await demarrerService({ id: conv.serviceId._id, body: { conversationId: conv._id } })
-      toast.success('Prestation démarrée avec succès !')
+      toast.success(t('planning.toast.start_success'))
       setSelectedItem(null)
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Erreur lors du démarrage.')
+      toast.error(err?.response?.data?.message || t('planning.toast.start_error'))
     }
   }
 
@@ -113,10 +115,10 @@ export default function PlanningPage() {
     if (!conv.serviceId) return
     try {
       await terminerService({ id: conv.serviceId._id, body: { conversationId: conv._id } })
-      toast.success('Prestation marquée comme accomplie !')
+      toast.success(t('planning.toast.finish_success'))
       setSelectedItem(null)
     } catch {
-      toast.error('Erreur lors de la finalisation.')
+      toast.error(t('planning.toast.finish_error'))
     }
   }
 
@@ -124,10 +126,10 @@ export default function PlanningPage() {
     if (!conv.serviceId) return
     try {
       await validerService({ id: conv.serviceId._id, body: { conversationId: conv._id } })
-      toast.success('Réalisation validée et transaction réglée !')
+      toast.success(t('planning.toast.validate_success'))
       setSelectedItem(null)
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Erreur lors de la validation.')
+      toast.error(err?.response?.data?.message || t('planning.toast.validate_error'))
     }
   }
 
@@ -136,10 +138,10 @@ export default function PlanningPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-[#1e224e]" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Mon Agenda de Quartier
+            {t('planning.title')}
           </h1>
           <p className="text-gray-500 mt-1 text-sm font-light leading-relaxed">
-            Consultez toutes vos prestations d'entraide et événements du quartier.
+            {t('planning.description')}
           </p>
         </div>
         <Button
@@ -147,7 +149,7 @@ export default function PlanningPage() {
           className="self-start sm:self-center bg-[#2c308e] hover:bg-[#2c308e]/95 text-white rounded-full px-5 py-2.5 flex items-center gap-2 shadow-sm text-xs font-bold"
         >
           <MessageSquare className="h-4 w-4" />
-          <span>Planifier un rendez-vous</span>
+          <span>{t('planning.schedule_appointment_button')}</span>
         </Button>
       </div>
 
@@ -166,7 +168,15 @@ export default function PlanningPage() {
           </div>
 
           <div className="grid grid-cols-7 gap-2">
-            {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((d) => (
+            {[
+              t('planning.days.mon'),
+              t('planning.days.tue'),
+              t('planning.days.wed'),
+              t('planning.days.thu'),
+              t('planning.days.fri'),
+              t('planning.days.sat'),
+              t('planning.days.sun')
+            ].map((d) => (
               <div key={d} className="text-center py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">{d}</div>
             ))}
 
@@ -210,7 +220,7 @@ export default function PlanningPage() {
                       </button>
                     ))}
                     {total > 1 && (
-                      <span className="text-[7px] text-gray-400 text-center font-bold">+{total - 1} autre{total - 1 > 1 ? 's' : ''}</span>
+                      <span className="text-[7px] text-gray-400 text-center font-bold">{t('planning.other_count', { count: total - 1 })}</span>
                     )}
                   </div>
                 </div>
@@ -221,32 +231,34 @@ export default function PlanningPage() {
           <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-100">
             <div className="flex items-center gap-1.5">
               <div className="h-2.5 w-2.5 rounded-sm bg-emerald-400" />
-              <span className="text-[10px] text-gray-400 font-medium">Services</span>
+              <span className="text-[10px] text-gray-400 font-medium">{t('planning.legend.services')}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-2.5 w-2.5 rounded-sm bg-[#2c308e]" />
-              <span className="text-[10px] text-gray-400 font-medium">Événements</span>
+              <span className="text-[10px] text-gray-400 font-medium">{t('planning.legend.events')}</span>
             </div>
           </div>
         </Card>
 
         <div className="space-y-6">
-          <h3 className="text-lg font-bold text-gray-900 leading-none">À venir</h3>
+          <h3 className="text-lg font-bold text-gray-900 leading-none">{t('planning.upcoming.title')}</h3>
 
           <div className="space-y-3">
             {upcomingBookings.length === 0 && upcomingEvents.length === 0 ? (
               <div className="p-8 bg-white border border-dashed rounded-[2rem] text-center text-gray-400">
                 <CalendarIcon className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-                <p className="text-xs font-bold text-gray-900">Rien de planifié</p>
+                <p className="text-xs font-bold text-gray-900">{t('planning.upcoming.empty_title')}</p>
                 <p className="text-[10px] mt-1 leading-relaxed">
-                  Proposez des créneaux dans vos discussions ou participez à des événements.
+                  {t('planning.upcoming.empty_description')}
                 </p>
               </div>
             ) : (
               <>
                 {upcomingBookings.map((booking) => {
                   const other = getOtherParticipant(booking)
-                  const dateStr = new Date(booking.creneau!.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+                  const bookingDate = new Date(booking.creneau!.date)
+                  const monthShort = bookingDate.toLocaleDateString(i18n.language, { month: 'short' })
+                  const dayNumber = bookingDate.getDate()
                   const style = booking.serviceId ? (CATEGORY_STYLES[booking.serviceId.categorie] || DEFAULT_STYLE) : DEFAULT_STYLE
                   return (
                     <Card
@@ -255,16 +267,16 @@ export default function PlanningPage() {
                       className="bg-white rounded-2xl border border-gray-100 hover:border-gray-200 transition-all p-4 cursor-pointer shadow-xs flex items-center gap-4 hover:-translate-y-0.5"
                     >
                       <div className="h-12 w-12 rounded-xl bg-gray-50 flex flex-col items-center justify-center border shrink-0">
-                        <span className="text-xs font-extrabold text-[#2c308e] leading-none uppercase">{dateStr.split(' ')[1]}</span>
-                        <span className="text-lg font-extrabold text-gray-900 leading-none mt-0.5">{dateStr.split(' ')[0]}</span>
+                        <span className="text-xs font-extrabold text-[#2c308e] leading-none uppercase">{monthShort}</span>
+                        <span className="text-lg font-extrabold text-gray-900 leading-none mt-0.5">{dayNumber}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className={`text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${style.bg} ${style.text}`}>{booking.serviceId?.categorie}</span>
+                          <span className={`text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${style.bg} ${style.text}`}>{t('categories.' + booking.serviceId?.categorie)}</span>
                           <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider">{booking.creneau?.debut} - {booking.creneau?.fin}</span>
                         </div>
                         <h4 className="text-xs font-bold text-gray-900 truncate mt-1">{booking.serviceId?.titre}</h4>
-                        <p className="text-[9px] text-gray-400 truncate font-light">Voisin : {other?.name || 'Voisin'}</p>
+                        <p className="text-[9px] text-gray-400 truncate font-light">{t('planning.upcoming.voisin', { name: other?.name || t('planning.voisin_fallback') })}</p>
                       </div>
                     </Card>
                   )
@@ -272,8 +284,9 @@ export default function PlanningPage() {
 
                 {upcomingEvents.map((event) => {
                   const eventDate = new Date(event.date)
-                  const dateStr = eventDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
-                  const timeStr = eventDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+                  const monthShort = eventDate.toLocaleDateString(i18n.language, { month: 'short' })
+                  const dayNumber = eventDate.getDate()
+                  const timeStr = eventDate.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })
                   const isOrganizer = event.createurId === userId
                   return (
                     <Card
@@ -282,19 +295,19 @@ export default function PlanningPage() {
                       className="bg-white rounded-2xl border border-[#2c308e]/10 hover:border-[#2c308e]/30 transition-all p-4 cursor-pointer shadow-xs flex items-center gap-4 hover:-translate-y-0.5"
                     >
                       <div className="h-12 w-12 rounded-xl bg-[#e9eaf6] flex flex-col items-center justify-center border border-[#2c308e]/20 shrink-0">
-                        <span className="text-xs font-extrabold text-[#2c308e] leading-none uppercase">{dateStr.split(' ')[1]}</span>
-                        <span className="text-lg font-extrabold text-[#2c308e] leading-none mt-0.5">{dateStr.split(' ')[0]}</span>
+                        <span className="text-xs font-extrabold text-[#2c308e] leading-none uppercase">{monthShort}</span>
+                        <span className="text-lg font-extrabold text-[#2c308e] leading-none mt-0.5">{dayNumber}</span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                           <span className="text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border bg-[#e9eaf6] text-[#2c308e] border-[#2c308e]/20">
-                            🎉 {event.categorie}
+                            🎉 {t('categories.' + event.categorie)}
                           </span>
                           <span className="text-[8px] text-gray-400 font-bold">{timeStr}</span>
                         </div>
                         <h4 className="text-xs font-bold text-gray-900 truncate mt-1">{event.titre}</h4>
                         <p className="text-[9px] text-gray-400 font-light">
-                          {isOrganizer ? 'Organisateur' : 'Participant'} · {event.participants.length}/{event.capacite}
+                          {isOrganizer ? t('planning.organizer') : t('planning.participant')} · {event.participants.length}/{event.capacite}
                         </p>
                       </div>
                     </Card>
@@ -311,7 +324,7 @@ export default function PlanningPage() {
         const service = ev.serviceId!
         const creneau = ev.creneau!
         const other = getOtherParticipant(ev)
-        const dateStr = new Date(creneau.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+        const dateStr = new Date(creneau.date).toLocaleDateString(i18n.language, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
         const isCreator = typeof service.createurId === 'object' ? service.createurId.email === user?.email : service.createurId === user?.id
         const isProvider = service.type === 'demande' ? !isCreator : isCreator
         const isClient = service.type === 'demande' ? isCreator : !isCreator
@@ -327,10 +340,10 @@ export default function PlanningPage() {
               <div className="p-8 space-y-6 overflow-y-auto">
                 <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                   <Badge className="bg-[#e9eaf6] text-[#2c308e] text-[9px] font-bold uppercase tracking-wider px-3 py-1 border-0">
-                    🪙 {service.gratuit ? 'Gratuit / Entraide' : `${service.points || 0} pts`}
+                    🪙 {service.gratuit ? t('planning.modal.free') : t('planning.modal.points', { count: service.points || 0 })}
                   </Badge>
                   <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100 uppercase tracking-wider">
-                    {prestationStatut === 'valide' ? 'Planifié' : prestationStatut === 'en_cours' ? 'En Cours' : 'Terminé'}
+                    {prestationStatut === 'valide' ? t('planning.status.scheduled') : prestationStatut === 'en_cours' ? t('planning.status.in_progress') : t('planning.status.completed')}
                   </span>
                 </div>
                 <div className="space-y-3">
@@ -342,19 +355,19 @@ export default function PlanningPage() {
                     </div>
                     <div className="flex items-center gap-2 text-xs text-gray-500 font-light">
                       <Clock className="h-4 w-4 text-gray-400" />
-                      <span>De <strong>{creneau.debut}</strong> à <strong>{creneau.fin}</strong></span>
+                      <span>{t('planning.modal.from')} <strong>{creneau.debut}</strong> {t('planning.modal.to')} <strong>{creneau.fin}</strong></span>
                     </div>
                   </div>
                 </div>
                 <div className="border-t border-gray-100 pt-5 space-y-3">
-                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Voisin associé</h4>
+                  <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{t('planning.modal.associated_neighbor')}</h4>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10 border border-gray-100">
                       <AvatarImage src={other?.picture} />
-                      <AvatarFallback className="bg-[#2c308e] text-white">{other?.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                      <AvatarFallback className="bg-[#2c308e] text-white">{other?.name?.charAt(0).toUpperCase() || 'V'}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="text-sm font-bold text-gray-900">{other?.name}</p>
+                      <p className="text-sm font-bold text-gray-900">{other?.name || t('planning.voisin_fallback')}</p>
                       <p className="text-xs text-gray-400">{other?.email}</p>
                     </div>
                   </div>
@@ -362,26 +375,26 @@ export default function PlanningPage() {
                 <div className="border-t border-gray-100 pt-6 space-y-3">
                   {prestationStatut === 'valide' && isProvider && (
                     <Button onClick={() => handleStart(ev)} className="w-full bg-[#2c308e] hover:bg-[#2c308e]/95 text-white rounded-xl py-5 text-xs font-bold shadow-md flex items-center justify-center gap-2">
-                      <Play className="h-4 w-4 fill-white" /><span>Démarrer la prestation</span>
+                      <Play className="h-4 w-4 fill-white" /><span>{t('planning.modal.start_button')}</span>
                     </Button>
                   )}
                   {prestationStatut === 'en_cours' && isProvider && (
                     <Button onClick={() => handleFinish(ev)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-5 text-xs font-bold shadow-md flex items-center justify-center gap-2">
-                      <CheckCircle2 className="h-4 w-4" /><span>Marquer comme accompli</span>
+                      <CheckCircle2 className="h-4 w-4" /><span>{t('planning.modal.complete_button')}</span>
                     </Button>
                   )}
                   {prestationStatut === 'termine' && !realisationValidee && isClient && (
                     <Button onClick={() => handleValidate(ev)} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl py-5 text-xs font-bold shadow-md flex items-center justify-center gap-2">
-                      <Award className="h-4 w-4" /><span>Valider la réalisation (Payer)</span>
+                      <Award className="h-4 w-4" /><span>{t('planning.modal.validate_button')}</span>
                     </Button>
                   )}
 
 
                   <div className="flex gap-2">
                     <Button variant="outline" onClick={() => { setSelectedItem(null); navigate(`/messages?id=${ev._id}`) }} className="flex-1 rounded-xl py-5 text-xs font-semibold flex items-center justify-center gap-2">
-                      <MessageSquare className="h-4 w-4 text-gray-500" /><span>Écrire au voisin</span>
+                      <MessageSquare className="h-4 w-4 text-gray-500" /><span>{t('planning.modal.write_neighbor_button')}</span>
                     </Button>
-                    <Button variant="ghost" onClick={() => setSelectedItem(null)} className="rounded-xl px-4">Fermer</Button>
+                    <Button variant="ghost" onClick={() => setSelectedItem(null)} className="rounded-xl px-4">{t('planning.modal.close_button')}</Button>
                   </div>
                 </div>
               </div>
@@ -395,8 +408,8 @@ export default function PlanningPage() {
         const isOrganizer = event.createurId === userId
         const isParticipant = event.participants.includes(userId)
         const eventDate = new Date(event.date)
-        const dateStr = eventDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
-        const timeStr = eventDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        const dateStr = eventDate.toLocaleDateString(i18n.language, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+        const timeStr = eventDate.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' })
         const lieu = event.lieu?.adresse || event.lieu?.ville ? `${event.lieu.adresse ?? ''} ${event.lieu.ville ?? ''}`.trim() : null
 
         return (
@@ -408,14 +421,14 @@ export default function PlanningPage() {
               <div className="p-8 space-y-6 overflow-y-auto">
                 <div className="flex items-center justify-between border-b border-gray-100 pb-4">
                   <Badge className="bg-[#e9eaf6] text-[#2c308e] text-[9px] font-bold uppercase tracking-wider px-3 py-1 border-0">
-                    🎉 {event.categorie}
+                    🎉 {t('categories.' + event.categorie)}
                   </Badge>
                   <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase tracking-wider ${
                     isOrganizer
                       ? 'text-amber-600 bg-amber-50 border-amber-100'
                       : 'text-emerald-600 bg-emerald-50 border-emerald-100'
                   }`}>
-                    {isOrganizer ? 'Organisateur' : 'Participant'}
+                    {isOrganizer ? t('planning.organizer') : t('planning.participant')}
                   </span>
                 </div>
 
@@ -434,7 +447,7 @@ export default function PlanningPage() {
                   <div className="space-y-2 pt-1">
                     <div className="flex items-center gap-2 text-xs text-gray-600">
                       <CalendarIcon className="h-4 w-4 text-[#2c308e] shrink-0" />
-                      <span className="capitalize">{dateStr} à {timeStr}</span>
+                      <span className="capitalize">{t('planning.modal.event_date_time', { date: dateStr, time: timeStr })}</span>
                     </div>
                     {lieu && (
                       <div className="flex items-center gap-2 text-xs text-gray-600">
@@ -444,7 +457,7 @@ export default function PlanningPage() {
                     )}
                     <div className="flex items-center gap-2 text-xs text-gray-600">
                       <Users className="h-4 w-4 text-[#2c308e] shrink-0" />
-                      <span>{event.participants.length}/{event.capacite} participants inscrits</span>
+                      <span>{t('planning.modal.participants_count', { count: event.participants.length, max: event.capacite })}</span>
                     </div>
                   </div>
                 </div>
@@ -455,10 +468,10 @@ export default function PlanningPage() {
                       onClick={() => { setSelectedItem(null); navigate(`/messages?id=${event.conversationId}`) }}
                       className="flex-1 bg-[#2c308e] hover:bg-[#2c308e]/95 text-white rounded-xl py-5 text-xs font-bold flex items-center justify-center gap-2"
                     >
-                      <MessageSquare className="h-4 w-4" /><span>Voir la discussion</span>
+                      <MessageSquare className="h-4 w-4" /><span>{t('planning.modal.view_chat_button')}</span>
                     </Button>
                   )}
-                  <Button variant="ghost" onClick={() => setSelectedItem(null)} className="rounded-xl px-4">Fermer</Button>
+                  <Button variant="ghost" onClick={() => setSelectedItem(null)} className="rounded-xl px-4">{t('planning.modal.close_button')}</Button>
                 </div>
               </div>
             </div>

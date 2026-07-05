@@ -4,12 +4,14 @@ import { useUser } from '../hooks/useUser'
 import { useConversations } from '../hooks/useConversations'
 import { useSocket } from '../hooks/useSocket'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 
 import { ConversationSidebar } from '../components/messages-page/ConversationSidebar'
 import { ChatWindow } from '../components/messages-page/ChatWindow'
 import { NeighborSearchModal } from '../components/messages-page/NeighborSearchModal'
 
 export default function MessagesPage() {
+  const { t } = useTranslation()
   const { user } = useUser()
   const { socket } = useSocket()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -57,9 +59,9 @@ export default function MessagesPage() {
       const conv = await startConversation({ destinataireId: voisinId })
       setShowNewChatModal(false)
       setSearchParams({ id: conv._id })
-      toast.success('Discussion générale démarrée !')
+      toast.success(t('messages.toasts.chatStarted'))
     } catch {
-      toast.error('Impossible de démarrer la discussion.')
+      toast.error(t('messages.toasts.startFailed'))
     }
   }
 

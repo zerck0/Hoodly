@@ -205,41 +205,36 @@
 }
 
 .dark {
-  /* Global page/layout backgrounds overrides */
   .bg-white, .bg-\[\#fefefa\], [class*="bg-white"], .bg-background {
-    background-color: oklch(0.205 0 0) !important; /* card background */
+    background-color: oklch(0.205 0 0) !important;
   }
   .bg-slate-50, .bg-\[\#f5f3ed\], .bg-gray-50, [class*="bg-slate-50"], .bg-\[\#fcfbfa\], .bg-\[\#fafafa\] {
-    background-color: oklch(0.145 0 0) !important; /* background color */
+    background-color: oklch(0.145 0 0) !important;
   }
   .bg-gray-100, .bg-gray-50\/50, .bg-gray-100\/60, .bg-slate-50\/50 {
-    background-color: oklch(0.269 0 0) !important; /* secondary/input background */
+    background-color: oklch(0.269 0 0) !important;
   }
 
-  /* Typography / Text colors */
   .text-gray-900, .text-gray-800, .text-\[\#1e224e\], .text-foreground {
-    color: oklch(0.985 0 0) !important; /* foreground white */
+    color: oklch(0.985 0 0) !important;
   }
   .text-gray-700, .text-gray-600 {
-    color: oklch(0.85 0 0) !important; /* light grey text */
+    color: oklch(0.85 0 0) !important;
   }
   .text-gray-500, .text-gray-400, .text-muted-foreground {
-    color: oklch(0.708 0 0) !important; /* muted text */
+    color: oklch(0.708 0 0) !important;
   }
 
-  /* Borders */
   .border, .border-gray-50, .border-gray-100, .border-gray-200, .border-gray-200\/30, .border-gray-200\/50, .border-gray-200\/60, .border-gray-200\/80, .border-border {
-    border-color: oklch(0.269 0 0 / 50%) !important; /* dark border */
+    border-color: oklch(0.269 0 0 / 50%) !important;
   }
-  
-  /* Inputs / Selects / Textareas */
+
   input[type="text"], input[type="email"], input[type="password"], textarea, select {
     background-color: oklch(0.269 0 0) !important;
     color: oklch(0.985 0 0) !important;
     border-color: oklch(0.269 0 0 / 80%) !important;
   }
-  
-  /* Buttons */
+
   button.bg-white {
     background-color: oklch(0.269 0 0) !important;
     color: oklch(0.985 0 0) !important;

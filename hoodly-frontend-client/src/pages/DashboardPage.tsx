@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useUser } from '../hooks/useUser'
 import VerificationModal from '../components/shared/VerificationModal'
 import StatusBanner from '../components/dashboard/StatusBanner'
@@ -7,6 +8,7 @@ import { CreatePostForm } from '../components/dashboard/feed/CreatePostForm'
 import { ZoneMembershipStatus } from '../types/status.enum'
 
 function DashboardPage() {
+  const { t } = useTranslation()
   const { user, isRefreshing, refreshProfile } = useUser()
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -26,10 +28,10 @@ function DashboardPage() {
         {!hasZone ? (
           <div className="rounded-2xl bg-white dark:bg-gray-900 p-12 text-center shadow-sm border border-gray-100 dark:border-gray-800">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-              Bienvenue sur Hoodly !
+              {t('dashboard.welcome')}
             </h1>
             <p className="mt-4 text-muted-foreground dark:text-gray-400 text-lg">
-              Rejoignez un quartier pour commencer à interagir avec vos voisins.
+              {t('dashboard.joinNeighborhoodPrompt')}
             </p>
           </div>
         ) : (

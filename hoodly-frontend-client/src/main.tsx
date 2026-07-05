@@ -8,6 +8,7 @@ import { setAuth0TokenGetter } from './lib/axios'
 import { TooltipProvider } from './components/ui/tooltip'
 import { Toaster } from './components/ui/sonner'
 import './index.css'
+import './i18n/config'
 
 import { ThemeProvider } from 'next-themes'
 

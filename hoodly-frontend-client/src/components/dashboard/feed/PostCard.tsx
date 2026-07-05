@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { fr } from 'date-fns/locale'
+import { fr, enUS } from 'date-fns/locale'
 import { Heart, MessageCircle, MapPin, AlertTriangle, Calendar, Wrench, Trash2, X } from 'lucide-react'
 import { Card, CardContent, CardFooter, CardHeader } from '../../ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar'
@@ -14,6 +14,7 @@ import { CommentSection } from './CommentSection'
 import { toast } from 'sonner'
 import { useAuthStore } from '../../../stores/auth.store'
 import { ZoneMembershipStatus } from '../../../types/status.enum'
+import { useTranslation } from 'react-i18next'
 
 interface PostCardProps {
   post: Post
@@ -21,13 +22,14 @@ interface PostCardProps {
 }
 
 const typeConfig = {
-  [PostType.DISCUSSION]: { label: 'Discussion', color: 'bg-blue-100 text-blue-800', icon: MessageCircle },
-  [PostType.SERVICE]: { label: 'Service', color: 'bg-green-100 text-green-800', icon: Wrench },
-  [PostType.EVENT]: { label: 'Événement', color: 'bg-purple-100 text-purple-800', icon: Calendar },
-  [PostType.ALERT]: { label: 'Alerte', color: 'bg-red-100 text-red-800', icon: AlertTriangle },
+  [PostType.DISCUSSION]: { color: 'bg-blue-100 text-blue-800', icon: MessageCircle },
+  [PostType.SERVICE]: { color: 'bg-green-100 text-green-800', icon: Wrench },
+  [PostType.EVENT]: { color: 'bg-purple-100 text-purple-800', icon: Calendar },
+  [PostType.ALERT]: { color: 'bg-red-100 text-red-800', icon: AlertTriangle },
 }
 
 export function PostCard({ post, currentUserId }: PostCardProps) {
+  const { t, i18n } = useTranslation()
   const user = useAuthStore((state) => state.user)
   const isVerified = user?.zoneStatut === ZoneMembershipStatus.ACTIVE
 
@@ -44,16 +46,16 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
   const { mutate: handleDeletePost, isPending: isDeleting } = useMutation({
     mutationFn: () => postsApi.deletePost(post._id),
     onSuccess: () => {
-      toast.success('Publication supprimée avec succès')
+      toast.success(t('dashboard.postCard.deleteSuccess', 'Publication supprimée avec succès'))
       queryClient.invalidateQueries({ queryKey: ['posts', post.zone] })
     },
     onError: () => {
-      toast.error('Erreur lors de la suppression de la publication')
+      toast.error(t('dashboard.postCard.deleteError', 'Erreur lors de la suppression de la publication'))
     }
   })
 
   const confirmDelete = () => {
-    if (window.confirm('Voulez-vous vraiment supprimer cette publication ?')) {
+    if (window.confirm(t('dashboard.postCard.confirmDelete', 'Voulez-vous vraiment supprimer cette publication ?'))) {
       handleDeletePost()
     }
   }
@@ -71,6 +73,17 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
   })
 
   const TypeIcon = typeConfig[post.type].icon
+  const activeLocale = i18n.language === 'en' ? enUS : fr
+
+  const getTypeLabel = (type: PostType) => {
+    switch (type) {
+      case PostType.DISCUSSION: return t('dashboard.createPost.types.discussion', 'Discussion')
+      case PostType.SERVICE: return t('dashboard.createPost.types.service', 'Service')
+      case PostType.EVENT: return t('dashboard.createPost.types.event', 'Événement')
+      case PostType.ALERT: return t('dashboard.createPost.types.alert', 'Alerte')
+      default: return type
+    }
+  }
 
   return (
     <Card className="overflow-hidden">
@@ -83,11 +96,11 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
           <div className="flex flex-col">
             <span className="font-semibold text-sm">{post.authorSnapshot.nom}</span>
             <span className="text-xs text-muted-foreground flex items-center gap-1">
-              {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: fr })}
+              {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: activeLocale })}
               {post.isPinned && (
                 <>
                   <span>•</span>
-                  <MapPin className="w-3 h-3 text-primary" /> Épinglé
+                  <MapPin className="w-3 h-3 text-primary" /> {t('dashboard.postCard.pinned', 'Épinglé')}
                 </>
               )}
             </span>
@@ -107,7 +120,7 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
           )}
           <Badge variant="secondary" className={`flex items-center gap-1.5 ${typeConfig[post.type].color}`}>
             <TypeIcon className="w-3 h-3" />
-            {typeConfig[post.type].label}
+            {getTypeLabel(post.type)}
           </Badge>
         </div>
       </CardHeader>
@@ -122,7 +135,7 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
               className="bg-[#2c308e] hover:bg-[#2c308e]/95 text-white font-bold text-xs rounded-xl h-9 px-4 shadow-sm transition-all cursor-pointer active:scale-98"
             >
               <a href="/votes">
-                🗳️ Participer à la consultation
+                {t('dashboard.postCard.joinVote', '🗳️ Participer à la consultation')}
               </a>
             </Button>
           </div>
@@ -151,7 +164,7 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
           className={`flex items-center gap-1.5 ${isLiked ? 'text-red-500 hover:text-red-600' : 'text-muted-foreground'}`}
           onClick={() => {
             if (!isVerified) {
-              toast.error("Veuillez faire vérifier votre compte avec vos justificatifs pour interagir avec les publications.")
+              toast.error(t('dashboard.postCard.verificationRequired', 'Veuillez faire vérifier votre compte avec vos justificatifs pour interagir avec les publications.'))
               return
             }
             toggleLike()
@@ -167,7 +180,7 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
           onClick={() => setIsCommentsExpanded((prev) => !prev)}
         >
           <MessageCircle className="w-4 h-4" />
-          <span>{commentsCount} commentaires</span>
+          <span>{t('dashboard.postCard.commentsCount', { count: commentsCount, defaultValue: `${commentsCount} commentaires` })}</span>
         </Button>
       </CardFooter>
 
@@ -207,7 +220,7 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
           </Button>
           <img
             src={activeImage}
-            alt="Aperçu grand écran"
+            alt={t('dashboard.postCard.fullscreenPreview', 'Aperçu grand écran')}
             className="max-w-full max-h-[90vh] object-contain rounded-md animate-in zoom-in-95 duration-200"
           />
         </div>

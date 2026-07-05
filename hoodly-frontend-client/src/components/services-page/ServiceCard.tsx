@@ -3,6 +3,7 @@ import { Calendar, Clock } from 'lucide-react'
 import { Card, CardContent } from '../ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar'
 import type { Service } from '../../types/service.types'
+import { useTranslation } from 'react-i18next'
 
 const CATEGORY_IMAGES: Record<string, string> = {
   Jardinage: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&q=80&w=600',
@@ -24,14 +25,14 @@ const CATEGORY_STYLES: Record<string, { bg: string, text: string }> = {
   Animaux: { bg: 'bg-purple-50 dark:bg-purple-950/20', text: 'text-purple-700 dark:text-purple-400 border-purple-100 dark:border-purple-900' }
 }
 
-const formatPlanification = (planif: string | undefined) => {
-  if (!planif) return 'Date flexible'
+const formatPlanification = (planif: string | undefined, t: any) => {
+  if (!planif) return t('services.card.flexibleDate', 'Date flexible')
   if (/[a-zA-Z]/.test(planif) || planif.includes(' ')) {
     return planif
   }
   const date = new Date(planif)
   if (!isNaN(date.getTime())) {
-    return `Le ${date.toLocaleDateString()}`
+    return t('services.card.dateOn', { date: date.toLocaleDateString(), defaultValue: `Le ${date.toLocaleDateString()}` })
   }
   return planif
 }
@@ -42,12 +43,13 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ service, onSelect }: ServiceCardProps) {
+  const { t } = useTranslation()
   const imageUrl = service.photoUrl || CATEGORY_IMAGES[service.categorie] || DEFAULT_IMAGE
   const categoryStyle = CATEGORY_STYLES[service.categorie] || { bg: 'bg-gray-50 dark:bg-gray-800', text: 'text-gray-700 dark:text-gray-300 border-gray-100 dark:border-gray-700' }
   const creator = typeof service.createurId === 'object' ? service.createurId : null
 
   const getPriceLabel = () => {
-    if (service.gratuit) return 'Gratuit'
+    if (service.gratuit) return t('services.card.free', 'Gratuit')
     return `${service.points || 0} pts`
   }
 
@@ -63,10 +65,10 @@ export function ServiceCard({ service, onSelect }: ServiceCardProps) {
           <span className={`text-[8px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-2xs border ${
             service.type === 'offre' ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900' : 'bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-900'
           }`}>
-            {service.type === 'offre' ? 'Offre' : 'Demande'}
+            {service.type === 'offre' ? t('services.card.typeOffer', 'Offre') : t('services.card.typeRequest', 'Demande')}
           </span>
           <span className={`text-[8px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-2xs border ${categoryStyle.bg} ${categoryStyle.text}`}>
-            {service.categorie}
+            {t(`categories.${service.categorie}`, service.categorie)}
           </span>
         </div>
         <div className="absolute bottom-4 right-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xs px-3 py-1 rounded-xl shadow-2xs border border-gray-100 dark:border-gray-850">
@@ -89,14 +91,16 @@ export function ServiceCard({ service, onSelect }: ServiceCardProps) {
             <div className="flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
               <span>
-                {service.recurrente ? 'Service récurrent (hebdomadaire)' : formatPlanification(service.datePlanification)}
+                {service.recurrente 
+                  ? t('services.card.recurrent', 'Service récurrent (hebdomadaire)') 
+                  : formatPlanification(service.datePlanification, t)}
               </span>
             </div>
             {service.disponibilites && service.disponibilites.length > 0 && (
               <div className="flex items-center gap-1.5">
                 <Clock className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500" />
                 <span className="truncate max-w-[200px]">
-                  {service.disponibilites.map(d => d.replace('semaine_', 'Semaine ')).join(', ')}
+                  {service.disponibilites.map(d => t('newService.dispoLabels.' + d, d.replace('semaine_', 'Semaine '))).join(', ')}
                 </span>
               </div>
             )}
@@ -112,7 +116,7 @@ export function ServiceCard({ service, onSelect }: ServiceCardProps) {
               </AvatarFallback>
             </Avatar>
             <span className="text-[10px] text-gray-600 dark:text-gray-300 truncate font-semibold">
-              {creator?.name || 'Voisin'}
+              {creator?.name || t('services.card.neighborFallback', 'Voisin')}
             </span>
           </div>
 
@@ -121,7 +125,7 @@ export function ServiceCard({ service, onSelect }: ServiceCardProps) {
             onClick={() => onSelect(service)}
             className="text-[10px] font-bold text-[#2c308e] dark:text-indigo-400 hover:text-[#2c308e]/80 dark:hover:text-indigo-300 transition-colors flex items-center gap-0.5 cursor-pointer"
           >
-            Détails
+            {t('services.card.details', 'Détails')}
           </button>
         </div>
       </CardContent>

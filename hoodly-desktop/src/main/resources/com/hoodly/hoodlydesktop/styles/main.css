@@ -113,7 +113,6 @@
     -fx-text-fill: #1E3A8A;
 }
 
-/* Disposition compacte */
 .layout-compact .stat-card { -fx-padding: 10; }
 .layout-compact .stat-value { -fx-font-size: 22px; }
 .layout-compact .table-row-cell { -fx-cell-size: 28px; }

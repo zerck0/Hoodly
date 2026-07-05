@@ -122,8 +122,6 @@ export class ConversationsGateway
       }
       ConversationsGateway.activeConnections.get(userId)!.add(client.id);
 
-      console.log(`[WS] Client connecté : ${user.name} (${user.id})`);
-
       if (ConversationsGateway.activeConnections.get(userId)!.size === 1) {
         this.server.emit('userPresence', { userId, status: 'online' });
       }
@@ -146,7 +144,6 @@ export class ConversationsGateway
         }
       }
     }
-    console.log(`[WS] Client déconnecté : ${client.data?.email || client.id}`);
   }
 
   @SubscribeMessage('getOnlineUsers')
@@ -170,7 +167,6 @@ export class ConversationsGateway
       if (conv) {
         const roomName = `room:conversation:${data.conversationId}`;
         await client.join(roomName);
-        console.log(`[WS] User ${userId} a rejoint le salon ${roomName}`);
       }
     } catch (e) {
       console.error(
@@ -190,14 +186,12 @@ export class ConversationsGateway
 
     const roomName = `room:conversation:${data.conversationId}`;
     await client.leave(roomName);
-    console.log(`[WS] User ${userId} a quitté le salon ${roomName}`);
   }
 
   emitNewMessage(conversationId: string, message: any) {
     const roomName = `room:conversation:${conversationId}`;
     if (this.server) {
       this.server.to(roomName).emit('newMessage', message);
-      console.log(`[WS] Message émis vers ${roomName}`);
     }
   }
 
@@ -205,7 +199,6 @@ export class ConversationsGateway
     const roomName = `room:conversation:${conversationId}`;
     if (this.server) {
       this.server.to(roomName).emit('messageUpdated', message);
-      console.log(`[WS] Message mis à jour émis vers ${roomName}`);
     }
   }
 
@@ -213,7 +206,6 @@ export class ConversationsGateway
     const roomName = `room:conversation:${conversationId}`;
     if (this.server) {
       this.server.to(roomName).emit('messageDeleted', { messageId });
-      console.log(`[WS] Message supprimé émis vers ${roomName}`);
     }
   }
 }

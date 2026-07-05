@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface SignaturePadProps {
   onSave: (base64Image: string) => void
@@ -6,6 +7,7 @@ interface SignaturePadProps {
 }
 
 export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, onClear }) => {
+  const { t } = useTranslation()
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isDrawing, setIsDrawing] = useState(false)
 
@@ -110,7 +112,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, onClear }) =
           className="w-full h-48 cursor-crosshair touch-none"
         />
         <div className="absolute top-2 right-2 text-xs text-slate-400 pointer-events-none select-none bg-white/80 px-2 py-0.5 rounded backdrop-blur-sm">
-          Signez avec votre souris ou doigt
+          {t('SignaturePad.placeholder', 'Signez avec votre souris ou doigt')}
         </div>
       </div>
       <div className="flex justify-end gap-2">
@@ -119,7 +121,7 @@ export const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, onClear }) =
           onClick={clear}
           className="text-xs text-slate-500 hover:text-slate-700 px-3 py-1.5 border border-slate-200 rounded-md transition-colors bg-white hover:bg-slate-50"
         >
-          Effacer
+          {t('SignaturePad.clear', 'Effacer')}
         </button>
       </div>
     </div>

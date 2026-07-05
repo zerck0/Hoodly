@@ -1,4 +1,5 @@
 import { ArrowDownLeft, ArrowUpRight, Loader2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 interface Transaction {
   id: string
@@ -16,21 +17,22 @@ interface TransactionListProps {
 }
 
 export function TransactionList({ transactions, isLoading }: TransactionListProps) {
+  const { t } = useTranslation()
   return (
     <div className="lg:col-span-2 space-y-4">
       <h2 className="text-xl font-bold text-gray-900 leading-none">
-        Activité & Historique récent
+        {t('points.transactionList.title', 'Activité & Historique récent')}
       </h2>
       <div className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden shadow-sm">
         <div className="divide-y divide-gray-100">
           {isLoading ? (
             <div className="p-12 flex items-center justify-center flex-col text-gray-400 gap-3">
               <Loader2 className="h-6 w-6 animate-spin text-[#2c308e]" />
-              <p className="text-xs font-bold">Chargement de votre historique...</p>
+              <p className="text-xs font-bold">{t('points.transactionList.loading', 'Chargement de votre historique...')}</p>
             </div>
           ) : transactions.length === 0 ? (
             <div className="p-12 text-center text-gray-400 text-xs font-light">
-              Aucune transaction enregistrée pour le moment.
+              {t('points.transactionList.empty', 'Aucune transaction enregistrée pour le moment.')}
             </div>
           ) : (
             transactions.map((tx) => (
@@ -64,7 +66,7 @@ export function TransactionList({ transactions, isLoading }: TransactionListProp
                   <span className={`text-sm font-extrabold ${
                     tx.type === 'credit' ? 'text-emerald-600' : 'text-rose-600'
                   }`}>
-                    {tx.type === 'credit' ? '+' : '-'}{tx.amount} pts
+                    {tx.type === 'credit' ? '+' : '-'}{tx.amount} {t('points.transactionList.pointsSuffix', 'pts')}
                   </span>
                   <p className="text-[9px] font-bold text-gray-400 mt-0.5 uppercase tracking-wider">
                     {tx.status}

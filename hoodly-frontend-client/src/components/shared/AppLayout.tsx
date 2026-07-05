@@ -3,11 +3,7 @@ import { useAuth0 } from "@auth0/auth0-react"
 import { useUser } from "../../hooks/useUser"
 import { ZoneMembershipStatus } from "../../types/status.enum"
 import { toast } from "sonner"
-import { useEffect } from "react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { conversationsApi } from "../../services/api/conversations"
-import { postsApi } from "../../services/api/posts"
-import { usersApi } from "../../services/api/user"
+import { useTranslation } from "react-i18next"
 import {
   Home,
   Users,
@@ -49,49 +45,24 @@ import {
 } from "../ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 
-const items = [
-  { title: "Accueil", url: "/dashboard", icon: Home },
-  { title: "Services", url: "/services", icon: Users },
-  { title: "Événements", url: "/evenements", icon: PartyPopper },
-  { title: "Messages", url: "/messages", icon: MessageSquare },
-  { title: "Votes", url: "/votes", icon: Vote },
-  { title: "Incidents", url: "/incidents", icon: AlertTriangle },
-]
-
 export default function AppLayout() {
+  const { t, i18n } = useTranslation()
   const { logout } = useAuth0()
-  const { user, refreshProfile } = useUser()
-  const queryClient = useQueryClient()
+  const { user } = useUser()
   const isVerified = user?.zoneStatut === ZoneMembershipStatus.ACTIVE
 
-  const { data: conversations = [] } = useQuery({
-    queryKey: ['global-conversations'],
-    queryFn: async () => {
-      const { data } = await conversationsApi.getAll()
-      return data
-    },
-    enabled: !!user?.id && isVerified
-  })
 
-  const { data: feedData } = useQuery({
-    queryKey: ['global-feed', user?.zoneId],
-    queryFn: async () => {
-      if (!user?.zoneId) return { data: [], nextCursor: null }
-      const { data } = await postsApi.getFeed(user.zoneId, undefined, 100)
-      return data
-    },
-    enabled: !!user?.zoneId
-  })
+  const menuItems = [
+    { title: t("sidebar.dashboard"), url: "/dashboard", icon: Home },
+    { title: t("sidebar.services"), url: "/services", icon: Users },
+    { title: t("sidebar.events"), url: "/evenements", icon: PartyPopper },
+    { title: t("sidebar.messages"), url: "/messages", icon: MessageSquare },
+    { title: t("sidebar.votes"), url: "/votes", icon: Vote },
+    { title: t("sidebar.incidents"), url: "/incidents", icon: AlertTriangle },
+  ]
 
-  const hasMessages = conversations.length > 0
-  const hasPosts = (feedData?.data || []).some(
-    (post) => post.author === user?.id || post.author === user?.auth0Id
-  )
-
-
-  const menuItems = [...items]
   if (user?.role === 'admin') {
-    menuItems.push({ title: "Candidatures modérateurs", url: "/admin/candidatures", icon: Shield })
+    menuItems.push({ title: t("sidebar.adminCandidatures"), url: "/admin/candidatures", icon: Shield })
   }
 
   return (
@@ -109,7 +80,7 @@ export default function AppLayout() {
           <SidebarContent>
             <SidebarGroup>
               <SidebarGroupLabel className="px-6 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                Mon Quartier
+                {t("sidebar.myQuarter")}
               </SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu className="px-4 gap-2">
@@ -126,23 +97,23 @@ export default function AppLayout() {
                                 if (isRestricted) {
                                   e.preventDefault()
 
-                                  let msg = "Veuillez faire vérifier votre compte pour accéder à cette fonctionnalité."
+                                  let msg = t("sidebar.verificationAlert")
                                   if (item.url === "/messages") {
-                                    msg = "Vérifiez votre compte pour pouvoir communiquer avec vos voisins."
+                                    msg = t("sidebar.verificationAlert_messages")
                                   } else if (item.url === "/services") {
-                                    msg = "Vérifiez votre compte pour pouvoir accéder aux services de quartier."
+                                    msg = t("sidebar.verificationAlert_services")
                                   } else if (item.url === "/planning") {
-                                    msg = "Vérifiez votre compte pour pouvoir accéder à l'agenda de quartier."
+                                    msg = t("sidebar.verificationAlert_planning")
                                   } else if (item.url === "/profil") {
-                                    msg = "Vérifiez votre compte pour pouvoir accéder à votre profil complet."
+                                    msg = t("sidebar.verificationAlert_profil")
                                   } else if (item.url === "/evenements") {
-                                    msg = "Vérifiez votre compte pour pouvoir accéder aux événements du quartier."
+                                    msg = t("sidebar.verificationAlert_evenements")
                                   } else if (item.url === "/votes") {
-                                    msg = "Vérifiez votre compte pour pouvoir participer aux votes de quartier."
+                                    msg = t("sidebar.verificationAlert_votes")
                                   } else if (item.url === "/incidents") {
-                                    msg = "Vérifiez votre compte pour pouvoir accéder au signalement d'incidents."
+                                    msg = t("sidebar.verificationAlert_incidents")
                                   } else if (item.url === "/map") {
-                                    msg = "Vérifiez votre compte pour pouvoir accéder à la carte de quartier."
+                                    msg = t("sidebar.verificationAlert_map")
                                   }
 
                                   toast.error(msg, {
@@ -180,7 +151,7 @@ export default function AppLayout() {
               className="flex w-full items-center gap-3 rounded-xl p-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-700 transition-all text-left font-bold text-xs cursor-pointer active:scale-98"
             >
               <LogOut className="h-5 w-5 shrink-0" />
-              <span>Se déconnecter</span>
+              <span>{t("common.logout")}</span>
             </button>
           </SidebarFooter>
         </Sidebar>
@@ -192,13 +163,21 @@ export default function AppLayout() {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Rechercher un voisin, un service..."
+                  placeholder={t("common.searchPlaceholder")}
                   className="h-10 w-full rounded-full border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-850 pl-10 pr-4 text-sm outline-none transition-all focus:border-[#2c308e] dark:focus:border-indigo-400 focus:bg-white dark:focus:bg-gray-900 focus:ring-1 focus:ring-[#2c308e]/20 dark:text-gray-100"
                 />
               </div>
             </div>
 
             <div className="flex items-center gap-4">
+              <button
+                onClick={() => i18n.changeLanguage(i18n.language.startsWith('fr') ? 'en' : 'fr')}
+                className="flex items-center justify-center h-8 w-8 rounded-full text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all shrink-0 cursor-pointer select-none"
+                title={i18n.language.startsWith('fr') ? 'Switch to English' : 'Passer en Français'}
+              >
+                {i18n.language.startsWith('fr') ? 'EN' : 'FR'}
+              </button>
+
               <button className="relative rounded-full p-2 text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 shrink-0">
                 <Bell animateOnHover className="h-5 w-5" />
               </button>
@@ -221,15 +200,15 @@ export default function AppLayout() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-64 rounded-xl p-2 z-40 mt-1 dark:bg-gray-900 dark:border-gray-800">
                   <div className="mb-2 px-2 py-1.5">
-                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{user?.name || "Habitant"}</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{user?.name || t("dropdown.resident")}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
                     {isVerified ? (
                       <p className="text-xs font-bold text-[#2c308e] dark:text-indigo-400 mt-1.5 flex items-center gap-1">
-                        🪙 {user?.points ?? 100} points
+                        🪙 {t("common.points", { count: user?.points ?? 100 })}
                       </p>
                     ) : (
                       <p className="text-[10px] font-bold text-amber-600 dark:text-amber-500 mt-1.5 flex items-center gap-1">
-                        ⚠️ Compte non vérifié
+                        ⚠️ {t("common.unverifiedAccount")}
                       </p>
                     )}
                   </div>
@@ -237,48 +216,48 @@ export default function AppLayout() {
                   <DropdownMenuSeparator className="dark:border-gray-800" />
 
                   <DropdownMenuLabel className="text-xs text-gray-400 uppercase tracking-wider mt-2 px-2">
-                    Compte
+                    {t("dropdown.account")}
                   </DropdownMenuLabel>
                   <DropdownMenuItem className="cursor-pointer rounded-lg py-2 dark:hover:bg-gray-800" asChild>
                     <Link to="/profil" className="flex items-center w-full">
                       <UserIcon className="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                      <span>Mon Profil</span>
+                      <span>{t("dropdown.profile")}</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer rounded-lg py-2 dark:hover:bg-gray-800" asChild>
                     <Link to="/points" className="flex items-center w-full">
                       <Coins className="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                      <span>Mon Solde</span>
+                      <span>{t("dropdown.balance")}</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer rounded-lg py-2 dark:hover:bg-gray-800" asChild>
                     <Link to="/contrats" className="flex items-center w-full">
                       <FileText className="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                      <span>Contrats</span>
+                      <span>{t("dropdown.contracts")}</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer rounded-lg py-2 dark:hover:bg-gray-800" asChild>
                     <Link to="/planning" className="flex items-center w-full">
                       <Calendar className="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                      <span>Mon Planning</span>
+                      <span>{t("dropdown.planning")}</span>
                     </Link>
                   </DropdownMenuItem>
 
                   <DropdownMenuSeparator className="my-2 dark:border-gray-800" />
 
                   <DropdownMenuLabel className="text-xs text-gray-400 uppercase tracking-wider px-2">
-                    Application
+                    {t("dropdown.application")}
                   </DropdownMenuLabel>
                   <DropdownMenuItem className="cursor-pointer rounded-lg py-2 dark:hover:bg-gray-800" asChild>
                     <Link to="/settings" className="flex items-center w-full">
                       <Settings className="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                      <span>Paramètres</span>
+                      <span>{t("dropdown.settings")}</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="cursor-pointer rounded-lg py-2 dark:hover:bg-gray-800" asChild>
                     <Link to="/aide" className="flex items-center w-full">
                       <LifeBuoy className="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                      <span>Aide & Support</span>
+                      <span>{t("dropdown.help")}</span>
                     </Link>
                   </DropdownMenuItem>
 
@@ -289,7 +268,7 @@ export default function AppLayout() {
                     onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>Se déconnecter</span>
+                    <span>{t("common.logout")}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

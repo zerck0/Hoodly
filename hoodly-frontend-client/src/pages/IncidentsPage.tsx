@@ -31,6 +31,27 @@ import { Button } from '../components/ui/button'
 import { Textarea } from '../components/ui/textarea'
 import { toast } from 'sonner'
 import type { IncidentPriority, IncidentContext, IncidentStatus } from '../types/incident.types'
+import { useTranslation } from 'react-i18next'
+
+const getCategoryTranslationKey = (name: string) => {
+  switch (name) {
+    case 'Électricité': return 'electricity';
+    case 'Eau / Fuite': return 'waterLeak';
+    case 'Voirie / Route': return 'roadway';
+    case 'Espaces Verts': return 'greenSpaces';
+    case 'Déchets': return 'waste';
+    case 'Éclairage': return 'lighting';
+    case 'Animaux': return 'animals';
+    case 'Autre': return 'other';
+    case 'Matériel endommagé': return 'damagedEquipment';
+    case 'Retard / Absence': return 'delayAbsence';
+    case 'Comportement': return 'behavior';
+    case 'Nuisance sonore': return 'noiseNuisance';
+    case 'Dégradation lieu': return 'venueDamage';
+    case 'Sécurité': return 'security';
+    default: return name;
+  }
+}
 
 const QUARTIER_CATEGORIES = [
   { name: 'Électricité', icon: Zap },
@@ -58,6 +79,7 @@ const EVENT_CATEGORIES = [
 ]
 
 export default function IncidentsPage() {
+  const { t, i18n } = useTranslation()
   const { user } = useUser()
   const queryClient = useQueryClient()
 
@@ -133,7 +155,7 @@ export default function IncidentsPage() {
     const file = e.target.files?.[0]
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('La photo est trop volumineuse (max 5 Mo)')
+        toast.error(t('incidents.errors.photoTooLarge'))
         return
       }
       setPhotoFile(file)
@@ -167,22 +189,22 @@ export default function IncidentsPage() {
     e.preventDefault()
 
     if (!nature) {
-      toast.error("Veuillez sélectionner la nature de l'incident.")
+      toast.error(t('incidents.errors.natureRequired'))
       return
     }
 
     if (contexte === 'service' && !selectedServiceId) {
-      toast.error('Veuillez sélectionner le service concerné.')
+      toast.error(t('incidents.errors.serviceRequired'))
       return
     }
 
     if (contexte === 'evenement' && !selectedEventId) {
-      toast.error("Veuillez sélectionner l'événement concerné.")
+      toast.error(t('incidents.errors.eventRequired'))
       return
     }
 
     if (!description.trim()) {
-      toast.error('Veuillez fournir une description de la situation.')
+      toast.error(t('incidents.errors.descriptionRequired'))
       return
     }
 
@@ -194,7 +216,7 @@ export default function IncidentsPage() {
           const uploadRes = await incidentsApi.uploadPhoto(photoFile)
           photoUrl = uploadRes.data.fileUrl
         } catch {
-          toast.error("Erreur d'upload photo, signalement créé sans photo.")
+          toast.error(t('incidents.errors.photoUploadFailed'))
         }
       }
 
@@ -210,13 +232,13 @@ export default function IncidentsPage() {
         signaledPar: user?.name || user?.email || 'Habitant'
       })
 
-      toast.success('Incident signalé avec succès ! Le modérateur en a été informé.')
+      toast.success(t('incidents.toasts.createSuccess'))
       queryClient.invalidateQueries({ queryKey: ['incidents'] })
       resetForm()
       setActiveTab('list')
     } catch (err) {
       console.error(err)
-      toast.error("Impossible d'enregistrer l'incident.")
+      toast.error(t('incidents.errors.createFailed'))
     } finally {
       setSubmitting(false)
     }
@@ -246,13 +268,13 @@ export default function IncidentsPage() {
   const getStatusLabel = (status: IncidentStatus) => {
     switch (status) {
       case 'signale':
-        return 'Signalé'
+        return t('incidents.status.signale')
       case 'en_cours':
-        return 'En cours'
+        return t('incidents.status.en_cours')
       case 'resolu':
-        return 'Résolu'
+        return t('incidents.status.resolu')
       case 'ferme':
-        return 'Clôturé'
+        return t('incidents.status.ferme')
       default:
         return status
     }
@@ -278,13 +300,13 @@ export default function IncidentsPage() {
       <div className="mb-8 text-center sm:text-left flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <span className="text-xs font-bold text-[#2c308e] uppercase tracking-widest block mb-1">
-            Communauté Active
+            {t('incidents.titleLabel')}
           </span>
           <h1 className="text-4xl font-extrabold text-[#1e224e] tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Signaler un <span className="text-[#2c308e]">Incident Local</span>
+            {t('incidents.titlePart1')} <span className="text-[#2c308e]">{t('incidents.titlePart2')}</span>
           </h1>
           <p className="text-gray-500 mt-2 text-sm max-w-xl leading-relaxed">
-            Contribuez à la sécurité et au bien-être de votre quartier. Vos signalements aident les services municipaux, les modérateurs et vos voisins à agir rapidement.
+            {t('incidents.subtitle')}
           </p>
         </div>
 
@@ -297,7 +319,7 @@ export default function IncidentsPage() {
                 : 'text-gray-500 hover:text-gray-800'
             }`}
           >
-            Nouveau Signalement
+            {t('incidents.tabs.newReport')}
           </button>
           <button
             onClick={() => setActiveTab('list')}
@@ -307,7 +329,7 @@ export default function IncidentsPage() {
                 : 'text-gray-500 hover:text-gray-800'
             }`}
           >
-            Suivi des Incidents ({incidents.length})
+            {t('incidents.tabs.followUp', { count: incidents.length })}
           </button>
         </div>
       </div>
@@ -319,7 +341,7 @@ export default function IncidentsPage() {
 
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
-                  0. Contexte de l'incident
+                  {t('incidents.form.contextHeader')}
                 </label>
                 <div className="grid grid-cols-3 gap-3">
                   <button
@@ -335,7 +357,7 @@ export default function IncidentsPage() {
                     }`}
                   >
                     <Trees className="h-5 w-5 mb-2" />
-                    <span className="text-xs font-bold">Dans le quartier</span>
+                    <span className="text-xs font-bold">{t('incidents.form.contextQuartier')}</span>
                   </button>
                   <button
                     type="button"
@@ -350,7 +372,7 @@ export default function IncidentsPage() {
                     }`}
                   >
                     <Users className="h-5 w-5 mb-2" />
-                    <span className="text-xs font-bold">Lors d'un service</span>
+                    <span className="text-xs font-bold">{t('incidents.form.contextService')}</span>
                   </button>
                   <button
                     type="button"
@@ -365,14 +387,14 @@ export default function IncidentsPage() {
                     }`}
                   >
                     <Calendar className="h-5 w-5 mb-2" />
-                    <span className="text-xs font-bold">Lors d'un événement</span>
+                    <span className="text-xs font-bold">{t('incidents.form.contextEvent')}</span>
                   </button>
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
-                  1. Nature de l'incident
+                  {t('incidents.form.natureHeader')}
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {getCategories().map((cat) => {
@@ -389,7 +411,9 @@ export default function IncidentsPage() {
                         }`}
                       >
                         <cat.icon className="h-5 w-5 mb-2" />
-                        <span className="text-xs font-semibold text-center leading-tight">{cat.name}</span>
+                        <span className="text-xs font-semibold text-center leading-tight">
+                          {t('incidents.categories.' + getCategoryTranslationKey(cat.name), { defaultValue: cat.name })}
+                        </span>
                       </button>
                     )
                   })}
@@ -399,11 +423,11 @@ export default function IncidentsPage() {
               {contexte === 'service' && (
                 <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                    Sélectionner le service concerné
+                    {t('incidents.form.selectServiceLabel')}
                   </label>
                   {myServices.length === 0 ? (
                     <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                      Vous n'avez pas de services récents enregistrés où vous êtes impliqué. Le signalement d'incident lié à un service nécessite d'avoir participé à un échange de service.
+                      {t('incidents.form.noServicesHint')}
                     </div>
                   ) : (
                     <select
@@ -411,10 +435,10 @@ export default function IncidentsPage() {
                       onChange={(e) => setSelectedServiceId(e.target.value)}
                       className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm focus:border-[#2c308e] focus:outline-none"
                     >
-                      <option value="">-- Choisir un service --</option>
+                      <option value="">{t('incidents.form.selectServicePlaceholder')}</option>
                       {myServices.map((s: any) => (
                         <option key={s._id || s.id} value={s._id || s.id}>
-                          {s.titre} ({s.type === 'offre' ? 'Offre' : 'Demande'})
+                          {s.titre} ({s.type === 'offre' ? t('incidents.form.offer') : t('incidents.form.request')})
                         </option>
                       ))}
                     </select>
@@ -425,11 +449,11 @@ export default function IncidentsPage() {
               {contexte === 'evenement' && (
                 <div className="animate-in fade-in slide-in-from-top-2 duration-300">
                   <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                    Sélectionner l'événement concerné
+                    {t('incidents.form.selectEventLabel')}
                   </label>
                   {myEvents.length === 0 ? (
                     <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                      Vous n'avez pas participé ou manifesté d'intérêt pour des événements récents. Le signalement d'incident lié à un événement nécessite d'être impliqué dans cet événement.
+                      {t('incidents.form.noEventsHint')}
                     </div>
                   ) : (
                     <select
@@ -437,10 +461,10 @@ export default function IncidentsPage() {
                       onChange={(e) => setSelectedEventId(e.target.value)}
                       className="w-full h-12 rounded-xl border border-gray-200 bg-white px-4 text-sm focus:border-[#2c308e] focus:outline-none"
                     >
-                      <option value="">-- Choisir un événement --</option>
+                      <option value="">{t('incidents.form.selectEventPlaceholder')}</option>
                       {myEvents.map((e: any) => (
                         <option key={e._id || e.id} value={e._id || e.id}>
-                          {e.titre} - {new Date(e.date).toLocaleDateString('fr-FR')}
+                          {e.titre} - {new Date(e.date).toLocaleDateString(i18n.language)}
                         </option>
                       ))}
                     </select>
@@ -450,19 +474,19 @@ export default function IncidentsPage() {
 
               <div>
                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  2. Détails & Photos
+                  {t('incidents.form.detailsHeader')}
                 </label>
                 <div className="space-y-4">
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Décrivez précisément l'incident, les risques éventuels pour les habitants, ou les détails pertinents pour la résolution..."
+                    placeholder={t('incidents.form.descriptionPlaceholder')}
                     className="min-h-[120px] rounded-2xl border-gray-200 focus:border-[#2c308e] focus:ring-1 focus:ring-[#2c308e]/10 text-sm leading-relaxed p-4"
                   />
 
                   <div>
                     <span className="block text-xs font-semibold text-gray-500 mb-2">
-                      Preuves visuelles (Photos)
+                      {t('incidents.form.visualEvidence')}
                     </span>
                     <input
                       type="file"
@@ -479,7 +503,7 @@ export default function IncidentsPage() {
                         className="h-24 w-24 border border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center text-gray-400 hover:text-[#2c308e] hover:border-[#2c308e] hover:bg-[#e9eaf6]/10 transition-all duration-200"
                       >
                         <Camera className="h-6 w-6 mb-1" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider">Ajouter</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider">{t('incidents.form.addPhoto')}</span>
                       </button>
 
                       {photoPreview && (
@@ -512,16 +536,16 @@ export default function IncidentsPage() {
                   {submitting ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Transmission du signalement...</span>
+                      <span>{t('incidents.form.submittingText')}</span>
                     </>
                   ) : (
                     <>
-                      <span>Signaler l'incident ▷</span>
+                      <span>{t('incidents.form.submitButton')}</span>
                     </>
                   )}
                 </Button>
                 <p className="text-[10px] text-gray-400 text-center mt-3 leading-relaxed">
-                  En signalant cet incident, vous acceptez que vos informations soient partagées avec les modérateurs du quartier et les intervenants.
+                  {t('incidents.form.submitDisclaimer')}
                 </p>
               </div>
 
@@ -531,7 +555,7 @@ export default function IncidentsPage() {
           <div className="space-y-6">
             <div className="bg-white rounded-[2rem] border border-gray-100 p-6 shadow-sm">
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">
-                Niveau de priorité
+                {t('incidents.priorityHeader')}
               </label>
 
               <div className="space-y-3">
@@ -554,10 +578,10 @@ export default function IncidentsPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-gray-900">Normal</span>
+                      <span className="text-xs font-bold text-gray-900">{t('incidents.priority.normale')}</span>
                       <Info className="h-4 w-4 text-gray-400" />
                     </div>
-                    <p className="text-[10px] text-gray-500 mt-0.5">Maintenance courante</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">{t('incidents.priority.normalHint')}</p>
                   </div>
                 </div>
 
@@ -580,10 +604,10 @@ export default function IncidentsPage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-rose-700">Urgent</span>
+                      <span className="text-xs font-bold text-rose-700">{t('incidents.priority.urgente')}</span>
                       <AlertOctagon className="h-4 w-4 text-rose-500" />
                     </div>
-                    <p className="text-[10px] text-rose-600/80 mt-0.5 font-medium">Danger immédiat / Sécurité</p>
+                    <p className="text-[10px] text-rose-600/80 mt-0.5 font-medium">{t('incidents.priority.urgentHint')}</p>
                   </div>
                 </div>
               </div>
@@ -593,30 +617,34 @@ export default function IncidentsPage() {
               <div className="h-10 w-10 rounded-2xl bg-[#e9eaf6] flex items-center justify-center">
                 <Sparkles className="h-5 w-5 text-[#2c308e]" />
               </div>
-              <h3 className="text-sm font-bold text-gray-900">Comment ça marche ?</h3>
+              <h3 className="text-sm font-bold text-gray-900">{t('incidents.howItWorks.title')}</h3>
               <ul className="text-xs text-gray-600 space-y-2 leading-relaxed list-disc list-inside">
-                <li>Votre signalement est publié dans la zone de votre quartier.</li>
-                <li>Les modérateurs reçoivent une alerte immédiate (surtout si l'incident est urgent).</li>
-                <li>Le statut passera à <strong>En cours</strong> lorsqu'un intervenant sera désigné.</li>
-                <li>Une fois résolu, vous recevrez une confirmation.</li>
+                <li>{t('incidents.howItWorks.step1')}</li>
+                <li>{t('incidents.howItWorks.step2')}</li>
+                <li>
+                  {t('incidents.howItWorks.step3Part1')}{' '}
+                  <strong>{t('incidents.howItWorks.step3Part2')}</strong>{' '}
+                  {t('incidents.howItWorks.step3Part3')}
+                </li>
+                <li>{t('incidents.howItWorks.step4')}</li>
               </ul>
             </div>
           </div>
         </div>
       ) : (
         <div className="bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Suivi des Incidents du Quartier</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-6">{t('incidents.followUp.title')}</h2>
 
           {loadingIncidents ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
               <Loader2 className="h-8 w-8 text-[#2c308e] animate-spin" />
-              <span className="text-xs text-gray-500">Chargement des signalements...</span>
+              <span className="text-xs text-gray-500">{t('incidents.followUp.loading')}</span>
             </div>
           ) : incidents.length === 0 ? (
             <div className="text-center py-16">
               <CheckCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-sm font-bold text-gray-800">Tout va bien dans le quartier !</h3>
-              <p className="text-xs text-gray-500 mt-1">Aucun incident n'est actuellement signalé dans votre zone.</p>
+              <h3 className="text-sm font-bold text-gray-800">{t('incidents.followUp.allGoodTitle')}</h3>
+              <p className="text-xs text-gray-500 mt-1">{t('incidents.followUp.allGoodHint')}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -633,13 +661,13 @@ export default function IncidentsPage() {
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-xs font-bold text-gray-900">
-                          {incident.type}
+                          {t('incidents.categories.' + getCategoryTranslationKey(incident.type), { defaultValue: incident.type })}
                         </span>
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 capitalize">
-                          {incident.contexte}
+                          {t('incidents.context.' + incident.contexte, { defaultValue: incident.contexte })}
                         </span>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full ${getPriorityBadgeColor(incident.priorite)} capitalize`}>
-                          {incident.priorite}
+                          {t('incidents.priority.' + incident.priorite, { defaultValue: incident.priorite })}
                         </span>
                       </div>
 
@@ -648,9 +676,9 @@ export default function IncidentsPage() {
                       </p>
 
                       <div className="flex items-center gap-2 mt-3 text-[10px] text-gray-400">
-                        <span>Signalé par {incident.signaledPar}</span>
+                        <span>{t('incidents.card.reportedBy', { name: incident.signaledPar })}</span>
                         <span>•</span>
-                        <span>{incident.createdAt ? new Date(incident.createdAt).toLocaleDateString('fr-FR') : 'Date inconnue'}</span>
+                        <span>{incident.createdAt ? new Date(incident.createdAt).toLocaleDateString(i18n.language) : t('incidents.card.unknownDate')}</span>
                       </div>
                     </div>
                   </div>
@@ -663,7 +691,7 @@ export default function IncidentsPage() {
                         rel="noreferrer"
                         className="text-[10px] font-bold text-[#2c308e] hover:underline"
                       >
-                        Voir photo
+                        {t('incidents.card.viewPhoto')}
                       </a>
                     )}
                     <span className={`text-xs px-3 py-1.5 rounded-xl border font-bold ${getStatusColor(incident.statut)}`}>

@@ -9,6 +9,7 @@ import { conversationsApi } from '../services/api/conversations'
 import { postsApi } from '../services/api/posts'
 import { incidentsApi } from '../services/api/incidents'
 import { eventsApi } from '../services/api/events'
+import { useTranslation } from 'react-i18next'
 import {
   Camera,
   Mail,
@@ -58,6 +59,7 @@ const CATEGORY_STYLES: Record<string, { bg: string, text: string, border: string
 const DEFAULT_STYLE = { bg: 'bg-gray-50 text-gray-700 border-gray-100', text: 'text-gray-700', border: 'border-l-4 border-l-gray-400', badgeBg: 'bg-gray-100/60' }
 
 export default function ProfilePage() {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { user, refreshProfile } = useUser()
@@ -78,18 +80,18 @@ export default function ProfilePage() {
   const handleApplyModerator = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!motivationText.trim()) {
-      toast.error('Veuillez écrire votre motivation.')
+      toast.error(t('profile.toast.motivation_required'))
       return
     }
     setSubmittingApply(true)
     try {
       await usersApi.applyForModerator(motivationText)
-      toast.success('Votre candidature a été envoyée avec succès.')
+      toast.success(t('profile.toast.application_sent'))
       setShowApplyForm(false)
       setMotivationText('')
       refetchModStatus()
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Une erreur est survenue.')
+      toast.error(err?.response?.data?.message || t('profile.toast.error'))
     } finally {
       setSubmittingApply(false)
     }
@@ -240,10 +242,10 @@ export default function ProfilePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-profile'] })
       refreshProfile()
-      toast.success('Profil enregistré avec succès !')
+      toast.success(t('profile.toast.profile_saved'))
     },
     onError: () => {
-      toast.error('Erreur lors de la mise à jour du profil')
+      toast.error(t('profile.toast.profile_save_error'))
     }
   })
 
@@ -255,10 +257,10 @@ export default function ProfilePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-profile'] })
       refreshProfile()
-      toast.success('🪙 Récompense récupérée avec succès !')
+      toast.success(t('profile.toast.reward_claimed'))
     },
     onError: (err: any) => {
-      const errMsg = err?.response?.data?.message || "Erreur lors de la récupération."
+      const errMsg = err?.response?.data?.message || t('profile.toast.reward_claim_error')
       toast.error(errMsg)
     }
   })
@@ -271,10 +273,10 @@ export default function ProfilePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-created-services'] })
       setEditingServiceId(null)
-      toast.success('Service mis à jour avec succès !')
+      toast.success(t('profile.toast.service_updated'))
     },
     onError: () => {
-      toast.error('Erreur lors de la modification du service')
+      toast.error(t('profile.toast.service_update_error'))
     }
   })
 
@@ -285,10 +287,10 @@ export default function ProfilePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-created-services'] })
       setConfirmDeleteId(null)
-      toast.success('Service supprimé avec succès !')
+      toast.success(t('profile.toast.service_deleted'))
     },
     onError: () => {
-      toast.error('Erreur lors de la suppression du service')
+      toast.error(t('profile.toast.service_delete_error'))
     }
   })
 
@@ -301,10 +303,10 @@ export default function ProfilePage() {
       queryClient.invalidateQueries({ queryKey: ['my-created-services'] })
       queryClient.invalidateQueries({ queryKey: ['user-profile'] })
       refreshProfile()
-      toast.success('Félicitations ! Le service est clôturé et les points sont accordés !')
+      toast.success(t('profile.toast.service_completed'))
     },
     onError: () => {
-      toast.error('Erreur lors de la clôture du service')
+      toast.error(t('profile.toast.service_complete_error'))
     }
   })
 
@@ -332,7 +334,7 @@ export default function ProfilePage() {
         material
       })
     } catch {
-      toast.error('Erreur lors du téléchargement de l\'image')
+      toast.error(t('profile.toast.upload_error'))
     } finally {
       setUploading(false)
     }
@@ -341,7 +343,7 @@ export default function ProfilePage() {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
     if (!firstName.trim() || !lastName.trim()) {
-      toast.error('Le prénom et le nom sont obligatoires')
+      toast.error(t('profile.toast.name_required'))
       return
     }
     const fullName = `${firstName.trim()} ${lastName.trim()}`
@@ -369,7 +371,7 @@ export default function ProfilePage() {
 
   const handleSaveServiceEdit = (id: string) => {
     if (!editTitle.trim()) {
-      toast.error('Le titre est obligatoire')
+      toast.error(t('profile.toast.title_required'))
       return
     }
     updateServiceMutation.mutate({
@@ -400,48 +402,48 @@ export default function ProfilePage() {
   const missionsList: Mission[] = [
     {
       id: 'discussion',
-      title: 'Discussion active',
-      description: 'Lancer ou participer à une discussion en écrivant un message à un voisin.',
+      title: t('profile.missions.discussion.title'),
+      description: t('profile.missions.discussion.description'),
       points: 10,
       isCompleted: hasMessages,
       isClaimed: claimedMissions.includes('discussion'),
-      progressText: hasMessages ? '10 / 10 pts' : '0 / 10 pts'
+      progressText: hasMessages ? t('profile.missions.progress_pts', { count: 10, max: 10 }) : t('profile.missions.progress_pts', { count: 0, max: 10 })
     },
     {
       id: 'first_post',
-      title: 'Premier pas sur le feed',
-      description: 'Partagez votre première publication sur le fil d\'actualité de quartier.',
+      title: t('profile.missions.first_post.title'),
+      description: t('profile.missions.first_post.description'),
       points: 15,
       isCompleted: hasPosts,
       isClaimed: claimedMissions.includes('first_post'),
-      progressText: hasPosts ? '15 / 15 pts' : '0 / 15 pts'
+      progressText: hasPosts ? t('profile.missions.progress_pts', { count: 15, max: 15 }) : t('profile.missions.progress_pts', { count: 0, max: 15 })
     },
     {
       id: 'first_incident',
-      title: 'Signalement civique',
-      description: 'Contribuez à la sécurité du quartier en signalant votre premier incident.',
+      title: t('profile.missions.first_incident.title'),
+      description: t('profile.missions.first_incident.description'),
       points: 10,
       isCompleted: hasIncidents,
       isClaimed: claimedMissions.includes('first_incident'),
-      progressText: hasIncidents ? '10 / 10 pts' : '0 / 10 pts'
+      progressText: hasIncidents ? t('profile.missions.progress_pts', { count: 10, max: 10 }) : t('profile.missions.progress_pts', { count: 0, max: 10 })
     },
     {
       id: 'create_event',
-      title: 'Organisateur de quartier',
-      description: 'Prenez l\'initiative de créer votre premier événement de quartier.',
+      title: t('profile.missions.create_event.title'),
+      description: t('profile.missions.create_event.description'),
       points: 20,
       isCompleted: hasCreatedEvent,
       isClaimed: claimedMissions.includes('create_event'),
-      progressText: hasCreatedEvent ? '20 / 20 pts' : '0 / 20 pts'
+      progressText: hasCreatedEvent ? t('profile.missions.progress_pts', { count: 20, max: 20 }) : t('profile.missions.progress_pts', { count: 0, max: 20 })
     },
     {
       id: 'join_event',
-      title: 'Esprit d\'équipe',
-      description: 'Inscrivez-vous à votre premier événement pour rencontrer vos voisins.',
+      title: t('profile.missions.join_event.title'),
+      description: t('profile.missions.join_event.description'),
       points: 10,
       isCompleted: hasParticipatedEvent,
       isClaimed: claimedMissions.includes('join_event'),
-      progressText: hasParticipatedEvent ? '10 / 10 pts' : '0 / 10 pts'
+      progressText: hasParticipatedEvent ? t('profile.missions.progress_pts', { count: 10, max: 10 }) : t('profile.missions.progress_pts', { count: 0, max: 10 })
     }
   ]
 
@@ -450,10 +452,10 @@ export default function ProfilePage() {
 
       <div>
         <h1 className="text-4xl font-extrabold text-[#1e224e] tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
-          Mon Espace Profil
+          {t('profile.title')}
         </h1>
         <p className="text-gray-500 mt-1.5 text-sm font-light leading-relaxed">
-          Gérez vos informations d'habitant, modifiez vos coordonnées et suivez vos missions de quartier.
+          {t('profile.description')}
         </p>
       </div>
 
@@ -484,7 +486,7 @@ export default function ProfilePage() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-black/35 text-white rounded-[1.8rem] flex items-center justify-center transition-all cursor-pointer z-10"
-                title="Changer la photo"
+                title={t('profile.change_photo')}
                 disabled={uploading}
               >
                 <Camera size={20} />
@@ -505,12 +507,12 @@ export default function ProfilePage() {
                 </h2>
                 {user?.role === 'moderator' && (
                   <Badge className="bg-[#e9eaf6] text-[#2c308e] font-bold text-[10px] rounded-full px-3 py-1 border border-white/20 shadow-sm flex items-center gap-1 shrink-0 select-none">
-                    🛡️ Modérateur
+                    🛡️ {t('profile.role.moderator')}
                   </Badge>
                 )}
                 {user?.role === 'admin' && (
                   <Badge className="bg-red-600 hover:bg-red-600 text-white font-bold text-[10px] rounded-full px-3 py-1 border border-white/20 shadow-sm flex items-center gap-1 shrink-0 select-none">
-                    👑 Administrateur
+                    👑 {t('profile.role.administrator')}
                   </Badge>
                 )}
               </div>
@@ -518,7 +520,7 @@ export default function ProfilePage() {
               <div className="flex flex-wrap items-center justify-center md:justify-start mt-2.5 text-sm font-light text-white/90">
                 <span className="flex items-center gap-1.5 bg-white/10 px-3.5 py-1.5 rounded-xl border border-white/10 backdrop-blur-xs select-none">
                   <MapPin size={14} className="text-white/80" />
-                  <span>Quartier : <strong>{myZone?.nom || 'Saint-Gilles Sud'}</strong></span>
+                  <span>{t('profile.district')} : <strong>{myZone?.nom || t('profile.district_fallback')}</strong></span>
                 </span>
               </div>
             </div>
@@ -526,7 +528,7 @@ export default function ProfilePage() {
 
           <div className="flex flex-col items-center md:items-end gap-4 shrink-0">
             <div className="bg-white/10 text-white backdrop-blur-md border border-white/20 px-6 py-3.5 rounded-2xl text-center min-w-[130px] shadow-sm select-none">
-              <span className="text-[9px] font-extrabold tracking-wider uppercase text-white/60 block font-sans">SOLDE DE POINTS</span>
+              <span className="text-[9px] font-extrabold tracking-wider uppercase text-white/60 block font-sans">{t('profile.points_balance')}</span>
               <span className="text-3xl font-black leading-none mt-0.5 block" style={{ fontFamily: "'Outfit', sans-serif" }}>
                 🪙 {(user?.points ?? 1240).toLocaleString()}
               </span>
@@ -544,7 +546,7 @@ export default function ProfilePage() {
             <div className="border-b border-gray-200 pb-3">
               <h3 className="text-lg font-bold text-[#0c2b76] tracking-tight flex items-center gap-2" style={{ fontFamily: "'Outfit', sans-serif" }}>
                 <HeartHandshake className="h-5 w-5 text-[#0c3383]" />
-                <span>Mes services proposés au quartier</span>
+                <span>{t('profile.my_services')}</span>
               </h3>
             </div>
 
@@ -556,9 +558,9 @@ export default function ProfilePage() {
               ) : createdServices.length === 0 ? (
                 <Card className="p-12 bg-white border border-dashed rounded-[2rem] text-center border-gray-200">
                   <HeartHandshake className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                  <h4 className="text-xs font-bold text-gray-800">Aucun service proposé pour le moment</h4>
+                  <h4 className="text-xs font-bold text-gray-800">{t('profile.no_services')}</h4>
                   <p className="text-[10px] text-gray-400 mt-2 max-w-xs mx-auto leading-relaxed font-light">
-                    Proposez un service de bricolage, jardinage ou aide aux devoirs pour faire vivre votre quartier.
+                    {t('profile.no_services_description')}
                   </p>
                 </Card>
               ) : (
@@ -586,7 +588,7 @@ export default function ProfilePage() {
 
                             <div className="px-4 py-2 bg-slate-50 border-b border-gray-50 flex items-center justify-between gap-2 shrink-0">
                               <Badge className={`border ${style.bg} ${style.text} hover:bg-white text-[8px] font-extrabold tracking-wider uppercase px-2 py-0.5 rounded`}>
-                                {service.categorie}
+                                {t('categories.' + service.categorie)}
                               </Badge>
 
                               <div className="flex items-center gap-1.5">
@@ -603,7 +605,7 @@ export default function ProfilePage() {
                                     ? 'bg-amber-50 border border-amber-100 text-amber-700'
                                     : 'bg-gray-100 border border-gray-200 text-gray-500'
                                 }`}>
-                                  {service.statut === 'actif' ? 'Actif' : service.statut === 'en_cours' ? 'En Cours' : 'Clôturé'}
+                                  {service.statut === 'actif' ? t('profile.service_status.active') : service.statut === 'en_cours' ? t('profile.service_status.in_progress') : t('profile.service_status.closed')}
                                 </Badge>
                               </div>
                             </div>
@@ -612,7 +614,7 @@ export default function ProfilePage() {
                               <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
                                 <div className="space-y-2">
                                   <div className="space-y-1">
-                                    <label className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Titre du service</label>
+                                    <label className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">{t('profile.edit_service.title_label')}</label>
                                     <Input
                                       type="text"
                                       value={editTitle}
@@ -624,7 +626,7 @@ export default function ProfilePage() {
 
                                   {!service.gratuit && (
                                     <div className="space-y-1">
-                                      <label className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Montant en points (🪙)</label>
+                                      <label className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">{t('profile.edit_service.points_label')}</label>
                                       <Input
                                         type="number"
                                         value={editPoints}
@@ -635,7 +637,7 @@ export default function ProfilePage() {
                                   )}
 
                                   <div className="space-y-1">
-                                    <label className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">Description</label>
+                                    <label className="text-[8px] font-bold text-gray-400 uppercase tracking-wider">{t('profile.edit_service.description_label')}</label>
                                     <Textarea
                                       value={editDescription}
                                       onChange={(e) => setEditDescription(e.target.value)}
@@ -652,7 +654,7 @@ export default function ProfilePage() {
                                     onClick={() => setEditingServiceId(null)}
                                     disabled={updateServiceMutation.isPending}
                                   >
-                                    Annuler
+                                    {t('profile.edit_service.cancel')}
                                   </Button>
                                   <Button
                                     className="h-8 bg-[#0c3383] hover:bg-[#0c3383]/95 text-white text-[9px] font-bold px-3 rounded-lg flex items-center gap-1 shadow-xs"
@@ -664,7 +666,7 @@ export default function ProfilePage() {
                                     ) : (
                                       <Check size={11} className="stroke-[2.5px]" />
                                     )}
-                                    <span>Enregistrer</span>
+                                    <span>{t('profile.edit_service.save')}</span>
                                   </Button>
                                 </div>
                               </div>
@@ -681,8 +683,8 @@ export default function ProfilePage() {
 
                                 <div className="border-t border-gray-50 px-4 py-3 bg-slate-50/40 flex items-center justify-between gap-4 shrink-0">
                                   <span className="text-xs font-extrabold text-[#0c3383]">
-                                    🪙 {service.gratuit ? 'Gratuit' : `${service.points} pts`}
-                                    {!service.gratuit && <span className="text-[9px] text-gray-400 font-light">/h</span>}
+                                    🪙 {service.gratuit ? t('profile.service.free') : t('profile.service.points', { count: service.points })}
+                                    {!service.gratuit && <span className="text-[9px] text-gray-400 font-light">{t('profile.service.per_hour')}</span>}
                                   </span>
 
                                   <div className="flex items-center gap-1">
@@ -693,7 +695,7 @@ export default function ProfilePage() {
                                         className="bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-bold h-7.5 px-2.5 rounded-lg flex items-center gap-1 cursor-pointer"
                                       >
                                         <Check size={10} className="stroke-[3px]" />
-                                        <span>Clôturer</span>
+                                        <span>{t('profile.service.complete_button')}</span>
                                       </Button>
                                     )}
 
@@ -704,7 +706,7 @@ export default function ProfilePage() {
                                           size="icon"
                                           className="h-7.5 w-7.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg shrink-0 cursor-pointer"
                                           onClick={() => handleStartEditService(service)}
-                                          title="Modifier"
+                                          title={t('profile.service.edit_tooltip')}
                                         >
                                           <Edit2 size={11.5} />
                                         </Button>
@@ -716,7 +718,7 @@ export default function ProfilePage() {
                                               disabled={deleteServiceMutation.isPending}
                                               className="bg-rose-600 hover:bg-rose-700 text-white text-[8px] font-bold h-7.5 px-2 rounded-lg"
                                             >
-                                              {deleteServiceMutation.isPending ? <Loader2 className="animate-spin h-2.5 w-2.5" /> : 'Confirmer'}
+                                              {deleteServiceMutation.isPending ? <Loader2 className="animate-spin h-2.5 w-2.5" /> : t('profile.service.confirm_delete')}
                                             </Button>
                                             <Button
                                               onClick={() => setConfirmDeleteId(null)}
@@ -732,7 +734,7 @@ export default function ProfilePage() {
                                             size="icon"
                                             className="h-7.5 w-7.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg shrink-0 cursor-pointer"
                                             onClick={() => setConfirmDeleteId(service._id)}
-                                            title="Supprimer"
+                                            title={t('profile.service.delete_tooltip')}
                                           >
                                             <Trash2 size={11.5} />
                                           </Button>
@@ -759,10 +761,10 @@ export default function ProfilePage() {
 
             <div className="space-y-2 max-w-xl text-center md:text-left z-10">
               <h3 className="text-2xl font-extrabold tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                Envie d'aider vos voisins ?
+                {t('profile.help_neighbors.title')}
               </h3>
               <p className="text-xs text-white/80 font-light leading-relaxed">
-                Ajoutez un nouveau service ou créez un événement communautaire pour gagner des points de confiance.
+                {t('profile.help_neighbors.description')}
               </p>
             </div>
 
@@ -771,15 +773,15 @@ export default function ProfilePage() {
                 onClick={() => navigate('/services/nouveau')}
                 className="bg-white hover:bg-slate-50 text-[#0c3383] rounded-xl font-bold px-6 py-5.5 text-xs shadow-sm cursor-pointer transition-all hover:scale-102"
               >
-                Nouveau Service
+                {t('profile.help_neighbors.new_service_button')}
               </Button>
               <Button
                 onClick={() => {
-                  toast.info("Fonctionnalité d'événement communautaire à venir bientôt !")
+                  toast.info(t('profile.toast.event_feature_coming_soon'))
                 }}
                 className="bg-transparent hover:bg-white/10 text-white border border-white/30 rounded-xl font-bold px-6 py-5.5 text-xs cursor-pointer transition-all hover:scale-102"
               >
-                Créer Événement
+                {t('profile.help_neighbors.create_event_button')}
               </Button>
             </div>
           </Card>
@@ -788,30 +790,30 @@ export default function ProfilePage() {
             <Card className="bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-2xs space-y-6 mt-6">
               <div className="space-y-2">
                 <h3 className="text-xl font-extrabold text-gray-900 tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>
-                  Devenir Modérateur du Quartier
+                  {t('profile.apply_mod.title')}
                 </h3>
                 <p className="text-xs text-gray-500 font-light leading-relaxed">
-                  Aidez à maintenir la convivialité et le respect dans votre quartier en modérant les publications, incidents et votes.
+                  {t('profile.apply_mod.description')}
                 </p>
               </div>
 
               {modApplication ? (
                 <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Statut de la demande</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{t('profile.apply_mod.status_label')}</span>
                     {modApplication.status === 'pending' && (
                       <Badge className="bg-amber-50 border border-amber-200/50 text-amber-700 text-[10px] font-bold rounded-full px-3 py-1">
-                        En cours d'examen
+                        {t('profile.apply_mod.status.pending')}
                       </Badge>
                     )}
                     {modApplication.status === 'rejected' && (
                       <Badge className="bg-red-50 border border-red-200/50 text-red-700 text-[10px] font-bold rounded-full px-3 py-1">
-                        Refusée
+                        {t('profile.apply_mod.status.rejected')}
                       </Badge>
                     )}
                   </div>
                   <div className="text-xs text-gray-600 font-light leading-relaxed">
-                    <p className="font-semibold text-gray-800 mb-1">Votre message de motivation :</p>
+                    <p className="font-semibold text-gray-800 mb-1">{t('profile.apply_mod.motivation_label')}</p>
                     <p className="italic bg-white border border-slate-100 rounded-xl p-3 text-gray-500 font-sans">
                       "{modApplication.motivation}"
                     </p>
@@ -821,7 +823,7 @@ export default function ProfilePage() {
                       onClick={() => setShowApplyForm(true)}
                       className="w-full bg-[#0c3383] hover:bg-[#0c3383]/95 text-white font-bold text-xs py-3 rounded-xl cursor-pointer"
                     >
-                      Postuler à nouveau
+                      {t('profile.apply_mod.reapply_button')}
                     </Button>
                   )}
                 </div>
@@ -831,7 +833,7 @@ export default function ProfilePage() {
                     onClick={() => setShowApplyForm(true)}
                     className="w-full bg-[#0c3383] hover:bg-[#0c3383]/95 text-white font-bold text-xs py-3.5 rounded-xl transition-all hover:scale-102 cursor-pointer flex items-center justify-center gap-1.5"
                   >
-                    🛡️ Faire une demande
+                    🛡️ {t('profile.apply_mod.apply_button')}
                   </Button>
                 )
               )}
@@ -840,13 +842,13 @@ export default function ProfilePage() {
                 <form onSubmit={handleApplyModerator} className="space-y-4 animate-in fade-in duration-200">
                   <div className="space-y-1.5">
                     <label htmlFor="motivation" className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
-                      Vos motivations
+                      {t('profile.apply_mod.form.motivations_label')}
                     </label>
                     <Textarea
                       id="motivation"
                       value={motivationText}
                       onChange={(e) => setMotivationText(e.target.value)}
-                      placeholder="Expliquez brièvement pourquoi vous souhaitez devenir modérateur et comment vous pouvez aider le quartier..."
+                      placeholder={t('profile.apply_mod.form.placeholder')}
                       className="min-h-[100px] text-xs rounded-xl border-gray-200 focus:border-[#0c3383] focus:ring-[#0c3383]"
                     />
                   </div>
@@ -860,7 +862,7 @@ export default function ProfilePage() {
                       }}
                       className="flex-1 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-50 cursor-pointer py-2.5"
                     >
-                      Annuler
+                      {t('profile.apply_mod.form.cancel')}
                     </Button>
                     <Button
                       type="submit"
@@ -870,10 +872,10 @@ export default function ProfilePage() {
                       {submittingApply ? (
                         <>
                           <Loader2 className="animate-spin h-3.5 w-3.5" />
-                          Envoi...
+                          {t('profile.apply_mod.form.submitting')}
                         </>
                       ) : (
-                        'Envoyer ma demande'
+                        t('profile.apply_mod.form.submit')
                       )}
                     </Button>
                   </div>
@@ -889,9 +891,9 @@ export default function ProfilePage() {
           <Card className="bg-white border border-gray-100 rounded-[2.5rem] shadow-2xs overflow-hidden">
             <CardHeader className="border-b border-gray-100 p-6">
               <div>
-                <CardTitle className="text-base font-bold text-gray-900">Informations Personnelles</CardTitle>
+                <CardTitle className="text-base font-bold text-gray-900">{t('profile.info.title')}</CardTitle>
                 <CardDescription className="text-[10px] text-gray-400 font-light mt-0.5">
-                  Modifiez vos coordonnées de contact et présentez-vous à votre quartier.
+                  {t('profile.info.description')}
                 </CardDescription>
               </div>
             </CardHeader>
@@ -902,7 +904,7 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label htmlFor="firstName" className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
-                      Prénom
+                      {t('profile.info.first_name')}
                     </label>
                     <div className="relative">
                       <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -911,7 +913,7 @@ export default function ProfilePage() {
                         type="text"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
-                        placeholder="Ex: Julien"
+                        placeholder={t('profile.info.first_name_placeholder')}
                         className="pl-9 h-10 rounded-xl text-xs font-light border-gray-200 focus:border-[#0c3383]"
                         required
                       />
@@ -920,7 +922,7 @@ export default function ProfilePage() {
 
                   <div className="space-y-1">
                     <label htmlFor="lastName" className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
-                      Nom de famille
+                      {t('profile.info.last_name')}
                     </label>
                     <div className="relative">
                       <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -929,7 +931,7 @@ export default function ProfilePage() {
                         type="text"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
-                        placeholder="Ex: Bernard"
+                        placeholder={t('profile.info.last_name_placeholder')}
                         className="pl-9 h-10 rounded-xl text-xs font-light border-gray-200 focus:border-[#0c3383]"
                         required
                       />
@@ -940,7 +942,7 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label htmlFor="civility" className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
-                      Civilité
+                      {t('profile.info.civility')}
                     </label>
                     <div className="relative">
                       <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
@@ -950,17 +952,17 @@ export default function ProfilePage() {
                         onChange={(e) => setCivility(e.target.value)}
                         className="pl-9 h-10 w-full rounded-xl text-xs font-light border border-gray-200 bg-white focus:border-[#0c3383] focus:outline-none transition-colors select-none"
                       >
-                        <option value="">Sélectionner...</option>
-                        <option value="Monsieur">Monsieur</option>
-                        <option value="Madame">Madame</option>
-                        <option value="Autre">Autre</option>
+                        <option value="">{t('profile.info.civility_select')}</option>
+                        <option value="Monsieur">{t('profile.info.civility_mr')}</option>
+                        <option value="Madame">{t('profile.info.civility_mrs')}</option>
+                        <option value="Autre">{t('profile.info.civility_other')}</option>
                       </select>
                     </div>
                   </div>
 
                   <div className="space-y-1">
                     <label htmlFor="birthDate" className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
-                      Date de naissance
+                      {t('profile.info.birth_date')}
                     </label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
@@ -977,7 +979,7 @@ export default function ProfilePage() {
 
                 <div className="space-y-1">
                   <label htmlFor="phone" className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
-                    Téléphone
+                    {t('profile.info.phone')}
                   </label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -986,7 +988,7 @@ export default function ProfilePage() {
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      placeholder="Ex: +33 6 12 34 56 78"
+                      placeholder={t('profile.info.phone_placeholder')}
                       className="pl-9 h-10 rounded-xl text-xs font-light border-gray-200 focus:border-[#0c3383]"
                     />
                   </div>
@@ -994,7 +996,7 @@ export default function ProfilePage() {
 
                 <div className="space-y-1">
                   <label htmlFor="email" className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
-                    Adresse Email (Non modifiable)
+                    {t('profile.info.email_label')}
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -1010,7 +1012,7 @@ export default function ProfilePage() {
 
                 <div className="space-y-1">
                   <label htmlFor="bio" className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
-                    Biographie (À propos de moi)
+                    {t('profile.info.bio')}
                   </label>
                   <div className="relative">
                     <FileText className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -1018,7 +1020,7 @@ export default function ProfilePage() {
                       id="bio"
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
-                      placeholder="Décrivez qui vous êtes, vos passions et vos compétences pour vos voisins."
+                      placeholder={t('profile.info.bio_placeholder')}
                       rows={3}
                       className="pl-9 rounded-xl text-xs font-light resize-none min-h-[85px] border-gray-200 focus:border-[#0c3383]"
                     />
@@ -1039,7 +1041,7 @@ export default function ProfilePage() {
                 ) : (
                   <Check size={14} className="stroke-[2.5px]" />
                 )}
-                <span>Enregistrer</span>
+                <span>{t('profile.info.save_button')}</span>
               </Button>
             </CardFooter>
           </Card>
@@ -1047,10 +1049,10 @@ export default function ProfilePage() {
           <Card className="bg-white border border-gray-100 rounded-[2.5rem] shadow-2xs p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-50 pb-2">
               <h4 className="text-xs font-bold text-gray-900 uppercase tracking-wider">
-                Missions de quartier
+                {t('profile.missions.title')}
               </h4>
               <Badge className="bg-amber-50 border border-amber-100 text-amber-700 text-[8px] font-extrabold tracking-wider px-2 py-0.5 rounded">
-                Gagner du Solde
+                {t('profile.missions.badge')}
               </Badge>
             </div>
 
@@ -1089,7 +1091,7 @@ export default function ProfilePage() {
                               ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
                               : 'bg-indigo-50 text-[#0c3383] border-indigo-100'
                           }`}>
-                            {mission.isClaimed ? 'Récupérée' : `+${mission.points} pts`}
+                            {mission.isClaimed ? t('profile.missions.claimed') : t('profile.missions.points', { count: mission.points })}
                           </span>
                         </div>
                         <p className="text-[10px] text-gray-400 font-light mt-1 leading-snug">
@@ -1099,7 +1101,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div className="flex items-center justify-between text-[9px] font-bold text-gray-400 mt-2 pt-2 border-t border-gray-100/30">
-                      <span className="text-[8px]">Progression : {mission.progressText}</span>
+                      <span className="text-[8px]">{t('profile.missions.progress', { progress: mission.progressText })}</span>
                       
                       {mission.isCompleted && !mission.isClaimed && (
                         <Button
@@ -1111,20 +1113,20 @@ export default function ProfilePage() {
                           {isClaimingThis ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
-                            'Récupérer'
+                            t('profile.missions.claim_button')
                           )}
                         </Button>
                       )}
 
                       {mission.isClaimed && (
                         <span className="text-emerald-600 font-bold text-[9px] flex items-center gap-1">
-                          Récupérée ✓
+                          {t('profile.missions.claimed_badge')}
                         </span>
                       )}
 
                       {!mission.isCompleted && (
                         <span className="text-gray-400 text-[9px] font-medium italic">
-                          En cours
+                          {t('profile.missions.in_progress_badge')}
                         </span>
                       )}
                     </div>

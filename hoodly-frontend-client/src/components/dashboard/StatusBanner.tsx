@@ -1,6 +1,7 @@
 import { Loader2, CheckCircle2, AlertCircle, Clock } from 'lucide-react'
 import type { User } from '../../types/user.types'
 import { ZoneMembershipStatus } from '../../types/status.enum'
+import { useTranslation } from 'react-i18next'
 
 interface StatusBannerProps {
   user: User | null
@@ -10,6 +11,7 @@ interface StatusBannerProps {
 }
 
 export default function StatusBanner({ user, isRefreshing, onRefresh, onOpenModal }: StatusBannerProps) {
+  const { t } = useTranslation()
   const isPendingUpload = user?.zoneStatut === ZoneMembershipStatus.PENDING_MEMBERSHIP
   const isProcessing = user?.zoneStatut === ZoneMembershipStatus.VERIF_EN_COURS
   const isRefused = user?.refusalReason && user?.refusalType === 'membership'
@@ -38,19 +40,19 @@ export default function StatusBanner({ user, isRefreshing, onRefresh, onOpenModa
               isRefused ? 'text-red-900' :
               'text-amber-900'
             }`}>
-              {isRefused ? 'Vérification refusée' :
-               isProcessing ? 'Vérification en cours' :
-               'Action requise : Vérifiez votre compte'}
+              {isRefused ? t('dashboard.statusBanner.verificationRefused', 'Vérification refusée') :
+               isProcessing ? t('dashboard.statusBanner.verificationInProcess', 'Vérification en cours') :
+               t('dashboard.statusBanner.verificationRequired', 'Action requise : Vérifiez votre compte')}
             </p>
             <p className={`text-sm ${
               isRefused ? 'text-red-700' :
               'text-amber-700'
             }`}>
               {isRefused
-                ? `Motif : ${user?.refusalReason}. Merci de renvoyer des justificatifs lisibles.`
+                ? t('dashboard.statusBanner.reasonText', { reason: user?.refusalReason, defaultValue: `Motif : ${user?.refusalReason}. Merci de renvoyer des justificatifs lisibles.` })
                 : isProcessing
-                ? 'Nos modérateurs examinent vos documents. Vous recevrez un accès complet sous peu.'
-                : 'Pour interagir avec la communauté, merci de nous transmettre un justificatif de domicile.'
+                ? t('dashboard.statusBanner.examiningText', 'Nos modérateurs examinent vos documents. Vous recevrez un accès complet sous peu.')
+                : t('dashboard.statusBanner.instructionText', 'Pour interagir avec la communauté, merci de nous transmettre un justificatif de domicile.')
               }
             </p>
           </div>
@@ -61,7 +63,7 @@ export default function StatusBanner({ user, isRefreshing, onRefresh, onOpenModa
             onClick={onRefresh}
             disabled={isRefreshing}
             className="p-2 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
-            title="Actualiser le statut"
+            title={t('dashboard.statusBanner.refreshTooltip', 'Actualiser le statut')}
           >
             <Loader2 size={18} className={isRefreshing ? 'animate-spin' : ''} />
           </button>
@@ -72,7 +74,9 @@ export default function StatusBanner({ user, isRefreshing, onRefresh, onOpenModa
               'bg-amber-600 hover:bg-amber-700 shadow-amber-500/20'
             }`}
           >
-            {isProcessing || isRefused ? 'Modifier les documents' : 'Vérifier mon compte'}
+            {isProcessing || isRefused 
+              ? t('dashboard.statusBanner.modifyDocsBtn', 'Modifier les documents') 
+              : t('dashboard.statusBanner.verifyBtn', 'Vérifier mon compte')}
           </button>
         </div>
       </div>

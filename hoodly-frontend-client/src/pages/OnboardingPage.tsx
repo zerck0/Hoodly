@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import OnboardingStepper from '../components/onboarding/OnboardingStepper'
 import StepPersonalInfo from '../components/onboarding/StepPersonalInfo'
 import AddressStep from '../components/onboarding/AddressStep'
@@ -12,6 +13,7 @@ import type { Zone } from '../types/zone.types'
 import { ZoneMembershipStatus } from '../types/status.enum'
 
 function OnboardingPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const setUser = useAuthStore((state) => state.setUser)
   const updateUser = useAuthStore((state) => state.updateUser)
@@ -43,10 +45,10 @@ function OnboardingPage() {
         const zip = addressData.properties.context?.postcode?.name || ''
 
         await zonesApi.createZoneRequest({
-          nomQuartier: 'Nouveau quartier',
+          nomQuartier: t('onboarding.newZoneName'),
           ville: city,
           codePostal: zip,
-          description: `Adresse : ${addressData.properties.full_address}`,
+          description: t('onboarding.addressDescription', { address: addressData.properties.full_address }),
           latitude: lat,
           longitude: lng
         })
@@ -59,11 +61,11 @@ function OnboardingPage() {
         setUser(updatedUser)
         navigate('/dashboard')
       } else {
-        setErrorMessage('Adresse ou quartier non valide pour l\'inscription.')
+        setErrorMessage(t('onboarding.errorInvalidAddressOrZone'))
       }
     } catch (error) {
       console.error(error)
-      setErrorMessage('Une erreur est survenue lors de la validation. Veuillez réessayer.')
+      setErrorMessage(t('onboarding.errorValidation'))
     } finally {
       setIsSubmitting(false)
     }
@@ -82,16 +84,16 @@ function OnboardingPage() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-red-900">
-                  {user.refusalType === 'zone' ? 'Demande de création de quartier refusée' : 'Adhésion au quartier refusée'}
+                  {user.refusalType === 'zone' ? t('onboarding.refusalZone') : t('onboarding.refusalMembership')}
                 </h3>
                 <p className="mt-1 text-sm text-red-700">
-                  Votre précédente demande n'a pas pu être acceptée pour le motif suivant :
+                  {t('onboarding.refusalReasonIntro')}
                 </p>
                 <div className="mt-3 rounded-lg bg-white/50 p-3 text-sm font-medium italic text-red-800 border border-red-100">
                   "{user.refusalReason}"
                 </div>
                 <p className="mt-3 text-xs text-red-600">
-                  Vous pouvez modifier vos informations et tenter une nouvelle demande.
+                  {t('onboarding.refusalReasonOutro')}
                 </p>
               </div>
             </div>

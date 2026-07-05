@@ -3,6 +3,7 @@ import * as pdfjsLib from 'pdfjs-dist'
 import { PenTool, FileText } from 'lucide-react'
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 import { getAccessToken } from '../../lib/axios'
+import { useTranslation } from 'react-i18next'
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker
 
@@ -36,6 +37,7 @@ export const PDFSignatureViewer: React.FC<PDFSignatureViewerProps> = ({
   userRole,
   onSignZoneClick,
 }) => {
+  const { t } = useTranslation()
   const [numPages, setNumPages] = useState<number>(0)
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [loading, setLoading] = useState<boolean>(true)
@@ -113,10 +115,10 @@ export const PDFSignatureViewer: React.FC<PDFSignatureViewerProps> = ({
           onClick={() => setCurrentPage(currentPage - 1)}
           className="text-slate-600 hover:text-slate-900 disabled:text-slate-300 font-medium transition-colors"
         >
-          Précédent
+          {t('PDFSignatureViewer.prev', 'Précédent')}
         </button>
         <span className="font-medium text-slate-700">
-          Page {currentPage} sur {numPages || '?'}
+          {t('PDFSignatureViewer.page_of', { current: currentPage, total: numPages || '?', defaultValue: `Page ${currentPage} sur ${numPages || '?'}` })}
         </span>
         <button
           type="button"
@@ -124,7 +126,7 @@ export const PDFSignatureViewer: React.FC<PDFSignatureViewerProps> = ({
           onClick={() => setCurrentPage(currentPage + 1)}
           className="text-slate-600 hover:text-slate-900 disabled:text-slate-300 font-medium transition-colors"
         >
-          Suivant
+          {t('PDFSignatureViewer.next', 'Suivant')}
         </button>
       </div>
 
@@ -182,12 +184,12 @@ export const PDFSignatureViewer: React.FC<PDFSignatureViewerProps> = ({
                   {canUserSign ? (
                     <>
                       <PenTool size={10} className="animate-bounce" />
-                      Signez ici
+                      {t('PDFSignatureViewer.sign_here', 'Signez ici')}
                     </>
                   ) : (
                     <>
                       <FileText size={10} />
-                      {isClient ? 'Sign. Client' : 'Sign. Prestataire'}
+                      {isClient ? t('PDFSignatureViewer.sign_client', 'Sign. Client') : t('PDFSignatureViewer.sign_provider', 'Sign. Prestataire')}
                     </>
                   )}
                 </div>

@@ -3,6 +3,7 @@ import { SignaturePad } from './SignaturePad'
 import { contractsApi } from '../../services/api/contracts'
 import { Check, AlertCircle, X, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslation } from 'react-i18next'
 
 interface SignatureModalProps {
   contractId: string
@@ -17,6 +18,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { t } = useTranslation()
   const [signatureImage, setSignatureImage] = useState<string>('')
   const [otp, setOtp] = useState<string>('')
   const [otpSent, setOtpSent] = useState<boolean>(false)
@@ -43,10 +45,10 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
       setLoadingOtp(true)
       await contractsApi.sendOtp(contractId)
       setOtpSent(true)
-      toast.success('Code de vérification envoyé par e-mail.')
+      toast.success(t('SignatureModal.toast_otp_sent', 'Code de vérification envoyé par e-mail.'))
     } catch (err: any) {
       console.error(err)
-      toast.error("Impossible d'envoyer le code OTP. Veuillez réessayer.")
+      toast.error(t('SignatureModal.toast_otp_error', "Impossible d'envoyer le code OTP. Veuillez réessayer."))
     } finally {
       setLoadingOtp(false)
     }
@@ -55,15 +57,15 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!signatureImage) {
-      toast.error('Veuillez dessiner votre signature avant de valider.')
+      toast.error(t('SignatureModal.toast_draw_error', 'Veuillez dessiner votre signature avant de valider.'))
       return
     }
     if (!otp || otp.length !== 6) {
-      toast.error('Veuillez entrer le code OTP à 6 chiffres.')
+      toast.error(t('SignatureModal.toast_otp_format_error', 'Veuillez entrer le code OTP à 6 chiffres.'))
       return
     }
     if (!consent) {
-      toast.error('Vous devez accepter le consentement pour signer le document.')
+      toast.error(t('SignatureModal.toast_consent_error', 'Vous devez accepter le consentement pour signer le document.'))
       return
     }
 
@@ -74,11 +76,11 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
         signatureImage,
         signatureMetadata: window.navigator.userAgent,
       })
-      toast.success('Votre signature a été enregistrée avec succès.')
+      toast.success(t('SignatureModal.toast_success', 'Votre signature a été enregistrée avec succès.'))
       onSuccess()
       onClose()
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Erreur lors de la signature.'
+      const errorMsg = err.response?.data?.message || t('SignatureModal.toast_sign_error', 'Erreur lors de la signature.')
       toast.error(errorMsg)
     } finally {
       setSigning(false)
@@ -96,26 +98,26 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
           >
             <X size={20} />
           </button>
-          <h3 className="text-lg font-bold">Signature Électronique</h3>
+          <h3 className="text-lg font-bold">{t('SignatureModal.title', 'Signature Électronique')}</h3>
           <p className="text-xs text-slate-300 mt-1">
-            Veuillez procéder à la signature et à la double vérification MFA par e-mail.
+            {t('SignatureModal.subtitle', 'Veuillez procéder à la signature et à la double vérification MFA par e-mail.')}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-5 overflow-y-auto max-h-[80vh]">
           <div className="flex flex-col gap-2">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-              1. Dessinez votre signature
+              {t('SignatureModal.draw_label', '1. Dessinez votre signature')}
             </label>
             <SignaturePad onSave={(img) => setSignatureImage(img)} onClear={() => setSignatureImage('')} />
           </div>
 
           <div className="flex flex-col gap-2 border-t border-slate-100 pt-4">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center justify-between">
-              2. Validation Double Facteur (MFA)
+              {t('SignatureModal.mfa_label', '2. Validation Double Facteur (MFA)')}
               {otpSent && (
                 <span className="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium Normal">
-                  <Check size={10} /> Envoyé
+                  <Check size={10} /> {t('SignatureModal.sent', 'Envoyé')}
                 </span>
               )}
             </label>
@@ -124,17 +126,17 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
               loadingOtp ? (
                 <div className="flex items-center justify-center gap-2 py-3 text-xs text-[#0c3383] font-medium bg-slate-50 border border-slate-100 rounded-xl">
                   <Loader2 className="animate-spin h-4 w-4" />
-                  Génération et envoi du code par e-mail...
+                  {t('SignatureModal.sending_otp', 'Génération et envoi du code par e-mail...')}
                 </div>
               ) : (
                 <div className="flex items-center justify-center gap-2 py-3 text-xs text-red-500 bg-rose-50/50 border border-rose-100 rounded-xl">
-                  Impossible d'envoyer le code automatiquement.
+                  {t('SignatureModal.cannot_send_auto', "Impossible d'envoyer le code automatiquement.")}
                   <button
                     type="button"
                     onClick={handleSendOtp}
                     className="text-xs font-bold underline ml-1 hover:text-red-700 cursor-pointer"
                   >
-                    Réessayer
+                    {t('SignatureModal.retry', 'Réessayer')}
                   </button>
                 </div>
               )
@@ -142,7 +144,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
               <div className="flex flex-col gap-2">
                 <p className="text-[11px] text-slate-500 flex items-center gap-1">
                   <AlertCircle size={12} className="text-amber-500" />
-                  Saisissez le code à 6 chiffres reçu par e-mail pour valider votre signature.
+                  {t('SignatureModal.mfa_desc', 'Saisissez le code à 6 chiffres reçu par e-mail pour valider votre signature.')}
                 </p>
                 <div className="flex gap-2">
                   <input
@@ -150,7 +152,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
                     maxLength={6}
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Entrez le code à 6 chiffres"
+                    placeholder={t('SignatureModal.otp_placeholder', 'Entrez le code à 6 chiffres')}
                     className="flex-1 px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-center font-mono text-lg tracking-wider"
                   />
                   <button
@@ -159,7 +161,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
                     disabled={loadingOtp}
                     className="text-xs text-[#0c3383] hover:text-[#0c3383]/80 px-3 py-2.5 font-medium border border-blue-100 rounded-xl hover:bg-blue-50/50 transition-colors cursor-pointer"
                   >
-                    Renvoyer
+                    {t('SignatureModal.resend', 'Renvoyer')}
                   </button>
                 </div>
               </div>
@@ -175,7 +177,7 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
               className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
             />
             <label htmlFor="consent-check" className="text-[11px] text-slate-500 cursor-pointer select-none leading-relaxed">
-              En cochant cette case, je consens à signer numériquement ce document et je reconnais que ma signature a valeur légale sur la plateforme Hoodly conformément à l’article 1367 du Code Civil.
+              {t('SignatureModal.consent_label', 'En cochant cette case, je consens à signer numériquement ce document et je reconnais que ma signature a valeur légale sur la plateforme Hoodly conformément à l’article 1367 du Code Civil.')}
             </label>
           </div>
 
@@ -185,14 +187,14 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
               onClick={onClose}
               className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-sm transition-colors"
             >
-              Annuler
+              {t('SignatureModal.cancel', 'Annuler')}
             </button>
             <button
               type="submit"
               disabled={signing || !signatureImage || !otp || !consent}
               className="flex-1 py-3 rounded-xl bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-100 disabled:text-slate-400 font-medium text-sm transition-all"
             >
-              {signing ? 'Signature...' : 'Signer le document'}
+              {signing ? t('SignatureModal.signing', 'Signature...') : t('SignatureModal.sign_btn', 'Signer le document')}
             </button>
           </div>
         </form>

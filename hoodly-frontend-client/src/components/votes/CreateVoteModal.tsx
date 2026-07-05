@@ -5,6 +5,7 @@ import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import { toast } from 'sonner'
 import { votesApi } from '../../services/api/votes'
+import { useTranslation } from 'react-i18next'
 
 interface CreateVoteModalProps {
   isOpen: boolean
@@ -14,6 +15,7 @@ interface CreateVoteModalProps {
 }
 
 export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: CreateVoteModalProps) {
+  const { t } = useTranslation()
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [options, setOptions] = useState<string[]>(['', ''])
@@ -28,7 +30,7 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
 
   const handleRemoveOption = (index: number) => {
     if (options.length <= 2) {
-      toast.error('Un vote nécessite au moins 2 options')
+      toast.error(t('votes.createModal.errorTwoOptionsRequired', 'Un vote nécessite au moins 2 options'))
       return
     }
     setOptions(options.filter((_, i) => i !== index))
@@ -44,13 +46,13 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
     e.preventDefault()
 
     if (!title.trim()) {
-      toast.error('Le titre est requis')
+      toast.error(t('votes.createModal.errorTitleRequired', 'Le titre est requis'))
       return
     }
 
     const filteredOptions = options.map((opt) => opt.trim()).filter(Boolean)
     if (filteredOptions.length < 2) {
-      toast.error('Veuillez renseigner au moins 2 options valides')
+      toast.error(t('votes.createModal.errorMinOptions', 'Veuillez renseigner au moins 2 options valides'))
       return
     }
 
@@ -67,7 +69,7 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
         isAnonymous
       })
 
-      toast.success('Votre proposition de vote a été soumise avec succès !')
+      toast.success(t('votes.createModal.successMsg', 'Votre proposition de vote a été soumise avec succès !'))
       onSuccess()
       setTitle('')
       setDescription('')
@@ -75,7 +77,7 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
       setIsAnonymous(true)
       onClose()
     } catch (err: any) {
-      const errorMsg = err?.response?.data?.message || "Une erreur est survenue lors de la création."
+      const errorMsg = err?.response?.data?.message || t('votes.createModal.errorMsg', "Une erreur est survenue lors de la création.")
       toast.error(errorMsg)
     } finally {
       setSubmitting(false)
@@ -100,23 +102,23 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
 
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-[#1e224e]" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Proposer un vote
+            {t('votes.createModal.title', 'Proposer un vote')}
           </h2>
           <p className="text-gray-500 text-xs mt-1">
-            Les autres habitants pourront voter sur ce sujet après validation par un modérateur. Durée du vote : 1 semaine.
+            {t('votes.createModal.subtitle', 'Les autres habitants pourront voter sur ce sujet après validation par un modérateur. Durée du vote : 1 semaine.')}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-              Question ou titre du vote
+              {t('votes.createModal.questionLabel', 'Question ou titre du vote')}
             </label>
             <Input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="ex: Doit-on planter un cerisier dans la cour ?"
+              placeholder={t('votes.createModal.questionPlaceholder', 'ex: Doit-on planter un cerisier dans la cour ?')}
               className="h-11 rounded-xl border-gray-200 focus:border-[#2c308e] text-sm"
               disabled={submitting}
               required
@@ -125,12 +127,12 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
 
           <div>
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-              Description (contexte)
+              {t('votes.createModal.descLabel', 'Description (contexte)')}
             </label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Expliquez brièvement l'intérêt de ce vote à vos voisins..."
+              placeholder={t('votes.createModal.descPlaceholder', "Expliquez brièvement l'intérêt de ce vote à vos voisins...")}
               className="min-h-[80px] rounded-xl border-gray-200 focus:border-[#2c308e] text-sm p-3"
               disabled={submitting}
             />
@@ -138,7 +140,7 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
 
           <div>
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-              Options de réponse
+              {t('votes.createModal.optionsLabel', 'Options de réponse')}
             </label>
             <div className="space-y-2">
               {options.map((option, idx) => (
@@ -147,7 +149,7 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
                     type="text"
                     value={option}
                     onChange={(e) => handleOptionChange(idx, e.target.value)}
-                    placeholder={`Option ${idx + 1}`}
+                    placeholder={t('votes.createModal.optionPlaceholder', { index: idx + 1, defaultValue: `Option ${idx + 1}` })}
                     className="h-10 rounded-xl border-gray-200 focus:border-[#2c308e] text-sm flex-1"
                     disabled={submitting}
                     required
@@ -173,7 +175,7 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
               disabled={submitting}
             >
               <Plus className="h-4 w-4" />
-              <span>Ajouter une option</span>
+              <span>{t('votes.createModal.addOption', 'Ajouter une option')}</span>
             </button>
           </div>
 
@@ -188,12 +190,12 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
             />
             <div className="flex-1">
               <label htmlFor="isAnonymous" className="block text-xs font-bold text-gray-700 cursor-pointer select-none">
-                Vote Anonyme
+                {t('votes.createModal.anonymousLabel', 'Vote Anonyme')}
               </label>
               <p className="text-[10px] text-gray-400 mt-0.5">
                 {isAnonymous 
-                  ? "Les votes de chacun resteront entièrement secrets (recommandé)."
-                  : "Les choix et noms des participants seront visibles par tous sur les résultats."}
+                  ? t('votes.createModal.anonymousDescTrue', "Les votes de chacun resteront entièrement secrets (recommandé).")
+                  : t('votes.createModal.anonymousDescFalse', "Les choix et noms des participants seront visibles par tous sur les résultats.")}
               </p>
             </div>
           </div>
@@ -206,7 +208,7 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
               disabled={submitting}
               className="flex-1 border-gray-200 text-gray-500 rounded-xl h-11"
             >
-              Annuler
+              {t('common.cancel', 'Annuler')}
             </Button>
             <Button
               type="submit"
@@ -216,10 +218,10 @@ export default function CreateVoteModal({ isOpen, onClose, zoneId, onSuccess }: 
               {submitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                  <span>Soumission...</span>
+                  <span>{t('votes.createModal.submittingBtn', 'Soumission...')}</span>
                 </>
               ) : (
-                'Proposer'
+                t('votes.createModal.submitBtn', 'Proposer')
               )}
             </Button>
           </div>

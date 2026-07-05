@@ -10,8 +10,10 @@ import { useUser } from '../../../hooks/useUser'
 import { toast } from 'sonner'
 import { PostType } from '../../../types/post.types'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select'
+import { useTranslation } from 'react-i18next'
 
 export function CreatePostForm({ zoneId }: { zoneId: string }) {
+  const { t } = useTranslation()
   const { user } = useUser()
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -27,13 +29,13 @@ export function CreatePostForm({ zoneId }: { zoneId: string }) {
       setContent('')
       setType(PostType.DISCUSSION)
       removeFile()
-      toast.success('Publication réussie !')
+      toast.success(t('dashboard.createPost.successMsg', 'Publication réussie !'))
       queryClient.invalidateQueries({ queryKey: ['posts', zoneId] })
     },
     onError: (error: Error | { response?: { data?: { message?: string } } }) => {
       console.error(error)
       const err = error as { response?: { data?: { message?: string } } }
-      toast.error(err.response?.data?.message || 'Erreur lors de la publication')
+      toast.error(err.response?.data?.message || t('dashboard.createPost.errorMsg', 'Erreur lors de la publication'))
     }
   })
 
@@ -42,12 +44,12 @@ export function CreatePostForm({ zoneId }: { zoneId: string }) {
     if (!selected) return
 
     if (selected.size > 5 * 1024 * 1024) {
-      toast.error('L\'image ne doit pas dépasser 5 Mo')
+      toast.error(t('dashboard.createPost.errorSize', "L'image ne doit pas dépasser 5 Mo"))
       return
     }
 
     if (!selected.type.startsWith('image/')) {
-      toast.error('Le fichier doit être une image')
+      toast.error(t('dashboard.createPost.errorType', "Le fichier doit être une image"))
       return
     }
 
@@ -80,7 +82,7 @@ export function CreatePostForm({ zoneId }: { zoneId: string }) {
             </Avatar>
             <div className="flex-1 space-y-2">
               <Textarea
-                placeholder="Quoi de neuf dans votre quartier ?"
+                placeholder={t('dashboard.createPost.placeholder', 'Quoi de neuf dans votre quartier ?')}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 className="min-h-[100px] resize-none border-none focus-visible:ring-0 px-0 text-base"
@@ -124,18 +126,18 @@ export function CreatePostForm({ zoneId }: { zoneId: string }) {
               disabled={isPending || !!file}
             >
               <Image className="h-4 w-4 mr-2" />
-              Photo
+              {t('dashboard.createPost.photo', 'Photo')}
             </Button>
             
             <Select value={type} onValueChange={(v) => setType(v as PostType)} disabled={isPending}>
               <SelectTrigger className="w-[140px] h-8 text-xs border-none shadow-none focus:ring-0">
-                <SelectValue placeholder="Type de post" />
+                <SelectValue placeholder={t('dashboard.createPost.typePlaceholder', 'Type de post')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={PostType.DISCUSSION}>Discussion</SelectItem>
-                <SelectItem value={PostType.SERVICE}>Service</SelectItem>
-                <SelectItem value={PostType.EVENT}>Événement</SelectItem>
-                <SelectItem value={PostType.ALERT}>Alerte</SelectItem>
+                <SelectItem value={PostType.DISCUSSION}>{t('dashboard.createPost.types.discussion', 'Discussion')}</SelectItem>
+                <SelectItem value={PostType.SERVICE}>{t('dashboard.createPost.types.service', 'Service')}</SelectItem>
+                <SelectItem value={PostType.EVENT}>{t('dashboard.createPost.types.event', 'Événement')}</SelectItem>
+                <SelectItem value={PostType.ALERT}>{t('dashboard.createPost.types.alert', 'Alerte')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -146,7 +148,7 @@ export function CreatePostForm({ zoneId }: { zoneId: string }) {
             className="rounded-full px-6"
           >
             {isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-            Publier
+            {t('dashboard.createPost.submit', 'Publier')}
           </Button>
         </CardFooter>
       </form>

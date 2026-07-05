@@ -1,16 +1,18 @@
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../stores/auth.store'
 
 function WaitingPage() {
+  const { t } = useTranslation()
   const user = useAuthStore((state) => state.user)
 
   const messages: Record<string, { title: string; desc: string }> = {
     en_attente_adh: {
-      title: 'Demande d\'adhésion envoyée',
-      desc: 'Votre demande pour rejoindre le quartier est en cours de traitement par un administrateur.',
+      title: t('waiting.membershipRequestedTitle'),
+      desc: t('waiting.membershipRequestedDesc'),
     },
     en_attente_zone: {
-      title: 'Demande de création envoyée',
-      desc: 'Votre demande de création de quartier est en cours de traitement par un administrateur.',
+      title: t('waiting.zoneCreationRequestedTitle'),
+      desc: t('waiting.zoneCreationRequestedDesc'),
     },
   }
 
@@ -21,11 +23,10 @@ function WaitingPage() {
       <div className="mx-auto max-w-md text-center">
         <div className="mb-6 text-6xl">⏳</div>
         <h1 className="mb-3 text-2xl font-bold">
-          {message?.title ?? 'Demande en cours de traitement'}
+          {message?.title ?? t('waiting.defaultTitle')}
         </h1>
         <p className="text-gray-500">
-          {message?.desc ??
-            'Votre demande sera traitée par un administrateur dans les plus brefs délais.'}
+          {message?.desc ?? t('waiting.defaultDesc')}
         </p>
       </div>
     </div>

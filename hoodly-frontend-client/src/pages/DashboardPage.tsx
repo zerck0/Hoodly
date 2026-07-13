@@ -98,7 +98,7 @@ function DashboardPage() {
     fetchWeather()
   }, [zone])
 
-  const { events } = useEvents()
+  const { events } = useEvents(isVerified)
 
   const nextEvent = events
     ? [...events]
@@ -253,7 +253,7 @@ function DashboardPage() {
                 </div>
               </div>
 
-              {hasZone && (
+              {hasZone && isVerified && (
                 <div className="bg-white/75 dark:bg-gray-900/75 backdrop-blur-md rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 ring-1 ring-black/[0.04] dark:ring-white/[0.04]">
                   <div className="flex items-center justify-between mb-4">
                     <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">

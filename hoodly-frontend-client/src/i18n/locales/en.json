@@ -185,7 +185,7 @@
       "verificationInProcess": "Verification in progress",
       "verificationRequired": "Action required: Verify your account",
       "reasonText": "Reason: {{reason}}. Please resend legible proof.",
-      "examiningText": "Our moderators are reviewing your documents. You will receive full access shortly.",
+      "examiningText": "Administrators are reviewing your documents. You will receive full access shortly.",
       "instructionText": "To interact with the community, please send us proof of address.",
       "refreshTooltip": "Refresh status",
       "modifyDocsBtn": "Modify documents",

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsApi } from '../services/api/events'
 import type { CreateEventDto } from '../types/event.types'
 
-export function useEvents() {
+export function useEvents(enabled = true) {
   const queryClient = useQueryClient()
 
   const eventsQuery = useQuery({
@@ -12,6 +12,7 @@ export function useEvents() {
       return data
     },
     staleTime: 1000 * 30,
+    enabled,
   })
 
   const recommendationsQuery = useQuery({
@@ -21,6 +22,7 @@ export function useEvents() {
       return data
     },
     staleTime: 1000 * 60 * 5,
+    enabled,
   })
 
   const createMutation = useMutation({

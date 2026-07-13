@@ -185,7 +185,7 @@
       "verificationInProcess": "Vérification en cours",
       "verificationRequired": "Action requise : Vérifiez votre compte",
       "reasonText": "Motif : {{reason}}. Merci de renvoyer des justificatifs lisibles.",
-      "examiningText": "Nos modérateurs examinent vos documents. Vous recevrez un accès complet sous peu.",
+      "examiningText": "Les administrateurs examinent vos documents. Vous recevrez un accès complet sous peu.",
       "instructionText": "Pour interagir avec la communauté, merci de nous transmettre un justificatif de domicile.",
       "refreshTooltip": "Actualiser le statut",
       "modifyDocsBtn": "Modifier les documents",

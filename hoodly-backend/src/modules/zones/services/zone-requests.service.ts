@@ -15,6 +15,7 @@ import { CreateZoneRequestDto } from '../dto/create-zone-request.dto';
 import { BulkActionZoneRequestDto } from '../dto/bulk-action-zone-request.dto';
 import { RequestStatus } from '../enums/request-status.enum';
 import { ZoneMembershipStatus } from '../../users/enums/zone-membership-status.enum';
+import { EmailsService } from '../../emails/emails.service';
 
 @Injectable()
 export class ZoneRequestsService {
@@ -25,6 +26,7 @@ export class ZoneRequestsService {
     private userModel: Model<UserDocument>,
     @InjectModel(Zone.name)
     private zoneModel: Model<ZoneDocument>,
+    private readonly emailsService: EmailsService,
   ) {}
 
   async create(
@@ -62,7 +64,19 @@ export class ZoneRequestsService {
       $unset: { refusalReason: '', refusalType: '' },
     });
 
-    return request.save();
+    const savedRequest = await request.save();
+
+    if (user.email) {
+      this.emailsService.sendWelcomeCreationEmail(
+        user.email,
+        user.name || '',
+        data.nomQuartier,
+      ).catch((err) => {
+        console.error(`[ZoneRequestsService] Error sending welcome creation email: ${err.message}`);
+      });
+    }
+
+    return savedRequest;
   }
 
   async findAll(): Promise<ZoneRequest[]> {
@@ -109,6 +123,20 @@ export class ZoneRequestsService {
       },
     );
 
+    const users = await this.userModel.find({ _id: { $in: userIds } });
+    for (const r of requests) {
+      const u = users.find((user) => user._id.toString() === r.userId.toString());
+      if (u && u.email) {
+        this.emailsService.sendNeighborhoodCreatedEmail(
+          u.email,
+          u.name || '',
+          r.nomQuartier,
+        ).catch((err) => {
+          console.error(`[ZoneRequestsService] Error sending bulk neighborhood created email: ${err.message}`);
+        });
+      }
+    }
+
     return zone;
   }
 
@@ -143,6 +171,17 @@ export class ZoneRequestsService {
       zoneStatut: ZoneMembershipStatus.PENDING_MEMBERSHIP,
       $unset: { refusalReason: '', refusalType: '' },
     });
+
+    const user = await this.userModel.findById(request.userId);
+    if (user && user.email) {
+      this.emailsService.sendNeighborhoodCreatedEmail(
+        user.email,
+        user.name || '',
+        request.nomQuartier,
+      ).catch((err) => {
+        console.error(`[ZoneRequestsService] Error sending neighborhood created email: ${err.message}`);
+      });
+    }
 
     return zone;
   }

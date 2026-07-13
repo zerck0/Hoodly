@@ -13,6 +13,7 @@ import { User, UserDocument } from '../../users/schemas/user.schema';
 import { Zone, ZoneDocument } from '../schemas/zone.schema';
 import { RequestStatus } from '../enums/request-status.enum';
 import { ZoneMembershipStatus } from '../../users/enums/zone-membership-status.enum';
+import { EmailsService } from '../../emails/emails.service';
 
 @Injectable()
 export class ZoneMembershipsService {
@@ -23,6 +24,7 @@ export class ZoneMembershipsService {
     private userModel: Model<UserDocument>,
     @InjectModel(Zone.name)
     private zoneModel: Model<ZoneDocument>,
+    private readonly emailsService: EmailsService,
   ) {}
 
   async create(
@@ -58,7 +60,19 @@ export class ZoneMembershipsService {
       $unset: { refusalReason: '', refusalType: '' },
     });
 
-    return membership.save();
+    const savedMembership = await membership.save();
+
+    if (user.email) {
+      this.emailsService.sendWelcomeJoinEmail(
+        user.email,
+        user.name || '',
+        zone.nom,
+      ).catch((err) => {
+        console.error(`[ZoneMembershipsService] Error sending welcome join email: ${err.message}`);
+      });
+    }
+
+    return savedMembership;
   }
 
   async intent(zoneId: string, userSub: string): Promise<UserDocument> {
@@ -108,7 +122,7 @@ export class ZoneMembershipsService {
       $inc: { membresCount: 1 },
     });
 
-    return this.zoneMembershipModel
+    const acceptedMembership = await this.zoneMembershipModel
       .findByIdAndUpdate(
         membershipId,
         {
@@ -119,6 +133,20 @@ export class ZoneMembershipsService {
         { returnDocument: 'after' },
       )
       .exec();
+
+    const user = await this.userModel.findById(membership.userId);
+    const zone = await this.zoneModel.findById(membership.zoneId);
+    if (user && user.email && zone) {
+      this.emailsService.sendMembershipApprovedEmail(
+        user.email,
+        user.name || '',
+        zone.nom,
+      ).catch((err) => {
+        console.error(`[ZoneMembershipsService] Error sending membership approved email: ${err.message}`);
+      });
+    }
+
+    return acceptedMembership;
   }
 
   async refuse(

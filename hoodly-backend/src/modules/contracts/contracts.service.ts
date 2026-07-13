@@ -162,9 +162,7 @@ export class ContractsService {
 
     await contract.save();
 
-    const subject = `Votre code de validation de signature Hoodly`;
-    const body = `Bonjour ${user.name},\n\nVous avez demandé à signer le contrat "${contract.title}".\n\nVotre code de vérification MFA est : ${otp}\n\nCe code est valable pendant 5 minutes.\n\nL'équipe Hoodly.`;
-    await this.emailsService.sendEmail(user.email, subject, body);
+    await this.emailsService.sendOTPEmail(user.email, user.name || '', otp);
 
     return { message: 'Code de vérification envoyé par e-mail' };
   }
@@ -553,12 +551,19 @@ export class ContractsService {
 
       contract.signedDocumentId = finalDocument._id;
 
-      const subject = `Contrat signe et archive : ${contract.title}`;
-      const emailBody = `Bonjour,\n\nLe contrat "${contract.title}" a ete signe avec succes par les deux parties.\n\nVous trouverez le PDF final contenant la signature et le certificat à l'adresse suivante :\n${fileUrl}\n\nL'equipe Hoodly.`;
-
       await Promise.all([
-        this.emailsService.sendEmail(clientUser.email, subject, emailBody),
-        this.emailsService.sendEmail(providerUser.email, subject, emailBody),
+        this.emailsService.sendContractSignedNotification(
+          clientUser.email,
+          clientUser.name || '',
+          contract.title,
+          fileUrl,
+        ),
+        this.emailsService.sendContractSignedNotification(
+          providerUser.email,
+          providerUser.name || '',
+          contract.title,
+          fileUrl,
+        ),
       ]);
 
       return contract;
@@ -638,6 +643,42 @@ export class ContractsService {
     }
 
     contract.status = ContractStatus.COMPLETED;
+
+    try {
+      const clientUser = await this.usersService.findById(
+        contract.clientId.toString(),
+      );
+      const providerUser = await this.usersService.findById(
+        contract.providerId.toString(),
+      );
+
+      if (clientUser && clientUser.email) {
+        this.emailsService.sendServiceCompletedClientEmail(
+          clientUser.email,
+          clientUser.name || '',
+          providerUser ? providerUser.name || '' : '',
+          contract.title,
+          contract.pricePoints,
+        ).catch((err) => {
+          console.error(`[ContractsService] Error sending service completed client email: ${err.message}`);
+        });
+      }
+
+      if (providerUser && providerUser.email) {
+        this.emailsService.sendServiceCompletedProviderEmail(
+          providerUser.email,
+          providerUser.name || '',
+          clientUser ? clientUser.name || '' : '',
+          contract.title,
+          contract.pricePoints,
+        ).catch((err) => {
+          console.error(`[ContractsService] Error sending service completed provider email: ${err.message}`);
+        });
+      }
+    } catch (err: any) {
+      console.error(`[ContractsService] Error fetching users for completion emails: ${err.message}`);
+    }
+
     return contract.save();
   }
 

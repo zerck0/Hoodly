@@ -14,6 +14,7 @@ import { Event } from '../../events/schemas/event.schema';
 import { ModeratorApplication } from '../schemas/moderator-application.schema';
 
 import { TransactionsService } from '../../transactions/services/transactions.service';
+import { EmailsService } from '../../emails/emails.service';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -123,6 +124,12 @@ describe('UsersService', () => {
         {
           provide: TransactionsService,
           useValue: transactionsService,
+        },
+        {
+          provide: EmailsService,
+          useValue: {
+            sendAccountDeletedEmail: jest.fn().mockResolvedValue(true),
+          },
         },
       ],
     }).compile();

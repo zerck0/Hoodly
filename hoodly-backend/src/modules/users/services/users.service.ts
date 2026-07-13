@@ -15,6 +15,7 @@ import {
 import { UserResponseDto } from '../dto/user-response.dto';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
 import { TransactionsService } from '../../transactions/services/transactions.service';
+import { EmailsService } from '../../emails/emails.service';
 import { TransactionType } from '../../transactions/schemas/transaction.schema';
 import {
   Conversation,
@@ -45,6 +46,7 @@ export class UsersService {
     @InjectModel(Incident.name) private incidentModel: Model<IncidentDocument>,
     @InjectModel(Event.name) private eventModel: Model<EventDocument>,
     private transactionsService: TransactionsService,
+    private readonly emailsService: EmailsService,
   ) {}
 
   async syncFromAuth0(
@@ -175,6 +177,13 @@ export class UsersService {
   async deleteUser(id: string) {
     const result = await this.userModel.findByIdAndDelete(id);
     if (!result) throw new NotFoundException('Utilisateur introuvable');
+
+    if (result.email && !result.email.startsWith('anonymized-')) {
+      this.emailsService.sendAccountDeletedEmail(result.email, result.name || '').catch((err) => {
+        console.error(`[UsersService] Error sending account deleted email: ${err.message}`);
+      });
+    }
+
     return { message: 'Utilisateur supprimé' };
   }
 

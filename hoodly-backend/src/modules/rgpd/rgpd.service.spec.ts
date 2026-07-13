@@ -10,6 +10,7 @@ import { Incident } from '../incidents/schemas/incident.schema';
 import { Transaction } from '../transactions/schemas/transaction.schema';
 import { NotFoundException } from '@nestjs/common';
 import { Neo4jService } from '../neo4j/neo4j.service';
+import { EmailsService } from '../emails/emails.service';
 
 describe('RgpdService', () => {
   let service: RgpdService;
@@ -152,6 +153,12 @@ describe('RgpdService', () => {
           provide: Neo4jService,
           useValue: {
             run: jest.fn().mockResolvedValue({}),
+          },
+        },
+        {
+          provide: EmailsService,
+          useValue: {
+            sendAccountDeletedEmail: jest.fn().mockResolvedValue(true),
           },
         },
       ],

@@ -7,6 +7,7 @@ import { ZoneRequest } from '../schemas/zone-request.schema';
 import { User } from '../../users/schemas/user.schema';
 import { Zone } from '../schemas/zone.schema';
 import { RequestStatus } from '../enums/request-status.enum';
+import { EmailsService } from '../../emails/emails.service';
 
 describe('ZoneRequestsService', () => {
   let service: ZoneRequestsService;
@@ -67,6 +68,8 @@ describe('ZoneRequestsService', () => {
 
     const mockUsrModel = jest.fn();
     (mockUsrModel as any).findOne = jest.fn().mockResolvedValue(mockUserDoc);
+    (mockUsrModel as any).findById = jest.fn().mockResolvedValue(mockUserDoc);
+    (mockUsrModel as any).find = jest.fn().mockResolvedValue([mockUserDoc]);
     (mockUsrModel as any).findByIdAndUpdate = jest.fn().mockResolvedValue(mockUserDoc);
     (mockUsrModel as any).updateMany = jest.fn().mockResolvedValue({});
 
@@ -80,12 +83,18 @@ describe('ZoneRequestsService', () => {
     }));
     (mockZModel as any).findById = jest.fn().mockResolvedValue(mockZoneDoc);
 
+    const mockEmailsService = {
+      sendWelcomeCreationEmail: jest.fn().mockResolvedValue(true),
+      sendNeighborhoodCreatedEmail: jest.fn().mockResolvedValue(true),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ZoneRequestsService,
         { provide: getModelToken(ZoneRequest.name), useValue: mockReqModel },
         { provide: getModelToken(User.name), useValue: mockUsrModel },
         { provide: getModelToken(Zone.name), useValue: mockZModel },
+        { provide: EmailsService, useValue: mockEmailsService },
       ],
     }).compile();
 

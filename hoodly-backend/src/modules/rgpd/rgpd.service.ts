@@ -17,6 +17,7 @@ import {
   TransactionDocument,
 } from '../transactions/schemas/transaction.schema';
 import { Neo4jService } from '../neo4j/neo4j.service';
+import { EmailsService } from '../emails/emails.service';
 
 @Injectable()
 export class RgpdService {
@@ -32,6 +33,7 @@ export class RgpdService {
     @InjectModel(Transaction.name)
     private readonly transactionModel: Model<TransactionDocument>,
     private readonly neo4jService: Neo4jService,
+    private readonly emailsService: EmailsService,
   ) {}
 
   async exportUserData(userId: string) {
@@ -77,6 +79,14 @@ export class RgpdService {
     const profile = await this.userModel.findById(userId).exec();
     if (!profile) {
       throw new NotFoundException('Utilisateur introuvable');
+    }
+
+    if (profile.email && !profile.email.startsWith('anonymized-')) {
+      try {
+        await this.emailsService.sendAccountDeletedEmail(profile.email, profile.name || '');
+      } catch (err: any) {
+        console.error(`[RgpdService] Error sending account deleted email: ${err.message}`);
+      }
     }
 
     await this.postModel.deleteMany({ author: userObjectId }).exec();

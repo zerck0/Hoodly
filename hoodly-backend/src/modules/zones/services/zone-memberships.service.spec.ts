@@ -7,6 +7,7 @@ import { ZoneMembership } from '../schemas/zone-membership.schema';
 import { User } from '../../users/schemas/user.schema';
 import { Zone } from '../schemas/zone.schema';
 import { RequestStatus } from '../enums/request-status.enum';
+import { EmailsService } from '../../emails/emails.service';
 
 describe('ZoneMembershipsService', () => {
   let service: ZoneMembershipsService;
@@ -62,11 +63,17 @@ describe('ZoneMembershipsService', () => {
 
     const mockUsrModel = jest.fn();
     (mockUsrModel as any).findOne = jest.fn().mockResolvedValue(mockUserDoc);
+    (mockUsrModel as any).findById = jest.fn().mockResolvedValue(mockUserDoc);
     (mockUsrModel as any).findByIdAndUpdate = jest.fn().mockResolvedValue(mockUserDoc);
 
     const mockZModel = jest.fn();
     (mockZModel as any).findById = jest.fn().mockResolvedValue(mockZoneDoc);
     (mockZModel as any).findByIdAndUpdate = jest.fn().mockResolvedValue(mockZoneDoc);
+
+    const mockEmailsService = {
+      sendWelcomeJoinEmail: jest.fn().mockResolvedValue(true),
+      sendMembershipApprovedEmail: jest.fn().mockResolvedValue(true),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -74,6 +81,7 @@ describe('ZoneMembershipsService', () => {
         { provide: getModelToken(ZoneMembership.name), useValue: mockMshpModel },
         { provide: getModelToken(User.name), useValue: mockUsrModel },
         { provide: getModelToken(Zone.name), useValue: mockZModel },
+        { provide: EmailsService, useValue: mockEmailsService },
       ],
     }).compile();
 

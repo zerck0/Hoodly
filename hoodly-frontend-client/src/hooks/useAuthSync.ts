@@ -18,7 +18,16 @@ export function useAuthSync() {
           try {
             const { data } = await authApi.getMe()
             setUser(data)
-          } catch (err) {
+          } catch (err: any) {
+            if (err.response?.status === 404) {
+              try {
+                const { data } = await authApi.syncUser()
+                setUser(data)
+                return
+              } catch (syncErr) {
+                console.error('Erreur lors de la création/synchronisation du profil:', syncErr)
+              }
+            }
             console.error('Erreur sync profil:', err)
             setIsSyncing(false)
           }

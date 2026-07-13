@@ -14,6 +14,7 @@ import {
   Transaction,
   TransactionSchema,
 } from '../transactions/schemas/transaction.schema';
+import { EmailsModule } from '../emails/emails.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import {
       { name: Incident.name, schema: IncidentSchema },
       { name: Transaction.name, schema: TransactionSchema },
     ]),
+    EmailsModule,
   ],
   controllers: [RgpdController],
   providers: [RgpdService],

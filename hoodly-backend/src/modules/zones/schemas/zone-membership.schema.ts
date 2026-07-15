@@ -12,10 +12,10 @@ export class ZoneMembership {
   @Prop({ type: Types.ObjectId, ref: 'Zone', required: true })
   zoneId!: Types.ObjectId;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   justificatifUrl!: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   pieceIdentiteUrl!: string;
 
   @Prop({

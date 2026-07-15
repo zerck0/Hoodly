@@ -14,6 +14,7 @@ import { Zone, ZoneDocument } from '../schemas/zone.schema';
 import { RequestStatus } from '../enums/request-status.enum';
 import { ZoneMembershipStatus } from '../../users/enums/zone-membership-status.enum';
 import { EmailsService } from '../../emails/emails.service';
+import { UploadsService } from '../../uploads/services/uploads.service';
 
 @Injectable()
 export class ZoneMembershipsService {
@@ -25,6 +26,7 @@ export class ZoneMembershipsService {
     @InjectModel(Zone.name)
     private zoneModel: Model<ZoneDocument>,
     private readonly emailsService: EmailsService,
+    private readonly uploadsService: UploadsService,
   ) {}
 
   async create(
@@ -122,6 +124,17 @@ export class ZoneMembershipsService {
       $inc: { membresCount: 1 },
     });
 
+    if (membership.justificatifUrl && membership.justificatifUrl !== 'DELETED_RGPD') {
+      await this.uploadsService.deleteFile(membership.justificatifUrl).catch((err) => {
+        console.error(`[ZoneMembershipsService] Failed to delete justificatif file: ${err.message}`);
+      });
+    }
+    if (membership.pieceIdentiteUrl && membership.pieceIdentiteUrl !== 'DELETED_RGPD') {
+      await this.uploadsService.deleteFile(membership.pieceIdentiteUrl).catch((err) => {
+        console.error(`[ZoneMembershipsService] Failed to delete pieceIdentite file: ${err.message}`);
+      });
+    }
+
     const acceptedMembership = await this.zoneMembershipModel
       .findByIdAndUpdate(
         membershipId,
@@ -129,6 +142,8 @@ export class ZoneMembershipsService {
           statut: RequestStatus.ACCEPTED,
           traitePar: admin._id,
           traiteLe: new Date(),
+          justificatifUrl: 'DELETED_RGPD',
+          pieceIdentiteUrl: 'DELETED_RGPD',
         },
         { returnDocument: 'after' },
       )
@@ -167,6 +182,17 @@ export class ZoneMembershipsService {
       refusalType: 'membership',
     });
 
+    if (membership.justificatifUrl && membership.justificatifUrl !== 'DELETED_RGPD') {
+      await this.uploadsService.deleteFile(membership.justificatifUrl).catch((err) => {
+        console.error(`[ZoneMembershipsService] Failed to delete justificatif file: ${err.message}`);
+      });
+    }
+    if (membership.pieceIdentiteUrl && membership.pieceIdentiteUrl !== 'DELETED_RGPD') {
+      await this.uploadsService.deleteFile(membership.pieceIdentiteUrl).catch((err) => {
+        console.error(`[ZoneMembershipsService] Failed to delete pieceIdentite file: ${err.message}`);
+      });
+    }
+
     return this.zoneMembershipModel
       .findByIdAndUpdate(
         membershipId,
@@ -175,6 +201,8 @@ export class ZoneMembershipsService {
           commentaireAdmin: commentaire,
           traitePar: admin._id,
           traiteLe: new Date(),
+          justificatifUrl: 'DELETED_RGPD',
+          pieceIdentiteUrl: 'DELETED_RGPD',
         },
         { returnDocument: 'after' },
       )

@@ -8,6 +8,7 @@ import { User } from '../../users/schemas/user.schema';
 import { Zone } from '../schemas/zone.schema';
 import { RequestStatus } from '../enums/request-status.enum';
 import { EmailsService } from '../../emails/emails.service';
+import { UploadsService } from '../../uploads/services/uploads.service';
 
 describe('ZoneMembershipsService', () => {
   let service: ZoneMembershipsService;
@@ -75,6 +76,10 @@ describe('ZoneMembershipsService', () => {
       sendMembershipApprovedEmail: jest.fn().mockResolvedValue(true),
     };
 
+    const mockUploadsService = {
+      deleteFile: jest.fn().mockResolvedValue(true),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ZoneMembershipsService,
@@ -82,6 +87,7 @@ describe('ZoneMembershipsService', () => {
         { provide: getModelToken(User.name), useValue: mockUsrModel },
         { provide: getModelToken(Zone.name), useValue: mockZModel },
         { provide: EmailsService, useValue: mockEmailsService },
+        { provide: UploadsService, useValue: mockUploadsService },
       ],
     }).compile();
 

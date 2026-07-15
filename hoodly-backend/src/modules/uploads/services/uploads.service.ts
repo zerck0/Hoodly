@@ -97,4 +97,49 @@ export class UploadsService {
     }
     return Buffer.from(await res.arrayBuffer());
   }
+
+  async deleteFile(fileUrl: string): Promise<boolean> {
+    try {
+      const publicId = this.extractPublicId(fileUrl);
+      const resourceType = this.extractResourceType(fileUrl);
+      const result = await cloudinary.uploader.destroy(publicId, {
+        resource_type: resourceType,
+      });
+      return result.result === 'ok';
+    } catch (error) {
+      console.error(
+        `[UploadsService] Erreur lors de la suppression de ${fileUrl}:`,
+        error,
+      );
+      return false;
+    }
+  }
+
+  private extractPublicId(fileUrl: string): string {
+    const urlObj = new URL(fileUrl);
+    const pathParts = urlObj.pathname.split('/');
+    const uploadIdx = pathParts.findIndex((p) => p === 'upload' || p === 'raw');
+    if (uploadIdx === -1) {
+      throw new Error('Format de URL Cloudinary invalide');
+    }
+    let publicIdParts = pathParts.slice(uploadIdx + 1);
+    if (publicIdParts[0]?.match(/^v\d+$/)) {
+      publicIdParts = publicIdParts.slice(1);
+    }
+    const ext = publicIdParts[publicIdParts.length - 1]?.split('.').pop() || '';
+    const publicIdWithExt = publicIdParts.join('/');
+    return ext
+      ? publicIdWithExt.replace(new RegExp(`\\.${ext}$`), '')
+      : publicIdWithExt;
+  }
+
+  private extractResourceType(fileUrl: string): string {
+    const urlObj = new URL(fileUrl);
+    const pathParts = urlObj.pathname.split('/');
+    const uploadIdx = pathParts.findIndex((p) => p === 'upload' || p === 'raw');
+    if (uploadIdx === -1) {
+      return 'image';
+    }
+    return pathParts[uploadIdx - 1] || 'image';
+  }
 }

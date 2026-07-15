@@ -14,6 +14,7 @@ import { User, UserSchema } from '../users/schemas/user.schema';
 import { Incident, IncidentSchema } from '../incidents/schemas/incident.schema';
 import { Event, EventSchema } from '../events/schemas/event.schema';
 import { Service, ServiceSchema } from '../services/schemas/service.schema';
+import { UploadsModule } from '../uploads/uploads.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { Service, ServiceSchema } from '../services/schemas/service.schema';
       { name: Event.name, schema: EventSchema },
       { name: Service.name, schema: ServiceSchema },
     ]),
+    UploadsModule,
   ],
   controllers: [ZonesController],
   providers: [ZonesService, ZoneRequestsService, ZoneMembershipsService],

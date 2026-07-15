@@ -145,6 +145,10 @@ export class ZonesService {
     const updated = await this.zoneModel
       .findByIdAndUpdate(id, { statut: ZoneStatus.ACTIVE }, { new: true })
       .exec();
+
+    if (!updated) {
+      throw new NotFoundException('Zone introuvable');
+    }
     return this.toDto(updated);
   }
 

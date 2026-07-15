@@ -85,11 +85,17 @@ describe('ZonesService', () => {
       find: jest.Mock;
       countDocuments: jest.Mock;
       findById: jest.Mock;
+      findOne: jest.Mock;
       findByIdAndUpdate: jest.Mock;
     };
     zoneModel.find = jest.fn();
     zoneModel.countDocuments = jest.fn();
-    zoneModel.findById = jest.fn();
+    zoneModel.findById = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue(makeZone()),
+    });
+    zoneModel.findOne = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue(null),
+    });
     zoneModel.findByIdAndUpdate = jest.fn();
 
     userModel = {
@@ -403,6 +409,7 @@ describe('ZonesService', () => {
 
     it('should throw NotFoundException when activating an unknown zone', async () => {
       const exec = jest.fn().mockResolvedValue(null);
+      zoneModel.findById.mockReturnValue({ exec });
       zoneModel.findByIdAndUpdate.mockReturnValue({ exec });
 
       await expect(service.activate(zoneId)).rejects.toThrow(NotFoundException);

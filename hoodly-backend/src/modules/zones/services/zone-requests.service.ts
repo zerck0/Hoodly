@@ -16,6 +16,7 @@ import { BulkActionZoneRequestDto } from '../dto/bulk-action-zone-request.dto';
 import { RequestStatus } from '../enums/request-status.enum';
 import { ZoneMembershipStatus } from '../../users/enums/zone-membership-status.enum';
 import { EmailsService } from '../../emails/emails.service';
+import { ZoneStatus } from '../enums/zone-status.enum';
 
 @Injectable()
 export class ZoneRequestsService {
@@ -91,6 +92,27 @@ export class ZoneRequestsService {
     adminSub: string,
   ): Promise<Zone> {
     const admin = await this.getAdminByAuth0Id(adminSub);
+
+    if (data.polygone) {
+      const overlapping = await this.zoneModel
+        .findOne({
+          statut: ZoneStatus.ACTIVE,
+          polygone: {
+            $geoIntersects: {
+              $geometry: {
+                type: data.polygone.type,
+                coordinates: data.polygone.coordinates,
+              },
+            },
+          },
+        })
+        .exec();
+      if (overlapping) {
+        throw new BadRequestException(
+          `Le périmètre de ce quartier chevauche ou touche un autre quartier actif (${overlapping.nom}).`,
+        );
+      }
+    }
 
     const zone = new this.zoneModel({
       nom: data.nomQuartier,

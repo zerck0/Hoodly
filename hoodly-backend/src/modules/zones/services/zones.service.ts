@@ -102,6 +102,7 @@ export class ZonesService {
     if (!data.polygone) {
       throw new BadRequestException('Le périmètre du quartier est obligatoire');
     }
+    await this.checkOverlap(data.polygone);
     const admin = await this.getAdminByAuth0Id(adminSub);
     const zone = new this.zoneModel({
       ...data,
@@ -120,6 +121,9 @@ export class ZonesService {
   }
 
   async update(id: string, data: UpdateZoneDto): Promise<ZoneDto> {
+    if (data.polygone) {
+      await this.checkOverlap(data.polygone, id);
+    }
     const updated = await this.zoneModel
       .findByIdAndUpdate(id, data, { new: true, runValidators: true })
       .exec();
@@ -131,13 +135,16 @@ export class ZonesService {
   }
 
   async activate(id: string): Promise<ZoneDto> {
+    const zone = await this.zoneModel.findById(id).exec();
+    if (!zone) {
+      throw new NotFoundException('Zone introuvable');
+    }
+    if (zone.polygone) {
+      await this.checkOverlap(zone.polygone, id);
+    }
     const updated = await this.zoneModel
       .findByIdAndUpdate(id, { statut: ZoneStatus.ACTIVE }, { new: true })
       .exec();
-
-    if (!updated) {
-      throw new NotFoundException('Zone introuvable');
-    }
     return this.toDto(updated);
   }
 
@@ -250,6 +257,34 @@ export class ZonesService {
       .findById(id)
       .orFail(new NotFoundException('Zone introuvable'));
     return this.serviceModel.find({ zoneId: new Types.ObjectId(id) }).exec();
+  }
+
+  private async checkOverlap(
+    polygone: { type: string; coordinates: number[][][] },
+    excludeZoneId?: string,
+  ): Promise<void> {
+    const query: Record<string, any> = {
+      statut: ZoneStatus.ACTIVE,
+      polygone: {
+        $geoIntersects: {
+          $geometry: {
+            type: polygone.type,
+            coordinates: polygone.coordinates,
+          },
+        },
+      },
+    };
+
+    if (excludeZoneId) {
+      query._id = { $ne: new Types.ObjectId(excludeZoneId) };
+    }
+
+    const overlapping = await this.zoneModel.findOne(query).exec();
+    if (overlapping) {
+      throw new BadRequestException(
+        `Le périmètre de ce quartier chevauche ou touche un autre quartier actif (${overlapping.nom}).`,
+      );
+    }
   }
 
   private toDto(zone: ZoneDocument): ZoneDto {

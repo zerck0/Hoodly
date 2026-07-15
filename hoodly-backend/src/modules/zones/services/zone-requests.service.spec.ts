@@ -82,6 +82,9 @@ describe('ZoneRequestsService', () => {
       }),
     }));
     (mockZModel as any).findById = jest.fn().mockResolvedValue(mockZoneDoc);
+    (mockZModel as any).findOne = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue(null),
+    });
 
     const mockEmailsService = {
       sendWelcomeCreationEmail: jest.fn().mockResolvedValue(true),

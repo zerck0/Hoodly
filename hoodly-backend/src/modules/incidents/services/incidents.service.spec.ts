@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { IncidentsService } from './incidents.service';
 import { Incident } from '../schemas/incident.schema';
+import { User } from '../../users/schemas/user.schema';
 import { CreateIncidentDto } from '../dto/create-incident.dto';
 import { IncidentStatus } from '../enums/incident-status.enum';
 import { IncidentPriority } from '../enums/incident-priority.enum';
@@ -39,12 +40,21 @@ describe('IncidentsService', () => {
     incidentModel.find = jest.fn();
     incidentModel.findByIdAndUpdate = jest.fn();
 
+    const userModel = {
+      find: jest.fn(),
+      findById: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         IncidentsService,
         {
           provide: getModelToken(Incident.name),
           useValue: incidentModel,
+        },
+        {
+          provide: getModelToken(User.name),
+          useValue: userModel,
         },
       ],
     }).compile();

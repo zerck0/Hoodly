@@ -264,6 +264,8 @@ describe('RgpdService', () => {
             isActive: false,
             points: 0,
             location: undefined,
+            zoneId: null,
+            zoneStatut: 'sans_zone',
           },
         },
       );

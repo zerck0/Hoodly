@@ -79,8 +79,25 @@ export class ZonesService {
       this.zoneModel.countDocuments(query),
     ]);
 
+    const results = await Promise.all(
+      zones.map(async (zone) => {
+        const count = await this.userModel.countDocuments({
+          zoneId: zone._id,
+          zoneStatut: ZoneMembershipStatus.ACTIVE,
+          isActive: { $ne: false },
+          email: { $not: /^anonymized-/ },
+        });
+        const dto = this.toDto(zone);
+        dto.membresCount = count;
+        if (zone.membresCount !== count) {
+          await this.zoneModel.findByIdAndUpdate(zone._id, { membresCount: count }).exec();
+        }
+        return dto;
+      }),
+    );
+
     return {
-      zones: zones.map((z) => this.toDto(z)),
+      zones: results,
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -95,7 +112,23 @@ export class ZonesService {
         ...(ville && { ville: { $regex: ville, $options: 'i' } }),
       })
       .exec();
-    return zones.map((z) => this.toDto(z));
+
+    return Promise.all(
+      zones.map(async (z) => {
+        const count = await this.userModel.countDocuments({
+          zoneId: z._id,
+          zoneStatut: ZoneMembershipStatus.ACTIVE,
+          isActive: { $ne: false },
+          email: { $not: /^anonymized-/ },
+        });
+        const dto = this.toDto(z);
+        dto.membresCount = count;
+        if (z.membresCount !== count) {
+          await this.zoneModel.findByIdAndUpdate(z._id, { membresCount: count }).exec();
+        }
+        return dto;
+      }),
+    );
   }
 
   async create(data: CreateZoneDto, adminSub: string): Promise<ZoneDto> {
@@ -117,7 +150,18 @@ export class ZonesService {
     if (!zone) {
       throw new NotFoundException('Zone introuvable');
     }
-    return this.toDto(zone);
+    const count = await this.userModel.countDocuments({
+      zoneId: zone._id,
+      zoneStatut: ZoneMembershipStatus.ACTIVE,
+      isActive: { $ne: false },
+      email: { $not: /^anonymized-/ },
+    });
+    const dto = this.toDto(zone);
+    dto.membresCount = count;
+    if (zone.membresCount !== count) {
+      await this.zoneModel.findByIdAndUpdate(zone._id, { membresCount: count }).exec();
+    }
+    return dto;
   }
 
   async update(id: string, data: UpdateZoneDto): Promise<ZoneDto> {
@@ -171,6 +215,8 @@ export class ZonesService {
       .find({
         zoneId: new Types.ObjectId(id),
         zoneStatut: ZoneMembershipStatus.ACTIVE,
+        isActive: { $ne: false },
+        email: { $not: /^anonymized-/ },
       })
       .exec();
   }

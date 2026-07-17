@@ -68,6 +68,7 @@ export default function MembershipsPage() {
 
   const getResidentName = (user: any) => {
     if (!user) return 'Inconnu';
+    if (user.firstName || user.lastName) return `${user.firstName || ''} ${user.lastName || ''}`.trim();
     if (user.nom || user.prenom) return `${user.nom || ''} ${user.prenom || ''}`.trim();
     return user.name || 'Anonyme';
   };
@@ -142,7 +143,7 @@ export default function MembershipsPage() {
                   <tbody className="divide-y divide-gray-800/50">
                     {pendingUsers?.users.map((u: any) => (
                       <tr key={u.id || u._id}>
-                        <td className="px-6 py-3 font-medium text-gray-300">{u.name || `${u.nom || ''} ${u.prenom || ''}`}</td>
+                        <td className="px-6 py-3 font-medium text-gray-300">{getResidentName(u)}</td>
                         <td className="px-6 py-3">{u.email}</td>
                         <td className="px-6 py-3 text-right text-[10px] uppercase tracking-wider text-amber-600">En attente de documents</td>
                       </tr>

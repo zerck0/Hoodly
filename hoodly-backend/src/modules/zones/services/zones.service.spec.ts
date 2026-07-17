@@ -96,12 +96,14 @@ describe('ZonesService', () => {
     zoneModel.findOne = jest.fn().mockReturnValue({
       exec: jest.fn().mockResolvedValue(null),
     });
-    zoneModel.findByIdAndUpdate = jest.fn();
+    zoneModel.findByIdAndUpdate = jest.fn().mockReturnValue({
+      exec: jest.fn().mockResolvedValue(null),
+    });
 
     userModel = {
       findOne: jest.fn(),
       find: jest.fn(),
-      countDocuments: jest.fn(),
+      countDocuments: jest.fn().mockResolvedValue(12),
     };
 
     incidentModel = {

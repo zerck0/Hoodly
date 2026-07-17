@@ -42,8 +42,8 @@ export default function ServicesPage() {
     : null
 
   const filteredServices = services.filter(service => {
-    const isCreator = typeof service.createurId === 'object'
-      ? service.createurId.email === user?.email
+    const isCreator = (service.createurId && typeof service.createurId === 'object')
+      ? (service.createurId as any).email === user?.email
       : service.createurId === user?.id
 
     const isFinishedPonctuel = service.statut === 'termine' && !service.recurrente

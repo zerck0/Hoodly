@@ -98,7 +98,7 @@ export class ZoneMembershipsService {
   async findAll(): Promise<ZoneMembership[]> {
     return this.zoneMembershipModel
       .find({ statut: RequestStatus.PENDING })
-      .populate('userId', 'nom prenom email')
+      .populate('userId', 'firstName lastName name email nom prenom')
       .populate('zoneId', 'nom ville')
       .exec();
   }

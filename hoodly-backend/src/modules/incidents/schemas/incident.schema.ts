@@ -65,7 +65,7 @@ export class Incident {
   eventId?: Types.ObjectId;
 
   @ApiPropertyOptional({ description: 'ID du signaleur' })
-  @Prop()
+  @Prop({ type: String })
   signaledPar?: string;
 
   @ApiPropertyOptional({ description: 'ID de la zone' })

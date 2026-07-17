@@ -324,9 +324,9 @@ export default function IncidentsPage() {
                 <div className="bg-gray-900/60 border border-gray-850 p-3 rounded-lg">
                   <p className="text-[10px] text-gray-500 font-bold uppercase">Signalé par</p>
                   <p className="text-xs font-semibold text-gray-200 mt-1 truncate">
-                    {typeof selectedIncident.signaledPar === 'object'
-                      ? selectedIncident.signaledPar?.name || selectedIncident.signaledPar?.email
-                      : 'Habitant de la zone'}
+                    {typeof selectedIncident.signaledPar === 'object' && selectedIncident.signaledPar
+                      ? `${selectedIncident.signaledPar.firstName || ''} ${selectedIncident.signaledPar.lastName || ''}`.trim() || selectedIncident.signaledPar.name || selectedIncident.signaledPar.email
+                      : selectedIncident.signaledPar === 'anonymized' ? 'Utilisateur Anonymisé' : (selectedIncident.signaledPar || 'Habitant de la zone')}
                   </p>
                 </div>
               </div>

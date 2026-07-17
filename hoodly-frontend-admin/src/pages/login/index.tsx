@@ -13,7 +13,10 @@ export default function LoginPage() {
 
   const handleLogin = async () => {
     await loginWithRedirect({
-      authorizationParams: { redirect_uri: `${window.location.origin}/dashboard` },
+      authorizationParams: { 
+        redirect_uri: `${window.location.origin}/dashboard`,
+        prompt: 'select_account'
+      },
       openUrl: (url) => { window.location.replace(url); },
     });
   };

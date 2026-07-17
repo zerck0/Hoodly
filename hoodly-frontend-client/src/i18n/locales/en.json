@@ -248,7 +248,7 @@
       "deleteError": "Error deleting post",
       "confirmDelete": "Do you really want to delete this post?",
       "pinned": "Pinned",
-      "joinVote": "🗳️ Participate in the consultation",
+      "joinVote": "🗳️ Participate in the poll",
       "verificationRequired": "Please verify your account with proof to interact with posts.",
       "commentsCount": "{{count}} comments",
       "fullscreenPreview": "Fullscreen preview"

@@ -1,3 +1,4 @@
+import { ZoneMembershipStatus } from '../users/enums/zone-membership-status.enum';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -18,6 +19,7 @@ import {
 } from '../transactions/schemas/transaction.schema';
 import { Neo4jService } from '../neo4j/neo4j.service';
 import { EmailsService } from '../emails/emails.service';
+
 
 @Injectable()
 export class RgpdService {
@@ -127,6 +129,8 @@ export class RgpdService {
           isActive: false,
           points: 0,
           location: undefined,
+          zoneId: null,
+          zoneStatut: ZoneMembershipStatus.NO_ZONE,
         },
       })
       .exec();

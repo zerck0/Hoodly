@@ -147,7 +147,7 @@ export function PostCard({ post, currentUserId }: PostCardProps) {
               className="bg-[#2c308e] hover:bg-[#2c308e]/95 text-white font-bold text-xs rounded-xl h-9 px-4 shadow-sm transition-all cursor-pointer active:scale-98"
             >
               <a href="/votes">
-                {t('dashboard.postCard.joinVote', '🗳️ Participer à la consultation')}
+                {t('dashboard.postCard.joinVote', '🗳️ Participer au sondage')}
               </a>
             </Button>
           </div>

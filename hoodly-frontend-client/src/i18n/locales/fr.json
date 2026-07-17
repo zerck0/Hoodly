@@ -248,7 +248,7 @@
       "deleteError": "Erreur lors de la suppression de la publication",
       "confirmDelete": "Voulez-vous vraiment supprimer cette publication ?",
       "pinned": "Épinglé",
-      "joinVote": "🗳️ Participer à la consultation",
+      "joinVote": "🗳️ Participer au sondage",
       "verificationRequired": "Veuillez faire vérifier votre compte avec vos justificatifs pour interagir avec les publications.",
       "commentsCount": "{{count}} commentaires",
       "fullscreenPreview": "Aperçu grand écran"

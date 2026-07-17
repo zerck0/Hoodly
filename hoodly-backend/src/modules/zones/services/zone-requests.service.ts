@@ -83,7 +83,7 @@ export class ZoneRequestsService {
   async findAll(): Promise<ZoneRequest[]> {
     return this.zoneRequestModel
       .find({ statut: RequestStatus.PENDING })
-      .populate('userId', 'name email picture location')
+      .populate('userId', 'firstName lastName name email picture location')
       .exec();
   }
 

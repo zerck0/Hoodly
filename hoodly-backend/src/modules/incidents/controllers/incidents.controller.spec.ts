@@ -53,7 +53,7 @@ describe('IncidentsController', () => {
   });
 
   describe('findAll', () => {
-    it('should return incidents from service', async () => {
+    it('should return incidents from service for admin without filtering', async () => {
       const incidents = [
         makeIncident(),
         makeIncident({
@@ -64,9 +64,27 @@ describe('IncidentsController', () => {
       ];
       incidentsService.findAll.mockResolvedValue(incidents);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll('zone-1', 'auth0|other', {
+        userId: 'auth0|admin',
+        role: 'admin' as any,
+        sub: 'auth0|admin',
+      });
 
-      expect(incidentsService.findAll).toHaveBeenCalledTimes(1);
+      expect(incidentsService.findAll).toHaveBeenCalledWith('zone-1', 'auth0|other');
+      expect(result).toEqual(incidents);
+    });
+
+    it('should filter incidents by userId for a regular user', async () => {
+      const incidents = [makeIncident()];
+      incidentsService.findAll.mockResolvedValue(incidents);
+
+      const result = await controller.findAll('zone-1', 'auth0|other', {
+        userId: 'auth0|user123',
+        role: 'user' as any,
+        sub: 'auth0|user123',
+      });
+
+      expect(incidentsService.findAll).toHaveBeenCalledWith('zone-1', 'auth0|user123');
       expect(result).toEqual(incidents);
     });
   });

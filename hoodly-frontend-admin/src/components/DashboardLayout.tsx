@@ -4,6 +4,9 @@ import { useAuthStore } from '../stores/auth.store';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { useQuery } from '@tanstack/react-query';
+import { zonesApi } from '../services/api/zones';
+import { usersApi } from '../services/api/users';
 import {
   LayoutDashboard,
   Users,
@@ -35,6 +38,28 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const dbUser = useAuthStore((s) => s.dbUser);
 
+  const { data: memberships } = useQuery({
+    queryKey: ['memberships-count'],
+    queryFn: () => zonesApi.getMemberships(),
+    refetchInterval: 15000,
+  });
+
+  const { data: zoneRequests } = useQuery({
+    queryKey: ['zone-requests-count'],
+    queryFn: () => zonesApi.getRequests(),
+    refetchInterval: 15000,
+  });
+
+  const { data: modApplications } = useQuery({
+    queryKey: ['mod-applications-count'],
+    queryFn: () => usersApi.getAllModeratorApplications(),
+    refetchInterval: 15000,
+  });
+
+  const pendingMembershipsCount = memberships?.length || 0;
+  const pendingZoneRequestsCount = zoneRequests?.filter((r: any) => r.statut === 'en_attente').length || 0;
+  const pendingModApplicationsCount = modApplications?.filter((a: any) => a.status === 'pending').length || 0;
+
   const initials = auth0User?.name
     ?.split(' ')
     .map((n) => n[0])
@@ -55,19 +80,37 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <nav className="flex-1 p-3 space-y-0.5">
-          {NAV_ITEMS.map(({ label, icon: Icon, path }) => (
-            <Button
-              key={label}
-              variant={location.pathname === path ? 'default' : 'ghost'}
-              size="sm"
-              className="w-full justify-start gap-2.5 h-9"
-              onClick={() => navigate(path)}
-            >
-              <Icon size={15} />
-              {label}
-            </Button>
-          ))}
+        <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+          {NAV_ITEMS.map(({ label, icon: Icon, path }) => {
+            let count = 0;
+            if (path === '/candidatures') {
+              count = pendingModApplicationsCount;
+            } else if (path === '/zones/map') {
+              count = pendingZoneRequestsCount;
+            } else if (path === '/zones/memberships') {
+              count = pendingMembershipsCount;
+            }
+
+            return (
+              <Button
+                key={label}
+                variant={location.pathname === path ? 'default' : 'ghost'}
+                size="sm"
+                className="w-full justify-between items-center h-9 px-3"
+                onClick={() => navigate(path)}
+              >
+                <span className="flex items-center gap-2.5">
+                  <Icon size={15} />
+                  <span>{label}</span>
+                </span>
+                {count > 0 && (
+                  <span className="h-5 min-w-5 px-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {count}
+                  </span>
+                )}
+              </Button>
+            );
+          })}
         </nav>
 
         <div className="p-3 border-t border-gray-800 space-y-1">

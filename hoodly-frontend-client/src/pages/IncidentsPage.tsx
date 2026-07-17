@@ -676,7 +676,13 @@ export default function IncidentsPage() {
                       </p>
 
                       <div className="flex items-center gap-2 mt-3 text-[10px] text-gray-400">
-                        <span>{t('incidents.card.reportedBy', { name: incident.signaledPar })}</span>
+                        <span>
+                          {t('incidents.card.reportedBy', {
+                            name: typeof incident.signaledPar === 'object' && incident.signaledPar
+                              ? `${(incident.signaledPar as any).firstName || ''} ${(incident.signaledPar as any).lastName || ''}`.trim() || (incident.signaledPar as any).name || (incident.signaledPar as any).email
+                              : incident.signaledPar === 'anonymized' ? t('incidents.card.anonymizedUser', 'Utilisateur Anonymisé') : (incident.signaledPar || t('incidents.card.unknownReporter', 'Habitant'))
+                          })}
+                        </span>
                         <span>•</span>
                         <span>{incident.createdAt ? new Date(incident.createdAt).toLocaleDateString(i18n.language) : t('incidents.card.unknownDate')}</span>
                       </div>

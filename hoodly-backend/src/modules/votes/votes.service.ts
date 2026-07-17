@@ -78,7 +78,7 @@ export class VotesService {
 
     if (status === VoteStatus.ACTIVE) {
       try {
-        const postContent = `🗳️ Consultation : ${savedVote.title}\n\n${savedVote.description || ''}\n\nLa consultation est ouverte pour une durée d'une semaine. Donnez votre avis dans l'onglet Consultations de l'application !`;
+        const postContent = `🗳️ Sondage : ${savedVote.title}\n\n${savedVote.description || ''}\n\nLe sondage est ouvert pour une durée d'une semaine. Donnez votre avis dans l'onglet Votes de l'application !`;
         await this.postsService.createPost(
           savedVote.zoneId.toString(),
           creatorId,
@@ -160,7 +160,7 @@ export class VotesService {
     const savedVote = await vote.save();
 
     try {
-      const postContent = `🗳️ Consultation : ${savedVote.title}\n\n${savedVote.description || ''}\n\nLa consultation est ouverte pour une durée d'une semaine. Donnez votre avis dans l'onglet Consultations de l'application !`;
+      const postContent = `🗳️ Sondage : ${savedVote.title}\n\n${savedVote.description || ''}\n\nLe sondage est ouvert pour une durée d'une semaine. Donnez votre avis dans l'onglet Votes de l'application !`;
       await this.postsService.createPost(
         savedVote.zoneId.toString(),
         moderatorId,
@@ -316,7 +316,7 @@ export class VotesService {
       }
       const totalVotes = vote.votedUsers.length;
 
-      let resultSummary = `📊 Résultats de la consultation : ${vote.title}\n\n`;
+      let resultSummary = `📊 Résultats du sondage : ${vote.title}\n\n`;
       if (totalVotes === 0) {
         resultSummary += `Aucun vote n'a été enregistré pour ce scrutin.`;
       } else {

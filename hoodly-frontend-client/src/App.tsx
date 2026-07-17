@@ -33,7 +33,7 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<LandingPage onLogin={() => loginWithRedirect()} />} />
+      <Route path="/" element={<LandingPage onLogin={() => loginWithRedirect({ authorizationParams: { prompt: 'select_account' } })} />} />
       <Route path="/callback" element={<CallbackPage />} />
 
       <Route

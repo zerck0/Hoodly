@@ -43,8 +43,13 @@ export class IncidentsController {
   findAll(
     @Query('zoneId') zoneId?: string,
     @Query('signaledPar') signaledPar?: string,
+    @CurrentUser() user?: AuthenticatedUser,
   ): Promise<Incident[]> {
-    return this.incidentsService.findAll(zoneId, signaledPar);
+    let enforcedSignaledPar = signaledPar;
+    if (user && user.role !== UserRole.ADMIN && user.role !== UserRole.MODERATOR) {
+      enforcedSignaledPar = user.userId;
+    }
+    return this.incidentsService.findAll(zoneId, enforcedSignaledPar);
   }
 
   @Get(':id')

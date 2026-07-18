@@ -7,6 +7,7 @@ import {
   Param,
   Body,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -95,6 +96,9 @@ export class ConversationsController {
     @Body() body: SendMessageDto,
     @CurrentUser() user: { userId: string },
   ) {
+    if (!body.content) {
+      throw new BadRequestException('Le contenu du message est requis pour la modification');
+    }
     return this.conversationsService.editMessage(
       id,
       messageId,

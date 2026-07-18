@@ -14,8 +14,16 @@ export const conversationsApi = {
   getMessages: (id: string) =>
     api.get<Message[]>(`/conversations/${id}/messages`),
 
-  sendMessage: (id: string, content: string) =>
-    api.post<Message>(`/conversations/${id}/messages`, { content }),
+  sendMessage: (id: string, content: string, imageUrl?: string) =>
+    api.post<Message>(`/conversations/${id}/messages`, { content, imageUrl }),
+
+  uploadImage: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post<{ fileUrl: string }>('/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
 
   editMessage: (id: string, messageId: string, content: string) =>
     api.patch<Message>(`/conversations/${id}/messages/${messageId}`, { content }),

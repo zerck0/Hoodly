@@ -106,7 +106,7 @@ describe('ConversationsController', () => {
       const result = await controller.sendMessage(id, body, user);
 
       expect(result).toEqual(mockResult);
-      expect(service.sendMessage).toHaveBeenCalledWith(id, 'user123', 'hello');
+      expect(service.sendMessage).toHaveBeenCalledWith(id, 'user123', 'hello', undefined);
     });
   });
 

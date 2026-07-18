@@ -83,7 +83,7 @@ export class ConversationsController {
     @Body() body: SendMessageDto,
     @CurrentUser() user: { userId: string },
   ) {
-    return this.conversationsService.sendMessage(id, user.userId, body.content);
+    return this.conversationsService.sendMessage(id, user.userId, body.content, body.imageUrl);
   }
 
   @Patch(':id/messages/:messageId')

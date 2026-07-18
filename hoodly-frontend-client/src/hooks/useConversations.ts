@@ -88,9 +88,9 @@ export function useConversations(conversationId?: string) {
   }, [socket, conversationId, queryClient])
 
   const sendMutation = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async ({ content, imageUrl }: { content: string; imageUrl?: string }) => {
       if (!conversationId) throw new Error('Aucune conversation active')
-      const { data } = await conversationsApi.sendMessage(conversationId, content)
+      const { data } = await conversationsApi.sendMessage(conversationId, content, imageUrl)
       return data
     },
     onSuccess: () => {

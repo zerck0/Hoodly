@@ -11,8 +11,11 @@ export class Message {
   @Prop({ type: Types.ObjectId, ref: 'User' })
   senderId?: Types.ObjectId;
 
-  @Prop({ required: true })
-  content!: string;
+  @Prop({ required: false })
+  content?: string;
+
+  @Prop({ required: false })
+  imageUrl?: string;
 
   @Prop({ type: Boolean, default: false })
   system!: boolean;

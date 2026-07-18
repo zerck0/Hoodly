@@ -18,6 +18,8 @@ import {
   ShieldCheck,
   Download,
   FileText,
+  Image,
+  X,
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar'
@@ -28,6 +30,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { contractsApi } from '../../services/api/contracts'
 import { documentsApi } from '../../services/api/documents'
+import { conversationsApi } from '../../services/api/conversations'
 import { SchedulerModal } from './SchedulerModal'
 
 const parsePlanificationToCreneau = (planif: string | undefined) => {
@@ -244,6 +247,51 @@ export function ChatWindow({
   const [editingContent, setEditingContent] = useState('')
   const [showParticipants, setShowParticipants] = useState(false)
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [file, setFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0]
+    if (!selected) return
+
+    if (selected.size > 5 * 1024 * 1024) {
+      toast.error("L'image ne doit pas dépasser 5 Mo")
+      return
+    }
+
+    if (!selected.type.startsWith('image/')) {
+      toast.error("Le fichier doit être une image")
+      return
+    }
+
+    setFile(selected)
+    const reader = new FileReader()
+    reader.onload = () => setPreviewUrl(reader.result as string)
+    reader.readAsDataURL(selected)
+
+    try {
+      setIsUploadingImage(true)
+      const { data } = await conversationsApi.uploadImage(selected)
+      setUploadedImageUrl(data.fileUrl)
+    } catch (err) {
+      console.error(err)
+      toast.error("Erreur lors du téléversement de l'image")
+      handleRemoveFile()
+    } finally {
+      setIsUploadingImage(false)
+    }
+  }
+
+  const handleRemoveFile = () => {
+    setFile(null)
+    setPreviewUrl(null)
+    setUploadedImageUrl(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -293,11 +341,14 @@ export function ChatWindow({
 
   const handleSend = async (e?: React.FormEvent<HTMLFormElement>) => {
     if (e) e.preventDefault()
-    if (!newMessage.trim() || isSending || !activeId) return
+    const hasText = !!newMessage.trim()
+    const hasImage = !!uploadedImageUrl
+    if ((!hasText && !hasImage) || isSending || !activeId) return
 
     try {
-      await sendMessage(newMessage)
+      await sendMessage({ content: newMessage, imageUrl: uploadedImageUrl || undefined })
       setNewMessage('')
+      handleRemoveFile()
       if (textareaRef.current) {
         textareaRef.current.style.height = '44px'
       }
@@ -794,7 +845,7 @@ export function ChatWindow({
               return (
                 <div key={msg._id} className="flex justify-center my-4 animate-in fade-in duration-200">
                   <div className="bg-white border border-gray-200/80 text-gray-500 rounded-2xl px-5 py-3 text-[11px] text-center max-w-sm font-semibold shadow-xs leading-relaxed">
-                    {translateSystemMessage(msg.content)}
+                    {translateSystemMessage(msg.content || '')}
                   </div>
                 </div>
               )
@@ -815,7 +866,7 @@ export function ChatWindow({
                       type="button"
                       onClick={() => {
                         setEditingMessageId(msg._id)
-                        setEditingContent(msg.content)
+                        setEditingContent(msg.content || '')
                       }}
                       className="h-6 w-6 rounded-lg bg-gray-100 hover:bg-[#e9eaf6] text-gray-400 hover:text-[#2c308e] flex items-center justify-center transition-all cursor-pointer"
                       title="Modifier le message"
@@ -875,7 +926,19 @@ export function ChatWindow({
                       ? 'bg-[#2c308e] text-white rounded-tr-none'
                       : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
                   }`}>
-                    <p className="font-light whitespace-pre-wrap break-words">{msg.content}</p>
+                    {msg.imageUrl && (
+                      <div className="mb-1.5 max-w-full rounded-lg overflow-hidden">
+                        <img
+                          src={msg.imageUrl}
+                          alt="Image partagée"
+                          className="max-h-60 w-auto object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => window.open(msg.imageUrl, '_blank')}
+                        />
+                      </div>
+                    )}
+                    {msg.content && (
+                      <p className="font-light whitespace-pre-wrap break-words">{msg.content}</p>
+                    )}
                     <div className="flex items-center justify-end gap-1 mt-1 font-sans">
                       {msg.edited && (
                         <span className={`text-[7px] font-light italic ${isMe ? 'text-white/50' : 'text-gray-400'}`}>
@@ -898,31 +961,74 @@ export function ChatWindow({
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={handleSend} className="p-4 border-t border-gray-200 bg-white shrink-0 flex gap-2 items-center">
+      <form onSubmit={handleSend} className="p-4 border-t border-gray-200 bg-white shrink-0 flex flex-col gap-2">
+        {previewUrl && (
+          <div className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-xl w-max relative animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative h-14 w-14 rounded-lg overflow-hidden border border-gray-200">
+              {isUploadingImage && (
+                <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                  <Loader2 className="h-4 w-4 animate-spin text-[#2c308e]" />
+                </div>
+              )}
+              <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
+            </div>
+            <div className="flex flex-col gap-0.5 pr-6">
+              <span className="text-[10px] font-bold text-gray-700">Image prête à l'envoi</span>
+              <span className="text-[8px] text-gray-400">Cliquez sur envoyer</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleRemoveFile}
+              disabled={isSending}
+              className="absolute top-1.5 right-1.5 h-4 w-4 rounded-full bg-red-50 hover:bg-red-100 text-red-500 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <X className="h-2.5 w-2.5" />
+            </button>
+          </div>
+        )}
 
+        <div className="flex gap-2 items-center w-full">
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleFileChange}
+            disabled={isSending}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isSending || isUploadingImage}
+            className="h-11 w-11 rounded-2xl bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-gray-900 flex items-center justify-center transition-colors border border-gray-200/40 cursor-pointer shrink-0"
+            title="Ajouter une photo"
+          >
+            <Image className="h-4.5 w-4.5" />
+          </button>
 
-        <textarea
-          ref={textareaRef}
-          value={newMessage}
-          onChange={handleTextareaChange}
-          onKeyDown={handleKeyDown}
-          placeholder={t('messages.chatWindow.placeholder', 'Écrivez un message à votre voisin...')}
-          disabled={isSending}
-          rows={1}
-          className="flex-1 rounded-2xl bg-gray-50 border border-gray-200/60 px-4 py-3 text-xs outline-none focus:bg-white focus:border-[#2c308e] focus:ring-1 focus:ring-[#2c308e]/10 transition-all disabled:opacity-50 resize-none h-[44px] min-h-[44px] max-h-[120px] overflow-y-auto leading-relaxed"
-        />
+          <textarea
+            ref={textareaRef}
+            value={newMessage}
+            onChange={handleTextareaChange}
+            onKeyDown={handleKeyDown}
+            placeholder={t('messages.chatWindow.placeholder', 'Écrivez un message à votre voisin...')}
+            disabled={isSending}
+            rows={1}
+            className="flex-1 rounded-2xl bg-gray-50 border border-gray-200/60 px-4 py-3 text-xs outline-none focus:bg-white focus:border-[#2c308e] focus:ring-1 focus:ring-[#2c308e]/10 transition-all disabled:opacity-50 resize-none h-[44px] min-h-[44px] max-h-[120px] overflow-y-auto leading-relaxed"
+          />
 
-        <button
-          type="submit"
-          disabled={!newMessage.trim() || isSending}
-          className="h-11 w-11 rounded-2xl bg-[#2c308e] hover:bg-[#2c308e]/95 text-white flex items-center justify-center transition-colors shadow-sm disabled:opacity-50 disabled:hover:bg-[#2c308e] cursor-pointer"
-        >
-          {isSending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4.5 w-4.5" />
-          )}
-        </button>
+          <button
+            type="submit"
+            disabled={(!newMessage.trim() && !uploadedImageUrl) || isSending || isUploadingImage}
+            className="h-11 w-11 rounded-2xl bg-[#2c308e] hover:bg-[#2c308e]/95 text-white flex items-center justify-center transition-colors shadow-sm disabled:opacity-50 disabled:hover:bg-[#2c308e] cursor-pointer shrink-0"
+          >
+            {isSending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4.5 w-4.5" />
+            )}
+          </button>
+        </div>
       </form>
 
       <SchedulerModal

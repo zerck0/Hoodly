@@ -10,9 +10,10 @@ export interface Message {
   _id: string
   conversationId: string
   senderId?: string | MessageSender
-  content: string
+  content?: string
   system: boolean
   edited?: boolean
+  imageUrl?: string
   createdAt: string
   updatedAt?: string
 }

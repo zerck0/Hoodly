@@ -108,11 +108,34 @@ export default function ZoneMapManagement() {
         setSelectedRequestIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
       };
 
+      const fullName = req.userId
+        ? `${req.userId.prenom || ''} ${req.userId.nom || req.userId.name || ''}`.trim()
+        : 'Habitant';
+
+      const tooltipPopup = new mapboxgl.Popup({
+        offset: 15,
+        closeButton: false,
+        closeOnClick: false,
+        className: 'pointer-events-none'
+      }).setHTML(
+        `<div class="p-1.5 text-slate-800 font-sans text-xs">
+          <p class="font-bold">${fullName || 'Habitant'}</p>
+          <p class="text-[10px] text-indigo-600 font-extrabold mt-0.5">${req.nomQuartier || 'Quartier demandé'}</p>
+         </div>`
+      );
+
+      el.onmouseenter = () => {
+        if (req.location?.coordinates) {
+          tooltipPopup.setLngLat(req.location.coordinates as [number, number]).addTo(m);
+        }
+      };
+
+      el.onmouseleave = () => {
+        tooltipPopup.remove();
+      };
+
       const marker = new mapboxgl.Marker({ element: el })
         .setLngLat(req.location.coordinates as [number, number])
-        .setPopup(new mapboxgl.Popup({ offset: 20 }).setHTML(
-          `<div class="p-2 text-gray-800 font-bold">${req.userId?.name || req.userId?.nom || 'Habitant'}</div>`
-        ))
         .addTo(m);
 
       markersRef.current.push(marker);

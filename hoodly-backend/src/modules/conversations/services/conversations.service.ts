@@ -180,7 +180,8 @@ export class ConversationsService {
   async sendMessage(
     conversationId: string,
     senderId: string,
-    content: string,
+    content?: string,
+    imageUrl?: string,
   ): Promise<MessageDocument> {
     const conversation = await this.conversationModel.findById(conversationId);
     if (!conversation) {
@@ -200,6 +201,7 @@ export class ConversationsService {
       conversationId: new Types.ObjectId(conversationId),
       senderId: new Types.ObjectId(senderId),
       content,
+      imageUrl,
       system: false,
     });
 
